@@ -1,9 +1,11 @@
 import { supabase } from "./supabase.js";
 
 
-// ====================================
-// AUTH ELEMENTS
-// ====================================
+// ======================================================
+// DOM ELEMENTS
+// ======================================================
+
+// AUTH
 
 const authSection =
     document.getElementById("auth-section");
@@ -30,9 +32,7 @@ const userEmail =
     document.getElementById("user-email");
 
 
-// ====================================
-// ACCOUNT ELEMENTS
-// ====================================
+// ACCOUNTS
 
 const accountForm =
     document.getElementById("account-form");
@@ -41,14 +41,10 @@ const accountList =
     document.getElementById("account-list");
 
 const accountFormTitle =
-    document.getElementById(
-        "account-form-title"
-    );
+    document.getElementById("account-form-title");
 
 const saveAccountButton =
-    document.getElementById(
-        "save-account-button"
-    );
+    document.getElementById("save-account-button");
 
 const cancelAccountEditButton =
     document.getElementById(
@@ -56,24 +52,16 @@ const cancelAccountEditButton =
     );
 
 const accountMessage =
-    document.getElementById(
-        "account-message"
-    );
+    document.getElementById("account-message");
 
 
-// ====================================
-// CATEGORY ELEMENTS
-// ====================================
+// CATEGORIES
 
 const categoryForm =
-    document.getElementById(
-        "category-form"
-    );
+    document.getElementById("category-form");
 
 const categoryList =
-    document.getElementById(
-        "category-list"
-    );
+    document.getElementById("category-list");
 
 const categoryFormTitle =
     document.getElementById(
@@ -96,9 +84,7 @@ const categoryMessage =
     );
 
 
-// ====================================
-// INCOME SOURCE ELEMENTS
-// ====================================
+// INCOME SOURCES
 
 const incomeSourceForm =
     document.getElementById(
@@ -131,13 +117,16 @@ const incomeSourceMessage =
     );
 
 
-// ====================================
-// TRANSACTION ELEMENTS
-// ====================================
+// TRANSACTIONS
 
 const transactionForm =
     document.getElementById(
         "transaction-form"
+    );
+
+const transactionList =
+    document.getElementById(
+        "transaction-list"
     );
 
 const transactionAccountSelect =
@@ -146,9 +135,7 @@ const transactionAccountSelect =
     );
 
 const transactionTypeSelect =
-    document.getElementById(
-        "type"
-    );
+    document.getElementById("type");
 
 const transactionCategorySelect =
     document.getElementById(
@@ -201,14 +188,12 @@ const formTitle =
     );
 
 const dateInput =
-    document.getElementById(
-        "date"
-    );
+    document.getElementById("date");
 
 
-// ====================================
+// ======================================================
 // APP STATE
-// ====================================
+// ======================================================
 
 let currentUser = null;
 
@@ -217,6 +202,8 @@ let accounts = [];
 let categories = [];
 
 let incomeSources = [];
+
+let transactions = [];
 
 let editingAccountId = null;
 
@@ -227,9 +214,9 @@ let editingIncomeSourceId = null;
 let editingTransactionId = null;
 
 
-// ====================================
+// ======================================================
 // STARTER DATA
-// ====================================
+// ======================================================
 
 const starterCategories = [
 
@@ -293,155 +280,9 @@ const starterIncomeSources = [
 ];
 
 
-// ====================================
-// TEMPORARY LOCAL TRANSACTIONS
-// ====================================
-
-const defaultTransactions = [
-
-    {
-        id: generateId(),
-
-        description: "Salary",
-
-        category: "Income",
-
-        amount: 2750,
-
-        type: "income",
-
-        date: "2026-09-01"
-    },
-
-    {
-        id: generateId(),
-
-        description: "Grab",
-
-        category: "Side Income",
-
-        amount: 1200,
-
-        type: "income",
-
-        date: "2026-09-07"
-    },
-
-    {
-        id: generateId(),
-
-        description: "Petrol",
-
-        category: "Transportation",
-
-        amount: 50,
-
-        type: "expense",
-
-        date: "2026-09-08"
-    },
-
-    {
-        id: generateId(),
-
-        description: "Nasi Kandar",
-
-        category: "Food & Dining",
-
-        amount: 18,
-
-        type: "expense",
-
-        date: "2026-09-08"
-    }
-
-];
-
-
-const savedTransactions =
-    localStorage.getItem(
-        "transactions"
-    );
-
-
-let transactions;
-
-
-if (savedTransactions) {
-
-    try {
-
-        transactions =
-            JSON.parse(
-                savedTransactions
-            );
-
-    } catch (error) {
-
-        console.error(
-            "Failed to read local transactions:",
-            error
-        );
-
-        transactions =
-            defaultTransactions;
-
-        saveTransactions();
-
-    }
-
-} else {
-
-    transactions =
-        defaultTransactions;
-
-    saveTransactions();
-
-}
-
-
-// ====================================
-// MIGRATE OLD LOCAL DATA
-// ====================================
-
-let localDataChanged = false;
-
-
-transactions =
-    transactions.map(
-        function (transaction) {
-
-            if (!transaction.id) {
-
-                localDataChanged =
-                    true;
-
-                return {
-
-                    ...transaction,
-
-                    id: generateId()
-
-                };
-
-            }
-
-            return transaction;
-
-        }
-    );
-
-
-if (localDataChanged) {
-
-    saveTransactions();
-
-}
-
-
-// ====================================
+// ======================================================
 // AUTH UI
-// ====================================
+// ======================================================
 
 function showLoggedOutState() {
 
@@ -452,6 +293,9 @@ function showLoggedOutState() {
     categories = [];
 
     incomeSources = [];
+
+    transactions = [];
+
 
     authSection.style.display =
         "flex";
@@ -464,8 +308,8 @@ function showLoggedOutState() {
 
 async function showLoggedInState(user) {
 
-    currentUser =
-        user;
+    currentUser = user;
+
 
     authSection.style.display =
         "none";
@@ -473,9 +317,10 @@ async function showLoggedInState(user) {
     financeApp.style.display =
         "block";
 
+
     userEmail.textContent =
-        user.email ||
-        "Signed in";
+        user.email || "Signed in";
+
 
     authMessage.textContent =
         "";
@@ -487,22 +332,25 @@ async function showLoggedInState(user) {
 
     await loadIncomeSources();
 
+
     await seedStarterData();
+
+
+    await loadTransactions();
 
 
     refreshTransactionDropdowns();
 
-    renderTransactions();
-
 }
 
 
-// ====================================
+// ======================================================
 // REGISTER
-// ====================================
+// ======================================================
 
 registerButton.addEventListener(
     "click",
+
     async function () {
 
         const email =
@@ -595,12 +443,13 @@ registerButton.addEventListener(
 );
 
 
-// ====================================
+// ======================================================
 // LOGIN
-// ====================================
+// ======================================================
 
 authForm.addEventListener(
     "submit",
+
     async function (event) {
 
         event.preventDefault();
@@ -667,12 +516,13 @@ authForm.addEventListener(
 );
 
 
-// ====================================
+// ======================================================
 // LOGOUT
-// ====================================
+// ======================================================
 
 logoutButton.addEventListener(
     "click",
+
     async function () {
 
         const {
@@ -698,9 +548,9 @@ logoutButton.addEventListener(
 );
 
 
-// ====================================
+// ======================================================
 // INITIAL AUTH
-// ====================================
+// ======================================================
 
 async function initializeAuth() {
 
@@ -715,6 +565,7 @@ async function initializeAuth() {
     if (error) {
 
         console.error(
+            "Session error:",
             error
         );
 
@@ -759,9 +610,9 @@ supabase.auth.onAuthStateChange(
 );
 
 
-// ====================================
+// ======================================================
 // ACCOUNTS
-// ====================================
+// ======================================================
 
 async function loadAccounts() {
 
@@ -790,6 +641,8 @@ async function loadAccounts() {
         accountMessage.textContent =
             error.message;
 
+        console.error(error);
+
         return;
 
     }
@@ -807,6 +660,10 @@ async function loadAccounts() {
 
 }
 
+
+// ======================================================
+// RENDER ACCOUNTS
+// ======================================================
 
 function renderAccounts() {
 
@@ -892,14 +749,9 @@ function renderAccounts() {
             }
 
 
-            left.appendChild(
-                name
-            );
+            left.appendChild(name);
 
-
-            left.appendChild(
-                meta
-            );
+            left.appendChild(meta);
 
 
             const right =
@@ -924,7 +776,9 @@ function renderAccounts() {
 
             balance.textContent =
                 formatMoney(
-                    account.opening_balance
+                    calculateAccountBalance(
+                        account.id
+                    )
                 );
 
 
@@ -956,20 +810,14 @@ function renderAccounts() {
                 balance
             );
 
-
             right.appendChild(
                 buttons
             );
 
 
-            card.appendChild(
-                left
-            );
+            card.appendChild(left);
 
-
-            card.appendChild(
-                right
-            );
+            card.appendChild(right);
 
 
             accountList.appendChild(
@@ -982,11 +830,21 @@ function renderAccounts() {
 }
 
 
+// ======================================================
+// ACCOUNT SUBMIT
+// ======================================================
+
 accountForm.addEventListener(
     "submit",
+
     async function (event) {
 
         event.preventDefault();
+
+
+        if (!currentUser) {
+            return;
+        }
 
 
         const name =
@@ -1023,19 +881,22 @@ accountForm.addEventListener(
             )
         ) {
 
+            accountMessage.textContent =
+                "Enter valid account details.";
+
             return;
 
         }
 
 
-        let queryResult;
+        let result;
 
 
         if (
             editingAccountId === null
         ) {
 
-            queryResult =
+            result =
                 await supabase
                     .from("accounts")
                     .insert({
@@ -1055,7 +916,7 @@ accountForm.addEventListener(
 
         } else {
 
-            queryResult =
+            result =
                 await supabase
                     .from("accounts")
                     .update({
@@ -1077,10 +938,10 @@ accountForm.addEventListener(
         }
 
 
-        if (queryResult.error) {
+        if (result.error) {
 
             accountMessage.textContent =
-                queryResult.error.message;
+                result.error.message;
 
             return;
 
@@ -1089,13 +950,21 @@ accountForm.addEventListener(
 
         resetAccountForm();
 
+
         await loadAccounts();
+
+
+        updateDashboard();
 
         refreshTransactionDropdowns();
 
     }
 );
 
+
+// ======================================================
+// EDIT ACCOUNT
+// ======================================================
 
 function editAccount(id) {
 
@@ -1153,6 +1022,10 @@ function editAccount(id) {
 }
 
 
+// ======================================================
+// ACCOUNT STATUS
+// ======================================================
+
 async function toggleAccountStatus(id) {
 
     const account =
@@ -1197,15 +1070,19 @@ async function toggleAccountStatus(id) {
 
     await loadAccounts();
 
+
     refreshTransactionDropdowns();
 
 }
 
 
+// ======================================================
+// RESET ACCOUNT
+// ======================================================
+
 function resetAccountForm() {
 
-    editingAccountId =
-        null;
+    editingAccountId = null;
 
 
     accountForm.reset();
@@ -1230,6 +1107,10 @@ function resetAccountForm() {
     cancelAccountEditButton.style.display =
         "none";
 
+
+    accountMessage.textContent =
+        "";
+
 }
 
 
@@ -1240,9 +1121,9 @@ cancelAccountEditButton
     );
 
 
-// ====================================
+// ======================================================
 // CATEGORIES
-// ====================================
+// ======================================================
 
 async function loadCategories() {
 
@@ -1271,6 +1152,8 @@ async function loadCategories() {
         categoryMessage.textContent =
             error.message;
 
+        console.error(error);
+
         return;
 
     }
@@ -1288,6 +1171,10 @@ async function loadCategories() {
 
 }
 
+
+// ======================================================
+// RENDER CATEGORIES
+// ======================================================
 
 function renderCategories() {
 
@@ -1355,8 +1242,13 @@ function renderCategories() {
 }
 
 
+// ======================================================
+// CATEGORY SUBMIT
+// ======================================================
+
 categoryForm.addEventListener(
     "submit",
+
     async function (event) {
 
         event.preventDefault();
@@ -1437,13 +1329,19 @@ categoryForm.addEventListener(
 
         resetCategoryForm();
 
+
         await loadCategories();
+
 
         refreshTransactionDropdowns();
 
     }
 );
 
+
+// ======================================================
+// EDIT CATEGORY
+// ======================================================
 
 function editCategory(id) {
 
@@ -1493,6 +1391,10 @@ function editCategory(id) {
 }
 
 
+// ======================================================
+// CATEGORY STATUS
+// ======================================================
+
 async function toggleCategoryStatus(id) {
 
     const category =
@@ -1537,15 +1439,19 @@ async function toggleCategoryStatus(id) {
 
     await loadCategories();
 
+
     refreshTransactionDropdowns();
 
 }
 
 
+// ======================================================
+// RESET CATEGORY
+// ======================================================
+
 function resetCategoryForm() {
 
-    editingCategoryId =
-        null;
+    editingCategoryId = null;
 
 
     categoryForm.reset();
@@ -1562,6 +1468,10 @@ function resetCategoryForm() {
     cancelCategoryEditButton.style.display =
         "none";
 
+
+    categoryMessage.textContent =
+        "";
+
 }
 
 
@@ -1572,9 +1482,9 @@ cancelCategoryEditButton
     );
 
 
-// ====================================
+// ======================================================
 // INCOME SOURCES
-// ====================================
+// ======================================================
 
 async function loadIncomeSources() {
 
@@ -1603,6 +1513,8 @@ async function loadIncomeSources() {
         incomeSourceMessage.textContent =
             error.message;
 
+        console.error(error);
+
         return;
 
     }
@@ -1620,6 +1532,10 @@ async function loadIncomeSources() {
 
 }
 
+
+// ======================================================
+// RENDER INCOME SOURCES
+// ======================================================
 
 function renderIncomeSources() {
 
@@ -1688,8 +1604,13 @@ function renderIncomeSources() {
 }
 
 
+// ======================================================
+// INCOME SOURCE SUBMIT
+// ======================================================
+
 incomeSourceForm.addEventListener(
     "submit",
+
     async function (event) {
 
         event.preventDefault();
@@ -1758,13 +1679,19 @@ incomeSourceForm.addEventListener(
 
         resetIncomeSourceForm();
 
+
         await loadIncomeSources();
+
 
         refreshTransactionDropdowns();
 
     }
 );
 
+
+// ======================================================
+// EDIT INCOME SOURCE
+// ======================================================
 
 function editIncomeSource(id) {
 
@@ -1805,6 +1732,10 @@ function editIncomeSource(id) {
 
 }
 
+
+// ======================================================
+// INCOME SOURCE STATUS
+// ======================================================
 
 async function toggleIncomeSourceStatus(id) {
 
@@ -1850,10 +1781,15 @@ async function toggleIncomeSourceStatus(id) {
 
     await loadIncomeSources();
 
+
     refreshTransactionDropdowns();
 
 }
 
+
+// ======================================================
+// RESET INCOME SOURCE
+// ======================================================
 
 function resetIncomeSourceForm() {
 
@@ -1875,6 +1811,10 @@ function resetIncomeSourceForm() {
     cancelIncomeSourceEditButton.style.display =
         "none";
 
+
+    incomeSourceMessage.textContent =
+        "";
+
 }
 
 
@@ -1885,14 +1825,13 @@ cancelIncomeSourceEditButton
     );
 
 
-// ====================================
+// ======================================================
 // STARTER DATA
-// ====================================
+// ======================================================
 
 async function seedStarterData() {
 
-    let changed =
-        false;
+    let changed = false;
 
 
     if (
@@ -1926,8 +1865,7 @@ async function seedStarterData() {
 
         if (!error) {
 
-            changed =
-                true;
+            changed = true;
 
         }
 
@@ -1961,8 +1899,7 @@ async function seedStarterData() {
 
         if (!error) {
 
-            changed =
-                true;
+            changed = true;
 
         }
 
@@ -1980,26 +1917,91 @@ async function seedStarterData() {
 }
 
 
-// ====================================
+// ======================================================
+// LOAD TRANSACTIONS FROM SUPABASE
+// ======================================================
+
+async function loadTransactions() {
+
+    if (!currentUser) {
+        return;
+    }
+
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("transactions")
+            .select("*")
+            .is(
+                "deleted_at",
+                null
+            )
+            .order(
+                "transaction_date",
+                {
+                    ascending: false
+                }
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "Load transactions error:",
+            error
+        );
+
+        alert(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    transactions =
+        data || [];
+
+
+    updateDashboard();
+
+    renderTransactions();
+
+    renderAccounts();
+
+}
+
+
+// ======================================================
 // TRANSACTION DROPDOWNS
-// ====================================
+// ======================================================
 
 function refreshTransactionDropdowns(
     transaction = null
 ) {
 
     populateAccountSelect(
-        transaction?.accountId || ""
+        transaction?.account_id || ""
     );
 
 
     populateCategorySelect(
-        transaction?.categoryId || ""
+        transaction?.category_id || ""
     );
 
 
     updateIncomeSourceVisibility(
-        transaction?.incomeSourceId || ""
+        transaction?.income_source_id || ""
     );
 
 
@@ -2013,6 +2015,10 @@ function refreshTransactionDropdowns(
 }
 
 
+// ======================================================
+// ACCOUNT DROPDOWN
+// ======================================================
+
 function populateAccountSelect(
     selectedValue = ""
 ) {
@@ -2021,28 +2027,30 @@ function populateAccountSelect(
         '<option value="">Select account</option>';
 
 
-    const activeAccounts =
-        accounts.filter(
+    accounts
+        .filter(
             account =>
-                account.is_active
+
+                account.is_active ||
+
+                account.id ===
+                    selectedValue
+        )
+        .forEach(
+            function (account) {
+
+                addSelectOption(
+
+                    transactionAccountSelect,
+
+                    account.id,
+
+                    account.name
+
+                );
+
+            }
         );
-
-
-    activeAccounts.forEach(
-        function (account) {
-
-            addSelectOption(
-
-                transactionAccountSelect,
-
-                account.id,
-
-                account.name
-
-            );
-
-        }
-    );
 
 
     transactionAccountSelect.value =
@@ -2050,6 +2058,10 @@ function populateAccountSelect(
 
 }
 
+
+// ======================================================
+// CATEGORY DROPDOWN
+// ======================================================
 
 function populateCategorySelect(
     selectedValue = ""
@@ -2067,11 +2079,20 @@ function populateCategorySelect(
         .filter(
             category =>
 
-                category.is_active &&
+                (
+                    category.is_active ||
+
+                    category.id ===
+                        selectedValue
+                )
+
+                &&
 
                 (
                     category.type ===
-                        transactionType ||
+                        transactionType
+
+                    ||
 
                     category.type ===
                         "both"
@@ -2110,6 +2131,10 @@ function populateCategorySelect(
 
 }
 
+
+// ======================================================
+// INCOME SOURCE DROPDOWN
+// ======================================================
 
 function updateIncomeSourceVisibility(
     selectedValue = ""
@@ -2150,7 +2175,11 @@ function updateIncomeSourceVisibility(
     incomeSources
         .filter(
             source =>
-                source.is_active
+
+                source.is_active ||
+
+                source.id ===
+                    selectedValue
         )
         .forEach(
             function (source) {
@@ -2186,42 +2215,62 @@ function updateIncomeSourceVisibility(
 }
 
 
+// ======================================================
+// TRANSACTION TYPE CHANGE
+// ======================================================
+
 transactionTypeSelect.addEventListener(
     "change",
+
     function () {
 
         populateCategorySelect();
 
         updateIncomeSourceVisibility();
 
+
         customCategoryGroup.style.display =
+            "none";
+
+
+        customIncomeSourceGroup.style.display =
             "none";
 
     }
 );
 
 
-transactionCategorySelect
-    .addEventListener(
-        "change",
-        function () {
+// ======================================================
+// OTHER CATEGORY
+// ======================================================
 
-            customCategoryGroup.style.display =
+transactionCategorySelect.addEventListener(
+    "change",
 
-                transactionCategorySelect.value ===
-                "__other__"
+    function () {
 
-                    ? "block"
+        customCategoryGroup.style.display =
 
-                    : "none";
+            transactionCategorySelect.value ===
+            "__other__"
 
-        }
-    );
+                ? "block"
 
+                : "none";
+
+    }
+);
+
+
+// ======================================================
+// OTHER INCOME SOURCE
+// ======================================================
 
 transactionIncomeSourceSelect
     .addEventListener(
+
         "change",
+
         function () {
 
             customIncomeSourceGroup.style.display =
@@ -2234,224 +2283,13 @@ transactionIncomeSourceSelect
                     : "none";
 
         }
+
     );
 
 
-// ====================================
-// TRANSACTION SUBMIT
-// Still LocalStorage
-// ====================================
-
-transactionForm.addEventListener(
-    "submit",
-    async function (event) {
-
-        event.preventDefault();
-
-
-        const description =
-            document
-                .getElementById(
-                    "description"
-                )
-                .value
-                .trim();
-
-
-        const accountId =
-            transactionAccountSelect.value;
-
-
-        const type =
-            transactionTypeSelect.value;
-
-
-        let categoryId =
-            transactionCategorySelect.value;
-
-
-        let incomeSourceId =
-            null;
-
-
-        const amount =
-            parseFloat(
-                document
-                    .getElementById(
-                        "amount"
-                    )
-                    .value
-            );
-
-
-        const date =
-            document
-                .getElementById(
-                    "date"
-                )
-                .value;
-
-
-        const notes =
-            document
-                .getElementById(
-                    "notes"
-                )
-                .value
-                .trim();
-
-
-        if (
-            !description ||
-            !accountId ||
-            !categoryId ||
-            !date ||
-            Number.isNaN(amount) ||
-            amount <= 0
-        ) {
-
-            alert(
-                "Please complete all required transaction fields."
-            );
-
-            return;
-
-        }
-
-
-        if (
-            categoryId ===
-            "__other__"
-        ) {
-
-            const newCategory =
-                await createCategoryFromTransaction(
-                    type
-                );
-
-
-            if (!newCategory) {
-                return;
-            }
-
-
-            categoryId =
-                newCategory.id;
-
-        }
-
-
-        if (
-            type === "income"
-        ) {
-
-            incomeSourceId =
-                transactionIncomeSourceSelect.value;
-
-
-            if (!incomeSourceId) {
-
-                alert(
-                    "Please select an income source."
-                );
-
-                return;
-
-            }
-
-
-            if (
-                incomeSourceId ===
-                "__other__"
-            ) {
-
-                const newSource =
-                    await createIncomeSourceFromTransaction();
-
-
-                if (!newSource) {
-                    return;
-                }
-
-
-                incomeSourceId =
-                    newSource.id;
-
-            }
-
-        }
-
-
-        const transactionData = {
-
-            id:
-                editingTransactionId ||
-                generateId(),
-
-            description,
-
-            accountId,
-
-            categoryId,
-
-            incomeSourceId,
-
-            amount,
-
-            type,
-
-            date,
-
-            notes
-
-        };
-
-
-        if (
-            editingTransactionId === null
-        ) {
-
-            transactions.push(
-                transactionData
-            );
-
-        } else {
-
-            const index =
-                transactions.findIndex(
-
-                    transaction =>
-                        transaction.id ===
-                        editingTransactionId
-
-                );
-
-
-            if (index >= 0) {
-
-                transactions[index] =
-                    transactionData;
-
-            }
-
-        }
-
-
-        saveTransactions();
-
-        updateDashboard();
-
-        renderTransactions();
-
-        resetTransactionForm();
-
-    }
-);
-
-
-// ====================================
-// CUSTOM CATEGORY FROM TRANSACTION
-// ====================================
+// ======================================================
+// CREATE CATEGORY FROM TRANSACTION
+// ======================================================
 
 async function createCategoryFromTransaction(
     type
@@ -2480,14 +2318,18 @@ async function createCategoryFromTransaction(
 
                 category.name
                     .toLowerCase() ===
-                name.toLowerCase() &&
+                name.toLowerCase()
+
+                &&
 
                 (
                     category.type ===
-                    type ||
+                        type
+
+                    ||
 
                     category.type ===
-                    "both"
+                        "both"
                 )
         );
 
@@ -2530,9 +2372,7 @@ async function createCategoryFromTransaction(
     }
 
 
-    categories.push(
-        data
-    );
+    categories.push(data);
 
 
     renderCategories();
@@ -2543,9 +2383,9 @@ async function createCategoryFromTransaction(
 }
 
 
-// ====================================
-// CUSTOM INCOME SOURCE
-// ====================================
+// ======================================================
+// CREATE INCOME SOURCE FROM TRANSACTION
+// ======================================================
 
 async function createIncomeSourceFromTransaction() {
 
@@ -2612,9 +2452,7 @@ async function createIncomeSourceFromTransaction() {
     }
 
 
-    incomeSources.push(
-        data
-    );
+    incomeSources.push(data);
 
 
     renderIncomeSources();
@@ -2625,17 +2463,281 @@ async function createIncomeSourceFromTransaction() {
 }
 
 
-// ====================================
+// ======================================================
+// ADD / UPDATE TRANSACTION IN SUPABASE
+// ======================================================
+
+transactionForm.addEventListener(
+    "submit",
+
+    async function (event) {
+
+        event.preventDefault();
+
+
+        if (!currentUser) {
+
+            return;
+
+        }
+
+
+        const description =
+            document
+                .getElementById(
+                    "description"
+                )
+                .value
+                .trim();
+
+
+        const accountId =
+            transactionAccountSelect.value;
+
+
+        const type =
+            transactionTypeSelect.value;
+
+
+        let categoryId =
+            transactionCategorySelect.value;
+
+
+        let incomeSourceId =
+            null;
+
+
+        const amount =
+            parseFloat(
+                document
+                    .getElementById(
+                        "amount"
+                    )
+                    .value
+            );
+
+
+        const transactionDate =
+            document
+                .getElementById(
+                    "date"
+                )
+                .value;
+
+
+        const notes =
+            document
+                .getElementById(
+                    "notes"
+                )
+                .value
+                .trim();
+
+
+        if (
+            !description ||
+            !accountId ||
+            !categoryId ||
+            !transactionDate ||
+            Number.isNaN(amount) ||
+            amount <= 0
+        ) {
+
+            alert(
+                "Please complete all required transaction fields."
+            );
+
+            return;
+
+        }
+
+
+        // CREATE CUSTOM CATEGORY
+
+        if (
+            categoryId ===
+            "__other__"
+        ) {
+
+            const newCategory =
+                await createCategoryFromTransaction(
+                    type
+                );
+
+
+            if (!newCategory) {
+                return;
+            }
+
+
+            categoryId =
+                newCategory.id;
+
+        }
+
+
+        // INCOME SOURCE
+
+        if (
+            type === "income"
+        ) {
+
+            incomeSourceId =
+                transactionIncomeSourceSelect.value;
+
+
+            if (!incomeSourceId) {
+
+                alert(
+                    "Please select an income source."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                incomeSourceId ===
+                "__other__"
+            ) {
+
+                const newSource =
+                    await createIncomeSourceFromTransaction();
+
+
+                if (!newSource) {
+                    return;
+                }
+
+
+                incomeSourceId =
+                    newSource.id;
+
+            }
+
+        }
+
+
+        submitButton.disabled =
+            true;
+
+
+        submitButton.textContent =
+            "Saving...";
+
+
+        const transactionData = {
+
+            user_id:
+                currentUser.id,
+
+            account_id:
+                accountId,
+
+            category_id:
+                categoryId,
+
+            income_source_id:
+                incomeSourceId,
+
+            description:
+                description,
+
+            notes:
+                notes || null,
+
+            amount:
+                amount,
+
+            type:
+                type,
+
+            transaction_date:
+                transactionDate
+
+        };
+
+
+        let result;
+
+
+        // CREATE
+
+        if (
+            editingTransactionId ===
+            null
+        ) {
+
+            result =
+                await supabase
+                    .from("transactions")
+                    .insert(
+                        transactionData
+                    );
+
+        }
+
+
+        // UPDATE
+
+        else {
+
+            result =
+                await supabase
+                    .from("transactions")
+                    .update(
+                        transactionData
+                    )
+                    .eq(
+                        "id",
+                        editingTransactionId
+                    );
+
+        }
+
+
+        submitButton.disabled =
+            false;
+
+
+        if (result.error) {
+
+            console.error(
+                result.error
+            );
+
+
+            alert(
+                result.error.message
+            );
+
+
+            submitButton.textContent =
+                editingTransactionId
+                    ? "Save Changes"
+                    : "+ Add Transaction";
+
+
+            return;
+
+        }
+
+
+        resetTransactionForm();
+
+
+        await loadTransactions();
+
+    }
+);
+
+
+// ======================================================
 // RENDER TRANSACTIONS
-// ====================================
+// ======================================================
 
 function renderTransactions() {
-
-    const transactionList =
-        document.getElementById(
-            "transaction-list"
-        );
-
 
     transactionList.innerHTML =
         "";
@@ -2705,20 +2807,18 @@ function renderTransactions() {
 
             const categoryName =
                 getCategoryName(
-                    transaction.categoryId
-                ) ||
-
-                transaction.category ||
-
+                    transaction.category_id
+                )
+                ||
                 "Uncategorized";
 
 
             const accountName =
                 getAccountName(
-                    transaction.accountId
-                ) ||
-
-                "No account";
+                    transaction.account_id
+                )
+                ||
+                "Unknown Account";
 
 
             category.textContent =
@@ -2737,7 +2837,7 @@ function renderTransactions() {
 
             date.textContent =
                 formatDate(
-                    transaction.date
+                    transaction.transaction_date
                 );
 
 
@@ -2755,7 +2855,7 @@ function renderTransactions() {
 
                 const sourceName =
                     getIncomeSourceName(
-                        transaction.incomeSourceId
+                        transaction.income_source_id
                     );
 
 
@@ -2784,7 +2884,9 @@ function renderTransactions() {
             }
 
 
-            if (transaction.notes) {
+            if (
+                transaction.notes
+            ) {
 
                 const note =
                     document.createElement(
@@ -2827,19 +2929,17 @@ function renderTransactions() {
                 `transaction-amount ${transaction.type}`;
 
 
+            const sign =
+                transaction.type ===
+                "income"
+
+                    ? "+"
+
+                    : "-";
+
+
             amount.textContent =
-
-                (
-                    transaction.type ===
-                    "income"
-
-                        ? "+"
-
-                        : "-"
-                )
-
-                +
-
+                sign +
                 formatMoney(
                     transaction.amount
                 );
@@ -2871,6 +2971,7 @@ function renderTransactions() {
 
             editButton.addEventListener(
                 "click",
+
                 function () {
 
                     editTransaction(
@@ -2883,6 +2984,7 @@ function renderTransactions() {
 
             deleteButton.addEventListener(
                 "click",
+
                 function () {
 
                     deleteTransaction(
@@ -2903,24 +3005,14 @@ function renderTransactions() {
             );
 
 
-            right.appendChild(
-                amount
-            );
+            right.appendChild(amount);
+
+            right.appendChild(buttons);
 
 
-            right.appendChild(
-                buttons
-            );
+            row.appendChild(left);
 
-
-            row.appendChild(
-                left
-            );
-
-
-            row.appendChild(
-                right
-            );
+            row.appendChild(right);
 
 
             transactionList.appendChild(
@@ -2933,9 +3025,9 @@ function renderTransactions() {
 }
 
 
-// ====================================
+// ======================================================
 // EDIT TRANSACTION
-// ====================================
+// ======================================================
 
 function editTransaction(id) {
 
@@ -2972,7 +3064,7 @@ function editTransaction(id) {
             "date"
         )
         .value =
-        transaction.date;
+        transaction.transaction_date;
 
 
     document
@@ -2987,13 +3079,13 @@ function editTransaction(id) {
         transaction.type;
 
 
+    editingTransactionId =
+        transaction.id;
+
+
     refreshTransactionDropdowns(
         transaction
     );
-
-
-    editingTransactionId =
-        id;
 
 
     formTitle.textContent =
@@ -3011,18 +3103,21 @@ function editTransaction(id) {
     transactionForm.scrollIntoView({
 
         behavior:
-            "smooth"
+            "smooth",
+
+        block:
+            "start"
 
     });
 
 }
 
 
-// ====================================
-// DELETE TRANSACTION
-// ====================================
+// ======================================================
+// SOFT DELETE TRANSACTION
+// ======================================================
 
-function deleteTransaction(id) {
+async function deleteTransaction(id) {
 
     const transaction =
         transactions.find(
@@ -3036,38 +3131,61 @@ function deleteTransaction(id) {
     }
 
 
-    if (
-        !confirm(
+    const confirmed =
+        confirm(
             `Delete "${transaction.description}"?`
-        )
-    ) {
+        );
+
+
+    if (!confirmed) {
 
         return;
 
     }
 
 
-    transactions =
-        transactions.filter(
-            item =>
-                item.id !== id
+    const {
+        error
+    } =
+        await supabase
+            .from("transactions")
+            .update({
+
+                deleted_at:
+                    new Date()
+                        .toISOString()
+
+            })
+            .eq(
+                "id",
+                id
+            );
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            error.message
         );
 
+        return;
 
-    saveTransactions();
+    }
 
-    updateDashboard();
-
-    renderTransactions();
 
     resetTransactionForm();
+
+
+    await loadTransactions();
 
 }
 
 
-// ====================================
-// RESET TRANSACTION
-// ====================================
+// ======================================================
+// RESET TRANSACTION FORM
+// ======================================================
 
 function resetTransactionForm() {
 
@@ -3094,6 +3212,10 @@ function resetTransactionForm() {
         "+ Add Transaction";
 
 
+    submitButton.disabled =
+        false;
+
+
     cancelEditButton.style.display =
         "none";
 
@@ -3117,36 +3239,44 @@ cancelEditButton.addEventListener(
 );
 
 
-// ====================================
+// ======================================================
 // DASHBOARD
-// ====================================
+// ======================================================
 
 function updateDashboard() {
 
-    let income = 0;
+    let totalIncome = 0;
 
-    let expenses = 0;
+    let totalExpenses = 0;
 
 
     transactions.forEach(
         function (transaction) {
+
+            const amount =
+                Number(
+                    transaction.amount
+                );
+
 
             if (
                 transaction.type ===
                 "income"
             ) {
 
-                income +=
-                    Number(
-                        transaction.amount
-                    );
+                totalIncome +=
+                    amount;
 
-            } else {
+            }
 
-                expenses +=
-                    Number(
-                        transaction.amount
-                    );
+
+            if (
+                transaction.type ===
+                "expense"
+            ) {
+
+                totalExpenses +=
+                    amount;
 
             }
 
@@ -3154,12 +3284,38 @@ function updateDashboard() {
     );
 
 
+    let totalOpeningBalance =
+        0;
+
+
+    accounts.forEach(
+        function (account) {
+
+            totalOpeningBalance +=
+                Number(
+                    account.opening_balance
+                );
+
+        }
+    );
+
+
+    const totalBalance =
+        totalOpeningBalance
+        +
+        totalIncome
+        -
+        totalExpenses;
+
+
     document
         .getElementById(
             "income"
         )
         .textContent =
-        formatMoney(income);
+        formatMoney(
+            totalIncome
+        );
 
 
     document
@@ -3167,7 +3323,9 @@ function updateDashboard() {
             "expenses"
         )
         .textContent =
-        formatMoney(expenses);
+        formatMoney(
+            totalExpenses
+        );
 
 
     document
@@ -3176,42 +3334,95 @@ function updateDashboard() {
         )
         .textContent =
         formatMoney(
-            income -
-            expenses
+            totalBalance
         );
 
 }
 
 
-// ====================================
-// LOCAL STORAGE
-// ====================================
+// ======================================================
+// ACCOUNT CURRENT BALANCE
+// ======================================================
 
-function saveTransactions() {
+function calculateAccountBalance(
+    accountId
+) {
 
-    localStorage.setItem(
+    const account =
+        accounts.find(
+            item =>
+                item.id === accountId
+        );
 
-        "transactions",
 
-        JSON.stringify(
-            transactions
+    if (!account) {
+
+        return 0;
+
+    }
+
+
+    let balance =
+        Number(
+            account.opening_balance
+        );
+
+
+    transactions
+        .filter(
+            transaction =>
+                transaction.account_id ===
+                accountId
         )
+        .forEach(
+            function (transaction) {
 
-    );
+                const amount =
+                    Number(
+                        transaction.amount
+                    );
+
+
+                if (
+                    transaction.type ===
+                    "income"
+                ) {
+
+                    balance +=
+                        amount;
+
+                } else {
+
+                    balance -=
+                        amount;
+
+                }
+
+            }
+        );
+
+
+    return balance;
 
 }
 
 
-// ====================================
-// HELPERS
-// ====================================
+// ======================================================
+// MANAGEMENT CARD HELPERS
+// ======================================================
 
 function createSimpleManagementCard({
+
     name,
+
     meta,
+
     active,
+
     onEdit,
+
     onToggle
+
 }) {
 
     const card =
@@ -3287,11 +3498,17 @@ function createSimpleManagementCard({
 
 
     actions.appendChild(
+
         createManagementButtons(
+
             onEdit,
+
             onToggle,
+
             active
+
         )
+
     );
 
 
@@ -3305,10 +3522,18 @@ function createSimpleManagementCard({
 }
 
 
+// ======================================================
+// MANAGEMENT BUTTONS
+// ======================================================
+
 function createManagementButtons(
+
     onEdit,
+
     onToggle,
+
     active
+
 ) {
 
     const buttons =
@@ -3362,6 +3587,10 @@ function createManagementButtons(
 }
 
 
+// ======================================================
+// TEXT BUTTON
+// ======================================================
+
 function createTextButton(
     text,
     className
@@ -3390,6 +3619,10 @@ function createTextButton(
 }
 
 
+// ======================================================
+// EMPTY STATE
+// ======================================================
+
 function renderEmptyState(
     element,
     text
@@ -3416,10 +3649,18 @@ function renderEmptyState(
 }
 
 
+// ======================================================
+// SELECT OPTION
+// ======================================================
+
 function addSelectOption(
+
     select,
+
     value,
+
     label
+
 ) {
 
     const option =
@@ -3442,6 +3683,10 @@ function addSelectOption(
 
 }
 
+
+// ======================================================
+// LOOKUP HELPERS
+// ======================================================
 
 function getAccountName(id) {
 
@@ -3473,19 +3718,28 @@ function getIncomeSourceName(id) {
 }
 
 
+// ======================================================
+// FORMAT ACCOUNT TYPE
+// ======================================================
+
 function formatAccountType(type) {
 
     const values = {
 
-        bank: "Bank",
+        bank:
+            "Bank",
 
-        cash: "Cash",
+        cash:
+            "Cash",
 
-        e_wallet: "E-Wallet",
+        e_wallet:
+            "E-Wallet",
 
-        savings: "Savings",
+        savings:
+            "Savings",
 
-        other: "Other"
+        other:
+            "Other"
 
     };
 
@@ -3494,16 +3748,23 @@ function formatAccountType(type) {
 
 }
 
+
+// ======================================================
+// FORMAT CATEGORY TYPE
+// ======================================================
 
 function formatCategoryType(type) {
 
     const values = {
 
-        expense: "Expense",
+        expense:
+            "Expense",
 
-        income: "Income",
+        income:
+            "Income",
 
-        both: "Income & Expense"
+        both:
+            "Income & Expense"
 
     };
 
@@ -3512,6 +3773,10 @@ function formatCategoryType(type) {
 
 }
 
+
+// ======================================================
+// MONEY
+// ======================================================
 
 function formatMoney(amount) {
 
@@ -3535,6 +3800,10 @@ function formatMoney(amount) {
 
 }
 
+
+// ======================================================
+// DATE
+// ======================================================
 
 function formatDate(date) {
 
@@ -3571,6 +3840,10 @@ function formatDate(date) {
 }
 
 
+// ======================================================
+// TODAY
+// ======================================================
+
 function getTodayDate() {
 
     const today =
@@ -3601,56 +3874,19 @@ function getTodayDate() {
             );
 
 
-    return `${year}-${month}-${day}`;
-
-}
-
-
-function generateId() {
-
-    if (
-        window.crypto &&
-        typeof window.crypto.randomUUID ===
-            "function"
-    ) {
-
-        return window.crypto
-            .randomUUID();
-
-    }
-
-
     return (
-
-        Date.now()
-            .toString(36)
-
-        +
-
-        "-"
-
-        +
-
-        Math.random()
-            .toString(36)
-            .slice(2)
-
+        `${year}-${month}-${day}`
     );
 
 }
 
 
-// ====================================
+// ======================================================
 // INITIAL LOAD
-// ====================================
-
-updateDashboard();
-
-renderTransactions();
+// ======================================================
 
 dateInput.value =
     getTodayDate();
 
-refreshTransactionDropdowns();
 
 initializeAuth();
