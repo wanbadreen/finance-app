@@ -2,43 +2,56 @@ import { supabase } from "./supabase.js";
 
 
 // ======================================================
-// DOM ELEMENTS
+// DOM
 // ======================================================
 
 // AUTH
 
-const authSection =
-    document.getElementById("auth-section");
+const authSection = document.getElementById("auth-section");
+const financeApp = document.getElementById("finance-app");
+const authForm = document.getElementById("auth-form");
 
-const financeApp =
-    document.getElementById("finance-app");
+const registerButton = document.getElementById("register-button");
+const loginButton = document.getElementById("login-button");
+const logoutButton = document.getElementById("logout-button");
 
-const authForm =
-    document.getElementById("auth-form");
+const authMessage = document.getElementById("auth-message");
+const userEmail = document.getElementById("user-email");
 
-const registerButton =
-    document.getElementById("register-button");
 
-const loginButton =
-    document.getElementById("login-button");
+// DASHBOARD
 
-const logoutButton =
-    document.getElementById("logout-button");
+const balanceElement = document.getElementById("balance");
+const incomeElement = document.getElementById("income");
+const expensesElement = document.getElementById("expenses");
 
-const authMessage =
-    document.getElementById("auth-message");
 
-const userEmail =
-    document.getElementById("user-email");
+// BUDGET
+
+const budgetMonthInput = document.getElementById("budget-month");
+const budgetMonthLabel = document.getElementById("budget-month-label");
+const budgetInsight = document.getElementById("budget-insight");
+const budgetList = document.getElementById("budget-list");
+
+const budgetForm = document.getElementById("budget-form");
+const budgetFormTitle = document.getElementById("budget-form-title");
+
+const budgetCategorySelect = document.getElementById("budget-category");
+const budgetAmountInput = document.getElementById("budget-amount");
+
+const saveBudgetButton = document.getElementById("save-budget-button");
+
+const cancelBudgetEditButton =
+    document.getElementById("cancel-budget-edit-button");
+
+const budgetMessage =
+    document.getElementById("budget-message");
 
 
 // ACCOUNTS
 
-const accountForm =
-    document.getElementById("account-form");
-
-const accountList =
-    document.getElementById("account-list");
+const accountForm = document.getElementById("account-form");
+const accountList = document.getElementById("account-list");
 
 const accountFormTitle =
     document.getElementById("account-form-title");
@@ -47,9 +60,7 @@ const saveAccountButton =
     document.getElementById("save-account-button");
 
 const cancelAccountEditButton =
-    document.getElementById(
-        "cancel-account-edit-button"
-    );
+    document.getElementById("cancel-account-edit-button");
 
 const accountMessage =
     document.getElementById("account-message");
@@ -57,168 +68,114 @@ const accountMessage =
 
 // CATEGORIES
 
-const categoryForm =
-    document.getElementById("category-form");
-
-const categoryList =
-    document.getElementById("category-list");
+const categoryForm = document.getElementById("category-form");
+const categoryList = document.getElementById("category-list");
 
 const categoryFormTitle =
-    document.getElementById(
-        "category-form-title"
-    );
+    document.getElementById("category-form-title");
 
 const saveCategoryButton =
-    document.getElementById(
-        "save-category-button"
-    );
+    document.getElementById("save-category-button");
 
 const cancelCategoryEditButton =
-    document.getElementById(
-        "cancel-category-edit-button"
-    );
+    document.getElementById("cancel-category-edit-button");
 
 const categoryMessage =
-    document.getElementById(
-        "category-message"
-    );
+    document.getElementById("category-message");
 
 
 // INCOME SOURCES
 
 const incomeSourceForm =
-    document.getElementById(
-        "income-source-form"
-    );
+    document.getElementById("income-source-form");
 
 const incomeSourceList =
-    document.getElementById(
-        "income-source-list"
-    );
+    document.getElementById("income-source-list");
 
 const incomeSourceFormTitle =
-    document.getElementById(
-        "income-source-form-title"
-    );
+    document.getElementById("income-source-form-title");
 
 const saveIncomeSourceButton =
-    document.getElementById(
-        "save-income-source-button"
-    );
+    document.getElementById("save-income-source-button");
 
 const cancelIncomeSourceEditButton =
-    document.getElementById(
-        "cancel-income-source-edit-button"
-    );
+    document.getElementById("cancel-income-source-edit-button");
 
 const incomeSourceMessage =
-    document.getElementById(
-        "income-source-message"
-    );
+    document.getElementById("income-source-message");
 
 
 // TRANSACTIONS
 
 const transactionForm =
-    document.getElementById(
-        "transaction-form"
-    );
+    document.getElementById("transaction-form");
 
 const transactionList =
-    document.getElementById(
-        "transaction-list"
-    );
+    document.getElementById("transaction-list");
 
 const deletedTransactionList =
-    document.getElementById(
-        "deleted-transaction-list"
-    );
+    document.getElementById("deleted-transaction-list");
 
 const transactionAccountSelect =
-    document.getElementById(
-        "transaction-account"
-    );
+    document.getElementById("transaction-account");
 
 const transactionTypeSelect =
     document.getElementById("type");
 
 const transactionCategorySelect =
-    document.getElementById(
-        "transaction-category"
-    );
+    document.getElementById("transaction-category");
 
 const customCategoryGroup =
-    document.getElementById(
-        "custom-category-group"
-    );
+    document.getElementById("custom-category-group");
 
 const customCategoryInput =
-    document.getElementById(
-        "custom-category-name"
-    );
+    document.getElementById("custom-category-name");
 
 const incomeSourceGroup =
-    document.getElementById(
-        "income-source-group"
-    );
+    document.getElementById("income-source-group");
 
 const transactionIncomeSourceSelect =
-    document.getElementById(
-        "transaction-income-source"
-    );
+    document.getElementById("transaction-income-source");
 
 const customIncomeSourceGroup =
-    document.getElementById(
-        "custom-income-source-group"
-    );
+    document.getElementById("custom-income-source-group");
 
 const customIncomeSourceInput =
-    document.getElementById(
-        "custom-income-source-name"
-    );
+    document.getElementById("custom-income-source-name");
 
 const cancelEditButton =
-    document.getElementById(
-        "cancel-edit-button"
-    );
+    document.getElementById("cancel-edit-button");
 
 const submitButton =
-    document.getElementById(
-        "submit-button"
-    );
+    document.getElementById("submit-button");
 
 const formTitle =
-    document.getElementById(
-        "form-title"
-    );
+    document.getElementById("form-title");
 
 const dateInput =
     document.getElementById("date");
 
 
 // ======================================================
-// APP STATE
+// STATE
 // ======================================================
 
 let currentUser = null;
 
 let accounts = [];
-
 let categories = [];
-
 let incomeSources = [];
 
 let transactions = [];
-
 let deletedTransactions = [];
 
+let budgets = [];
+
 let editingAccountId = null;
-
 let editingCategoryId = null;
-
 let editingIncomeSourceId = null;
-
 let editingTransactionId = null;
+let editingBudgetId = null;
 
 
 // ======================================================
@@ -226,64 +183,52 @@ let editingTransactionId = null;
 // ======================================================
 
 const starterCategories = [
-
     {
         name: "Food & Dining",
         type: "expense"
     },
-
     {
         name: "Transportation",
         type: "expense"
     },
-
     {
         name: "Bills",
         type: "expense"
     },
-
     {
         name: "Shopping",
         type: "expense"
     },
-
     {
         name: "Entertainment",
         type: "expense"
     },
-
     {
         name: "Health",
         type: "expense"
     },
-
     {
         name: "Salary",
         type: "income"
     },
-
     {
         name: "Side Income",
         type: "income"
     },
-
     {
         name: "Investment",
         type: "income"
     }
-
 ];
 
 
 const starterIncomeSources = [
-
     "Salary",
     "Grab",
     "Freelance",
     "Business",
     "Investment",
     "Bonus"
-
 ];
 
 
@@ -296,22 +241,16 @@ function showLoggedOutState() {
     currentUser = null;
 
     accounts = [];
-
     categories = [];
-
     incomeSources = [];
 
     transactions = [];
-
     deletedTransactions = [];
 
+    budgets = [];
 
-    authSection.style.display =
-        "flex";
-
-    financeApp.style.display =
-        "none";
-
+    authSection.style.display = "flex";
+    financeApp.style.display = "none";
 }
 
 
@@ -319,21 +258,13 @@ async function showLoggedInState(user) {
 
     currentUser = user;
 
-
-    authSection.style.display =
-        "none";
-
-    financeApp.style.display =
-        "block";
-
+    authSection.style.display = "none";
+    financeApp.style.display = "block";
 
     userEmail.textContent =
         user.email || "Signed in";
 
-
-    authMessage.textContent =
-        "";
-
+    authMessage.textContent = "";
 
     await loadAccounts();
 
@@ -347,8 +278,11 @@ async function showLoggedInState(user) {
 
     await loadDeletedTransactions();
 
-    refreshTransactionDropdowns();
+    setDefaultBudgetMonth();
 
+    await loadBudgets();
+
+    refreshTransactionDropdowns();
 }
 
 
@@ -358,25 +292,18 @@ async function showLoggedInState(user) {
 
 registerButton.addEventListener(
     "click",
-
     async function () {
 
         const email =
             document
-                .getElementById(
-                    "auth-email"
-                )
+                .getElementById("auth-email")
                 .value
                 .trim();
 
-
         const password =
             document
-                .getElementById(
-                    "auth-password"
-                )
+                .getElementById("auth-password")
                 .value;
-
 
         if (
             !email ||
@@ -387,17 +314,12 @@ registerButton.addEventListener(
                 "Enter a valid email and a password of at least 6 characters.";
 
             return;
-
         }
 
-
-        registerButton.disabled =
-            true;
-
+        registerButton.disabled = true;
 
         authMessage.textContent =
             "Creating account...";
-
 
         const {
             data,
@@ -406,22 +328,16 @@ registerButton.addEventListener(
             await supabase.auth.signUp({
 
                 email,
-
                 password,
 
                 options: {
-
                     emailRedirectTo:
                         "http://localhost:5173"
-
                 }
 
             });
 
-
-        registerButton.disabled =
-            false;
-
+        registerButton.disabled = false;
 
         if (error) {
 
@@ -429,9 +345,7 @@ registerButton.addEventListener(
                 error.message;
 
             return;
-
         }
-
 
         if (!data.session) {
 
@@ -439,14 +353,11 @@ registerButton.addEventListener(
                 "Account created. Check your email to confirm your account before logging in.";
 
             return;
-
         }
-
 
         await showLoggedInState(
             data.user
         );
-
     }
 );
 
@@ -457,36 +368,25 @@ registerButton.addEventListener(
 
 authForm.addEventListener(
     "submit",
-
     async function (event) {
 
         event.preventDefault();
 
-
         const email =
             document
-                .getElementById(
-                    "auth-email"
-                )
+                .getElementById("auth-email")
                 .value
                 .trim();
 
-
         const password =
             document
-                .getElementById(
-                    "auth-password"
-                )
+                .getElementById("auth-password")
                 .value;
 
-
-        loginButton.disabled =
-            true;
-
+        loginButton.disabled = true;
 
         authMessage.textContent =
             "Signing in...";
-
 
         const {
             data,
@@ -496,15 +396,11 @@ authForm.addEventListener(
                 .signInWithPassword({
 
                     email,
-
                     password
 
                 });
 
-
-        loginButton.disabled =
-            false;
-
+        loginButton.disabled = false;
 
         if (error) {
 
@@ -512,14 +408,11 @@ authForm.addEventListener(
                 error.message;
 
             return;
-
         }
-
 
         await showLoggedInState(
             data.user
         );
-
     }
 );
 
@@ -530,14 +423,12 @@ authForm.addEventListener(
 
 logoutButton.addEventListener(
     "click",
-
     async function () {
 
         const {
             error
         } =
             await supabase.auth.signOut();
-
 
         if (error) {
 
@@ -546,12 +437,9 @@ logoutButton.addEventListener(
             );
 
             return;
-
         }
 
-
         showLoggedOutState();
-
     }
 );
 
@@ -566,9 +454,7 @@ async function initializeAuth() {
         data,
         error
     } =
-        await supabase.auth
-            .getSession();
-
+        await supabase.auth.getSession();
 
     if (error) {
 
@@ -580,9 +466,7 @@ async function initializeAuth() {
         showLoggedOutState();
 
         return;
-
     }
-
 
     if (data.session) {
 
@@ -593,9 +477,7 @@ async function initializeAuth() {
     } else {
 
         showLoggedOutState();
-
     }
-
 }
 
 
@@ -607,13 +489,9 @@ supabase.auth.onAuthStateChange(
             event
         );
 
-
         if (!session) {
-
             currentUser = null;
-
         }
-
     }
 );
 
@@ -627,7 +505,6 @@ async function loadAccounts() {
     if (!currentUser) {
         return;
     }
-
 
     const {
         data,
@@ -643,7 +520,6 @@ async function loadAccounts() {
                 }
             );
 
-
     if (error) {
 
         accountMessage.textContent =
@@ -652,32 +528,20 @@ async function loadAccounts() {
         console.error(error);
 
         return;
-
     }
-
 
     accounts =
         data || [];
 
-
-    accountMessage.textContent =
-        "";
-
+    accountMessage.textContent = "";
 
     renderAccounts();
-
 }
 
 
-// ======================================================
-// RENDER ACCOUNTS
-// ======================================================
-
 function renderAccounts() {
 
-    accountList.innerHTML =
-        "";
-
+    accountList.innerHTML = "";
 
     if (!accounts.length) {
 
@@ -687,9 +551,7 @@ function renderAccounts() {
         );
 
         return;
-
     }
-
 
     accounts.forEach(
         function (account) {
@@ -699,66 +561,52 @@ function renderAccounts() {
                     "div"
                 );
 
-
             card.className =
                 "management-card";
-
 
             if (!account.is_active) {
 
                 card.classList.add(
                     "inactive"
                 );
-
             }
-
 
             const left =
                 document.createElement(
                     "div"
                 );
 
-
             const name =
                 document.createElement(
                     "p"
                 );
 
-
             name.className =
                 "management-name";
 
-
             name.textContent =
                 account.name;
-
 
             const meta =
                 document.createElement(
                     "p"
                 );
 
-
             meta.className =
                 "management-meta";
-
 
             meta.textContent =
                 formatAccountType(
                     account.account_type
                 );
 
-
             if (!account.is_active) {
 
                 meta.textContent +=
                     " • Inactive";
-
             }
 
-
             left.appendChild(name);
-
             left.appendChild(meta);
 
 
@@ -767,20 +615,16 @@ function renderAccounts() {
                     "div"
                 );
 
-
             right.className =
                 "management-actions";
-
 
             const balance =
                 document.createElement(
                     "p"
                 );
 
-
             balance.className =
                 "management-value";
-
 
             balance.textContent =
                 formatMoney(
@@ -789,16 +633,13 @@ function renderAccounts() {
                     )
                 );
 
-
             const buttons =
                 createManagementButtons(
-
                     function () {
 
                         editAccount(
                             account.id
                         );
-
                     },
 
                     function () {
@@ -806,81 +647,52 @@ function renderAccounts() {
                         toggleAccountStatus(
                             account.id
                         );
-
                     },
 
                     account.is_active
-
                 );
 
-
-            right.appendChild(
-                balance
-            );
-
-            right.appendChild(
-                buttons
-            );
-
+            right.appendChild(balance);
+            right.appendChild(buttons);
 
             card.appendChild(left);
-
             card.appendChild(right);
-
 
             accountList.appendChild(
                 card
             );
-
         }
     );
-
 }
 
 
-// ======================================================
-// ACCOUNT SUBMIT
-// ======================================================
-
 accountForm.addEventListener(
     "submit",
-
     async function (event) {
 
         event.preventDefault();
-
 
         if (!currentUser) {
             return;
         }
 
-
         const name =
             document
-                .getElementById(
-                    "account-name"
-                )
+                .getElementById("account-name")
                 .value
                 .trim();
 
-
         const accountType =
             document
-                .getElementById(
-                    "account-type"
-                )
+                .getElementById("account-type")
                 .value;
-
 
         const openingBalance =
             parseFloat(
                 document
-                    .getElementById(
-                        "opening-balance"
-                    )
+                    .getElementById("opening-balance")
                     .value
             );
-
 
         if (
             !name ||
@@ -893,12 +705,9 @@ accountForm.addEventListener(
                 "Enter valid account details.";
 
             return;
-
         }
 
-
         let result;
-
 
         if (
             editingAccountId === null
@@ -919,7 +728,6 @@ accountForm.addEventListener(
 
                         opening_balance:
                             openingBalance
-
                     });
 
         } else {
@@ -936,15 +744,12 @@ accountForm.addEventListener(
 
                         opening_balance:
                             openingBalance
-
                     })
                     .eq(
                         "id",
                         editingAccountId
                     );
-
         }
-
 
         if (result.error) {
 
@@ -952,9 +757,7 @@ accountForm.addEventListener(
                 result.error.message;
 
             return;
-
         }
-
 
         resetAccountForm();
 
@@ -963,14 +766,9 @@ accountForm.addEventListener(
         updateDashboard();
 
         refreshTransactionDropdowns();
-
     }
 );
 
-
-// ======================================================
-// EDIT ACCOUNT
-// ======================================================
 
 function editAccount(id) {
 
@@ -980,57 +778,38 @@ function editAccount(id) {
                 item.id === id
         );
 
-
     if (!account) {
         return;
     }
 
-
     document
-        .getElementById(
-            "account-name"
-        )
+        .getElementById("account-name")
         .value =
         account.name;
 
-
     document
-        .getElementById(
-            "account-type"
-        )
+        .getElementById("account-type")
         .value =
         account.account_type;
 
-
     document
-        .getElementById(
-            "opening-balance"
-        )
+        .getElementById("opening-balance")
         .value =
         account.opening_balance;
-
 
     editingAccountId =
         id;
 
-
     accountFormTitle.textContent =
         "Edit Account";
-
 
     saveAccountButton.textContent =
         "Save Changes";
 
-
     cancelAccountEditButton.style.display =
         "block";
-
 }
 
-
-// ======================================================
-// ACCOUNT STATUS
-// ======================================================
 
 async function toggleAccountStatus(id) {
 
@@ -1040,11 +819,9 @@ async function toggleAccountStatus(id) {
                 item.id === id
         );
 
-
     if (!account) {
         return;
     }
-
 
     const {
         error
@@ -1062,7 +839,6 @@ async function toggleAccountStatus(id) {
                 id
             );
 
-
     if (error) {
 
         alert(
@@ -1070,59 +846,44 @@ async function toggleAccountStatus(id) {
         );
 
         return;
-
     }
-
 
     await loadAccounts();
 
     refreshTransactionDropdowns();
-
 }
 
 
-// ======================================================
-// RESET ACCOUNT
-// ======================================================
-
 function resetAccountForm() {
 
-    editingAccountId = null;
+    editingAccountId =
+        null;
 
     accountForm.reset();
 
-
     document
-        .getElementById(
-            "opening-balance"
-        )
+        .getElementById("opening-balance")
         .value =
         "0";
-
 
     accountFormTitle.textContent =
         "Add Account";
 
-
     saveAccountButton.textContent =
         "+ Add Account";
-
 
     cancelAccountEditButton.style.display =
         "none";
 
-
     accountMessage.textContent =
         "";
-
 }
 
 
-cancelAccountEditButton
-    .addEventListener(
-        "click",
-        resetAccountForm
-    );
+cancelAccountEditButton.addEventListener(
+    "click",
+    resetAccountForm
+);
 
 
 // ======================================================
@@ -1134,7 +895,6 @@ async function loadCategories() {
     if (!currentUser) {
         return;
     }
-
 
     const {
         data,
@@ -1150,7 +910,6 @@ async function loadCategories() {
                 }
             );
 
-
     if (error) {
 
         categoryMessage.textContent =
@@ -1159,32 +918,22 @@ async function loadCategories() {
         console.error(error);
 
         return;
-
     }
-
 
     categories =
         data || [];
 
-
     categoryMessage.textContent =
         "";
 
-
     renderCategories();
-
 }
 
-
-// ======================================================
-// RENDER CATEGORIES
-// ======================================================
 
 function renderCategories() {
 
     categoryList.innerHTML =
         "";
-
 
     if (!categories.length) {
 
@@ -1194,9 +943,7 @@ function renderCategories() {
         );
 
         return;
-
     }
-
 
     categories.forEach(
         function (category) {
@@ -1221,7 +968,6 @@ function renderCategories() {
                             editCategory(
                                 category.id
                             );
-
                         },
 
                     onToggle:
@@ -1230,58 +976,39 @@ function renderCategories() {
                             toggleCategoryStatus(
                                 category.id
                             );
-
                         }
-
                 });
-
 
             categoryList.appendChild(
                 card
             );
-
         }
     );
-
 }
 
 
-// ======================================================
-// CATEGORY SUBMIT
-// ======================================================
-
 categoryForm.addEventListener(
     "submit",
-
     async function (event) {
 
         event.preventDefault();
 
-
         const name =
             document
-                .getElementById(
-                    "category-name"
-                )
+                .getElementById("category-name")
                 .value
                 .trim();
 
-
         const type =
             document
-                .getElementById(
-                    "category-type"
-                )
+                .getElementById("category-type")
                 .value;
-
 
         if (!name) {
             return;
         }
 
-
         let result;
-
 
         if (
             editingCategoryId === null
@@ -1296,9 +1023,7 @@ categoryForm.addEventListener(
                             currentUser.id,
 
                         name,
-
                         type
-
                     });
 
         } else {
@@ -1309,17 +1034,13 @@ categoryForm.addEventListener(
                     .update({
 
                         name,
-
                         type
-
                     })
                     .eq(
                         "id",
                         editingCategoryId
                     );
-
         }
-
 
         if (result.error) {
 
@@ -1327,23 +1048,20 @@ categoryForm.addEventListener(
                 result.error.message;
 
             return;
-
         }
-
 
         resetCategoryForm();
 
         await loadCategories();
 
+        populateBudgetCategorySelect();
+
         refreshTransactionDropdowns();
 
+        renderBudgets();
     }
 );
 
-
-// ======================================================
-// EDIT CATEGORY
-// ======================================================
 
 function editCategory(id) {
 
@@ -1353,49 +1071,33 @@ function editCategory(id) {
                 item.id === id
         );
 
-
     if (!category) {
         return;
     }
 
-
     document
-        .getElementById(
-            "category-name"
-        )
+        .getElementById("category-name")
         .value =
         category.name;
 
-
     document
-        .getElementById(
-            "category-type"
-        )
+        .getElementById("category-type")
         .value =
         category.type;
-
 
     editingCategoryId =
         id;
 
-
     categoryFormTitle.textContent =
         "Edit Category";
-
 
     saveCategoryButton.textContent =
         "Save Changes";
 
-
     cancelCategoryEditButton.style.display =
         "block";
-
 }
 
-
-// ======================================================
-// CATEGORY STATUS
-// ======================================================
 
 async function toggleCategoryStatus(id) {
 
@@ -1405,11 +1107,9 @@ async function toggleCategoryStatus(id) {
                 item.id === id
         );
 
-
     if (!category) {
         return;
     }
-
 
     const {
         error
@@ -1427,7 +1127,6 @@ async function toggleCategoryStatus(id) {
                 id
             );
 
-
     if (error) {
 
         alert(
@@ -1435,51 +1134,43 @@ async function toggleCategoryStatus(id) {
         );
 
         return;
-
     }
-
 
     await loadCategories();
 
+    populateBudgetCategorySelect();
+
     refreshTransactionDropdowns();
 
+    renderBudgets();
 }
 
 
-// ======================================================
-// RESET CATEGORY
-// ======================================================
-
 function resetCategoryForm() {
 
-    editingCategoryId = null;
+    editingCategoryId =
+        null;
 
     categoryForm.reset();
-
 
     categoryFormTitle.textContent =
         "Add Category";
 
-
     saveCategoryButton.textContent =
         "+ Add Category";
-
 
     cancelCategoryEditButton.style.display =
         "none";
 
-
     categoryMessage.textContent =
         "";
-
 }
 
 
-cancelCategoryEditButton
-    .addEventListener(
-        "click",
-        resetCategoryForm
-    );
+cancelCategoryEditButton.addEventListener(
+    "click",
+    resetCategoryForm
+);
 
 
 // ======================================================
@@ -1491,7 +1182,6 @@ async function loadIncomeSources() {
     if (!currentUser) {
         return;
     }
-
 
     const {
         data,
@@ -1507,7 +1197,6 @@ async function loadIncomeSources() {
                 }
             );
 
-
     if (error) {
 
         incomeSourceMessage.textContent =
@@ -1516,32 +1205,22 @@ async function loadIncomeSources() {
         console.error(error);
 
         return;
-
     }
-
 
     incomeSources =
         data || [];
 
-
     incomeSourceMessage.textContent =
         "";
 
-
     renderIncomeSources();
-
 }
 
-
-// ======================================================
-// RENDER INCOME SOURCES
-// ======================================================
 
 function renderIncomeSources() {
 
     incomeSourceList.innerHTML =
         "";
-
 
     if (!incomeSources.length) {
 
@@ -1551,9 +1230,7 @@ function renderIncomeSources() {
         );
 
         return;
-
     }
-
 
     incomeSources.forEach(
         function (source) {
@@ -1576,7 +1253,6 @@ function renderIncomeSources() {
                             editIncomeSource(
                                 source.id
                             );
-
                         },
 
                     onToggle:
@@ -1585,50 +1261,34 @@ function renderIncomeSources() {
                             toggleIncomeSourceStatus(
                                 source.id
                             );
-
                         }
-
                 });
-
 
             incomeSourceList.appendChild(
                 card
             );
-
         }
     );
-
 }
 
 
-// ======================================================
-// INCOME SOURCE SUBMIT
-// ======================================================
-
 incomeSourceForm.addEventListener(
     "submit",
-
     async function (event) {
 
         event.preventDefault();
 
-
         const name =
             document
-                .getElementById(
-                    "income-source-name"
-                )
+                .getElementById("income-source-name")
                 .value
                 .trim();
-
 
         if (!name) {
             return;
         }
 
-
         let result;
-
 
         if (
             editingIncomeSourceId === null
@@ -1643,7 +1303,6 @@ incomeSourceForm.addEventListener(
                             currentUser.id,
 
                         name
-
                     });
 
         } else {
@@ -1652,17 +1311,13 @@ incomeSourceForm.addEventListener(
                 await supabase
                     .from("income_sources")
                     .update({
-
                         name
-
                     })
                     .eq(
                         "id",
                         editingIncomeSourceId
                     );
-
         }
-
 
         if (result.error) {
 
@@ -1670,23 +1325,16 @@ incomeSourceForm.addEventListener(
                 result.error.message;
 
             return;
-
         }
-
 
         resetIncomeSourceForm();
 
         await loadIncomeSources();
 
         refreshTransactionDropdowns();
-
     }
 );
 
-
-// ======================================================
-// EDIT INCOME SOURCE
-// ======================================================
 
 function editIncomeSource(id) {
 
@@ -1696,41 +1344,28 @@ function editIncomeSource(id) {
                 item.id === id
         );
 
-
     if (!source) {
         return;
     }
 
-
     document
-        .getElementById(
-            "income-source-name"
-        )
+        .getElementById("income-source-name")
         .value =
         source.name;
-
 
     editingIncomeSourceId =
         id;
 
-
     incomeSourceFormTitle.textContent =
         "Edit Income Source";
-
 
     saveIncomeSourceButton.textContent =
         "Save Changes";
 
-
     cancelIncomeSourceEditButton.style.display =
         "block";
-
 }
 
-
-// ======================================================
-// INCOME SOURCE STATUS
-// ======================================================
 
 async function toggleIncomeSourceStatus(id) {
 
@@ -1740,11 +1375,9 @@ async function toggleIncomeSourceStatus(id) {
                 item.id === id
         );
 
-
     if (!source) {
         return;
     }
-
 
     const {
         error
@@ -1755,13 +1388,11 @@ async function toggleIncomeSourceStatus(id) {
 
                 is_active:
                     !source.is_active
-
             })
             .eq(
                 "id",
                 id
             );
-
 
     if (error) {
 
@@ -1770,63 +1401,49 @@ async function toggleIncomeSourceStatus(id) {
         );
 
         return;
-
     }
-
 
     await loadIncomeSources();
 
     refreshTransactionDropdowns();
-
 }
 
-
-// ======================================================
-// RESET INCOME SOURCE
-// ======================================================
 
 function resetIncomeSourceForm() {
 
     editingIncomeSourceId =
         null;
 
-
     incomeSourceForm.reset();
-
 
     incomeSourceFormTitle.textContent =
         "Add Income Source";
 
-
     saveIncomeSourceButton.textContent =
         "+ Add Income Source";
-
 
     cancelIncomeSourceEditButton.style.display =
         "none";
 
-
     incomeSourceMessage.textContent =
         "";
-
 }
 
 
-cancelIncomeSourceEditButton
-    .addEventListener(
-        "click",
-        resetIncomeSourceForm
-    );
+cancelIncomeSourceEditButton.addEventListener(
+    "click",
+    resetIncomeSourceForm
+);
 
 
 // ======================================================
-// STARTER DATA
+// SEED STARTER DATA
 // ======================================================
 
 async function seedStarterData() {
 
-    let changed = false;
-
+    let changed =
+        false;
 
     if (
         categories.length === 0
@@ -1844,10 +1461,8 @@ async function seedStarterData() {
 
                     type:
                         item.type
-
                 })
             );
-
 
         const {
             error
@@ -1856,15 +1471,10 @@ async function seedStarterData() {
                 .from("categories")
                 .insert(rows);
 
-
         if (!error) {
-
             changed = true;
-
         }
-
     }
-
 
     if (
         incomeSources.length === 0
@@ -1878,10 +1488,8 @@ async function seedStarterData() {
                         currentUser.id,
 
                     name
-
                 })
             );
-
 
         const {
             error
@@ -1890,24 +1498,892 @@ async function seedStarterData() {
                 .from("income_sources")
                 .insert(rows);
 
-
         if (!error) {
-
             changed = true;
-
         }
-
     }
-
 
     if (changed) {
 
         await loadCategories();
-
         await loadIncomeSources();
+    }
+}
 
+
+// ======================================================
+// BUDGET MONTH
+// ======================================================
+
+function setDefaultBudgetMonth() {
+
+    if (!budgetMonthInput.value) {
+
+        budgetMonthInput.value =
+            getCurrentMonthValue();
+    }
+}
+
+
+budgetMonthInput.addEventListener(
+    "change",
+    async function () {
+
+        resetBudgetForm();
+
+        await loadBudgets();
+    }
+);
+
+
+// ======================================================
+// LOAD BUDGETS
+// ======================================================
+
+async function loadBudgets() {
+
+    if (
+        !currentUser ||
+        !budgetMonthInput.value
+    ) {
+        return;
     }
 
+    const monthStart =
+        `${budgetMonthInput.value}-01`;
+
+    budgetMessage.textContent =
+        "Loading budget...";
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("budgets")
+            .select("*")
+            .eq(
+                "month_start",
+                monthStart
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: true
+                }
+            );
+
+    if (error) {
+
+        console.error(
+            "Load budget error:",
+            error
+        );
+
+        budgets = [];
+
+        budgetMessage.textContent =
+            error.message;
+
+        renderBudgets();
+
+        return;
+    }
+
+    budgets =
+        data || [];
+
+    budgetMessage.textContent =
+        "";
+
+    populateBudgetCategorySelect();
+
+    renderBudgets();
+}
+
+
+// ======================================================
+// BUDGET CATEGORY DROPDOWN
+// ======================================================
+
+function populateBudgetCategorySelect(
+    selectedValue = ""
+) {
+
+    budgetCategorySelect.innerHTML =
+        '<option value="">Select category</option>';
+
+    categories
+        .filter(
+            function (category) {
+
+                const canBudget =
+                    category.type === "expense" ||
+                    category.type === "both";
+
+                if (!canBudget) {
+                    return false;
+                }
+
+                if (
+                    category.id ===
+                    selectedValue
+                ) {
+                    return true;
+                }
+
+                if (!category.is_active) {
+                    return false;
+                }
+
+                const alreadyUsed =
+                    budgets.some(
+                        budget =>
+                            budget.category_id ===
+                                category.id
+                            &&
+                            budget.id !==
+                                editingBudgetId
+                    );
+
+                return !alreadyUsed;
+            }
+        )
+        .forEach(
+            function (category) {
+
+                addSelectOption(
+                    budgetCategorySelect,
+                    category.id,
+                    category.name
+                );
+            }
+        );
+
+    budgetCategorySelect.value =
+        selectedValue;
+}
+
+
+// ======================================================
+// CREATE / UPDATE BUDGET
+// ======================================================
+
+budgetForm.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+        if (!currentUser) {
+            return;
+        }
+
+        const categoryId =
+            budgetCategorySelect.value;
+
+        const amount =
+            parseFloat(
+                budgetAmountInput.value
+            );
+
+        const selectedMonth =
+            budgetMonthInput.value;
+
+        if (
+            !categoryId ||
+            !selectedMonth ||
+            Number.isNaN(amount) ||
+            amount <= 0
+        ) {
+
+            budgetMessage.textContent =
+                "Enter a valid category and budget amount.";
+
+            return;
+        }
+
+        const monthStart =
+            `${selectedMonth}-01`;
+
+        saveBudgetButton.disabled =
+            true;
+
+        saveBudgetButton.textContent =
+            "Saving...";
+
+        let result;
+
+        if (
+            editingBudgetId === null
+        ) {
+
+            result =
+                await supabase
+                    .from("budgets")
+                    .insert({
+
+                        user_id:
+                            currentUser.id,
+
+                        category_id:
+                            categoryId,
+
+                        month_start:
+                            monthStart,
+
+                        amount:
+                            amount
+                    });
+
+        } else {
+
+            result =
+                await supabase
+                    .from("budgets")
+                    .update({
+
+                        category_id:
+                            categoryId,
+
+                        month_start:
+                            monthStart,
+
+                        amount:
+                            amount
+                    })
+                    .eq(
+                        "id",
+                        editingBudgetId
+                    );
+        }
+
+        saveBudgetButton.disabled =
+            false;
+
+        if (result.error) {
+
+            console.error(
+                "Save budget error:",
+                result.error
+            );
+
+            budgetMessage.textContent =
+                result.error.message;
+
+            saveBudgetButton.textContent =
+                editingBudgetId
+                    ? "Save Changes"
+                    : "+ Add Budget";
+
+            return;
+        }
+
+        resetBudgetForm();
+
+        await loadBudgets();
+    }
+);
+
+
+// ======================================================
+// EDIT BUDGET
+// ======================================================
+
+function editBudget(id) {
+
+    const budget =
+        budgets.find(
+            item =>
+                item.id === id
+        );
+
+    if (!budget) {
+        return;
+    }
+
+    editingBudgetId =
+        budget.id;
+
+    budgetAmountInput.value =
+        budget.amount;
+
+    budgetFormTitle.textContent =
+        "Edit Budget";
+
+    saveBudgetButton.textContent =
+        "Save Changes";
+
+    cancelBudgetEditButton.style.display =
+        "block";
+
+    populateBudgetCategorySelect(
+        budget.category_id
+    );
+
+    budgetForm.scrollIntoView({
+
+        behavior:
+            "smooth",
+
+        block:
+            "start"
+    });
+}
+
+
+// ======================================================
+// DELETE BUDGET
+// ======================================================
+
+async function deleteBudget(id) {
+
+    const budget =
+        budgets.find(
+            item =>
+                item.id === id
+        );
+
+    if (!budget) {
+        return;
+    }
+
+    const categoryName =
+        getCategoryName(
+            budget.category_id
+        ) ||
+        "this category";
+
+    const confirmed =
+        confirm(
+            `Delete budget for "${categoryName}"?`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const {
+        error
+    } =
+        await supabase
+            .from("budgets")
+            .delete()
+            .eq(
+                "id",
+                id
+            );
+
+    if (error) {
+
+        alert(
+            error.message
+        );
+
+        return;
+    }
+
+    resetBudgetForm();
+
+    await loadBudgets();
+}
+
+
+// ======================================================
+// RESET BUDGET FORM
+// ======================================================
+
+function resetBudgetForm() {
+
+    editingBudgetId =
+        null;
+
+    budgetForm.reset();
+
+    budgetFormTitle.textContent =
+        "Add Budget";
+
+    saveBudgetButton.textContent =
+        "+ Add Budget";
+
+    saveBudgetButton.disabled =
+        false;
+
+    cancelBudgetEditButton.style.display =
+        "none";
+
+    budgetMessage.textContent =
+        "";
+
+    populateBudgetCategorySelect();
+}
+
+
+cancelBudgetEditButton.addEventListener(
+    "click",
+    resetBudgetForm
+);
+
+
+// ======================================================
+// RENDER BUDGETS
+// ======================================================
+
+function renderBudgets() {
+
+    budgetList.innerHTML =
+        "";
+
+    budgetMonthLabel.textContent =
+        formatBudgetMonth(
+            budgetMonthInput.value
+        );
+
+    budgetInsight.classList.remove(
+        "insight-warning"
+    );
+
+    if (!budgets.length) {
+
+        renderEmptyState(
+            budgetList,
+            "No budgets set for this month."
+        );
+
+        budgetInsight.textContent =
+            "Set a category budget to start tracking your spending.";
+
+        return;
+    }
+
+    const stats =
+        [];
+
+    budgets.forEach(
+        function (budget) {
+
+            const categoryName =
+                getCategoryName(
+                    budget.category_id
+                ) ||
+                "Unknown Category";
+
+            const limit =
+                Number(
+                    budget.amount
+                );
+
+            const spent =
+                calculateCategorySpending(
+                    budget.category_id,
+                    budgetMonthInput.value
+                );
+
+            const remaining =
+                limit - spent;
+
+            const percentage =
+                limit > 0
+                    ? (
+                        spent /
+                        limit
+                    ) * 100
+                    : 0;
+
+            stats.push({
+                categoryName,
+                limit,
+                spent,
+                remaining,
+                percentage
+            });
+
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "budget-card";
+
+
+            const top =
+                document.createElement(
+                    "div"
+                );
+
+            top.className =
+                "budget-card-top";
+
+
+            const left =
+                document.createElement(
+                    "div"
+                );
+
+
+            const name =
+                document.createElement(
+                    "p"
+                );
+
+            name.className =
+                "budget-category-name";
+
+            name.textContent =
+                categoryName;
+
+
+            const numbers =
+                document.createElement(
+                    "p"
+                );
+
+            numbers.className =
+                "budget-numbers";
+
+            numbers.textContent =
+                `${formatMoney(spent)} / ${formatMoney(limit)}`;
+
+
+            left.appendChild(name);
+            left.appendChild(numbers);
+
+
+            const percentageText =
+                document.createElement(
+                    "p"
+                );
+
+            percentageText.className =
+                "budget-percentage";
+
+            percentageText.textContent =
+                `${percentage.toFixed(1)}%`;
+
+
+            top.appendChild(left);
+            top.appendChild(
+                percentageText
+            );
+
+
+            const progress =
+                document.createElement(
+                    "div"
+                );
+
+            progress.className =
+                "budget-progress";
+
+
+            const progressFill =
+                document.createElement(
+                    "div"
+                );
+
+            progressFill.className =
+                "budget-progress-fill";
+
+            if (
+                percentage >= 100
+            ) {
+
+                progressFill.classList.add(
+                    "budget-over"
+                );
+
+            } else if (
+                percentage >= 80
+            ) {
+
+                progressFill.classList.add(
+                    "budget-warning"
+                );
+            }
+
+            progressFill.style.width =
+                `${Math.min(
+                    percentage,
+                    100
+                )}%`;
+
+            progress.appendChild(
+                progressFill
+            );
+
+
+            const footer =
+                document.createElement(
+                    "div"
+                );
+
+            footer.className =
+                "budget-card-footer";
+
+
+            const remainingText =
+                document.createElement(
+                    "p"
+                );
+
+            if (
+                remaining >= 0
+            ) {
+
+                remainingText.className =
+                    "budget-remaining";
+
+                remainingText.textContent =
+                    `${formatMoney(remaining)} remaining`;
+
+            } else {
+
+                remainingText.className =
+                    "budget-over-text";
+
+                remainingText.textContent =
+                    `${formatMoney(
+                        Math.abs(
+                            remaining
+                        )
+                    )} over budget`;
+            }
+
+
+            const buttons =
+                document.createElement(
+                    "div"
+                );
+
+            buttons.className =
+                "budget-buttons";
+
+
+            const editButton =
+                createTextButton(
+                    "Edit",
+                    "edit-button"
+                );
+
+
+            const deleteButton =
+                createTextButton(
+                    "Delete",
+                    "delete-button"
+                );
+
+
+            editButton.addEventListener(
+                "click",
+                function () {
+
+                    editBudget(
+                        budget.id
+                    );
+                }
+            );
+
+
+            deleteButton.addEventListener(
+                "click",
+                function () {
+
+                    deleteBudget(
+                        budget.id
+                    );
+                }
+            );
+
+
+            buttons.appendChild(
+                editButton
+            );
+
+            buttons.appendChild(
+                deleteButton
+            );
+
+
+            footer.appendChild(
+                remainingText
+            );
+
+            footer.appendChild(
+                buttons
+            );
+
+
+            card.appendChild(top);
+            card.appendChild(progress);
+            card.appendChild(footer);
+
+
+            budgetList.appendChild(
+                card
+            );
+        }
+    );
+
+    updateBudgetInsight(
+        stats
+    );
+}
+
+
+// ======================================================
+// CATEGORY SPENDING FOR BUDGET
+// ======================================================
+
+function calculateCategorySpending(
+    categoryId,
+    month
+) {
+
+    return transactions
+        .filter(
+            function (transaction) {
+
+                return (
+                    transaction.type ===
+                        "expense"
+                    &&
+                    transaction.category_id ===
+                        categoryId
+                    &&
+                    transaction.transaction_date
+                        ?.startsWith(
+                            month
+                        )
+                );
+            }
+        )
+        .reduce(
+            function (
+                total,
+                transaction
+            ) {
+
+                return (
+                    total +
+                    Number(
+                        transaction.amount
+                    )
+                );
+            },
+            0
+        );
+}
+
+
+// ======================================================
+// BUDGET INSIGHT
+// ======================================================
+
+function updateBudgetInsight(stats) {
+
+    budgetInsight.classList.remove(
+        "insight-warning"
+    );
+
+    if (!stats.length) {
+
+        budgetInsight.textContent =
+            "No budget data available.";
+
+        return;
+    }
+
+    const overBudget =
+        stats
+            .filter(
+                item =>
+                    item.remaining < 0
+            )
+            .sort(
+                (
+                    a,
+                    b
+                ) =>
+                    a.remaining -
+                    b.remaining
+            );
+
+    if (
+        overBudget.length
+    ) {
+
+        const worst =
+            overBudget[0];
+
+        budgetInsight.textContent =
+            `${worst.categoryName} is over budget by ${formatMoney(
+                Math.abs(
+                    worst.remaining
+                )
+            )}.`;
+
+        budgetInsight.classList.add(
+            "insight-warning"
+        );
+
+        return;
+    }
+
+    const totalBudget =
+        stats.reduce(
+            (
+                total,
+                item
+            ) =>
+                total +
+                item.limit,
+            0
+        );
+
+    const totalSpent =
+        stats.reduce(
+            (
+                total,
+                item
+            ) =>
+                total +
+                item.spent,
+            0
+        );
+
+    const remaining =
+        totalBudget -
+        totalSpent;
+
+    const highestUsage =
+        [...stats]
+            .sort(
+                (
+                    a,
+                    b
+                ) =>
+                    b.percentage -
+                    a.percentage
+            )[0];
+
+    if (
+        highestUsage.percentage >= 80
+    ) {
+
+        budgetInsight.textContent =
+            `${highestUsage.categoryName} has used ${highestUsage.percentage.toFixed(
+                0
+            )}% of its monthly budget.`;
+
+        return;
+    }
+
+    budgetInsight.textContent =
+        `You still have ${formatMoney(
+            remaining
+        )} remaining across your budgets this month.`;
 }
 
 
@@ -1920,7 +2396,6 @@ async function loadTransactions() {
     if (!currentUser) {
         return;
     }
-
 
     const {
         data,
@@ -1946,7 +2421,6 @@ async function loadTransactions() {
                 }
             );
 
-
     if (error) {
 
         console.error(
@@ -1959,13 +2433,10 @@ async function loadTransactions() {
         );
 
         return;
-
     }
-
 
     transactions =
         data || [];
-
 
     updateDashboard();
 
@@ -1973,6 +2444,13 @@ async function loadTransactions() {
 
     renderAccounts();
 
+    if (
+        budgetMonthInput.value &&
+        budgets.length
+    ) {
+
+        renderBudgets();
+    }
 }
 
 
@@ -1985,7 +2463,6 @@ async function loadDeletedTransactions() {
     if (!currentUser) {
         return;
     }
-
 
     const {
         data,
@@ -2006,25 +2483,20 @@ async function loadDeletedTransactions() {
                 }
             );
 
-
     if (error) {
 
         console.error(
-            "Load deleted transactions error:",
+            "Deleted transaction error:",
             error
         );
 
         return;
-
     }
-
 
     deletedTransactions =
         data || [];
 
-
     renderDeletedTransactions();
-
 }
 
 
@@ -2040,30 +2512,21 @@ function refreshTransactionDropdowns(
         transaction?.account_id || ""
     );
 
-
     populateCategorySelect(
         transaction?.category_id || ""
     );
-
 
     updateIncomeSourceVisibility(
         transaction?.income_source_id || ""
     );
 
-
     customCategoryGroup.style.display =
         "none";
 
-
     customIncomeSourceGroup.style.display =
         "none";
-
 }
 
-
-// ======================================================
-// ACCOUNT DROPDOWN
-// ======================================================
 
 function populateAccountSelect(
     selectedValue = ""
@@ -2072,13 +2535,10 @@ function populateAccountSelect(
     transactionAccountSelect.innerHTML =
         '<option value="">Select account</option>';
 
-
     accounts
         .filter(
             account =>
-
                 account.is_active ||
-
                 account.id ===
                     selectedValue
         )
@@ -2086,28 +2546,17 @@ function populateAccountSelect(
             function (account) {
 
                 addSelectOption(
-
                     transactionAccountSelect,
-
                     account.id,
-
                     account.name
-
                 );
-
             }
         );
 
-
     transactionAccountSelect.value =
         selectedValue;
-
 }
 
-
-// ======================================================
-// CATEGORY DROPDOWN
-// ======================================================
 
 function populateCategorySelect(
     selectedValue = ""
@@ -2116,30 +2565,22 @@ function populateCategorySelect(
     const transactionType =
         transactionTypeSelect.value;
 
-
     transactionCategorySelect.innerHTML =
         '<option value="">Select category</option>';
-
 
     categories
         .filter(
             category =>
-
                 (
                     category.is_active ||
-
                     category.id ===
                         selectedValue
                 )
-
                 &&
-
                 (
                     category.type ===
                         transactionType
-
                     ||
-
                     category.type ===
                         "both"
                 )
@@ -2148,39 +2589,23 @@ function populateCategorySelect(
             function (category) {
 
                 addSelectOption(
-
                     transactionCategorySelect,
-
                     category.id,
-
                     category.name
-
                 );
-
             }
         );
 
-
     addSelectOption(
-
         transactionCategorySelect,
-
         "__other__",
-
         "Other / Create New"
-
     );
-
 
     transactionCategorySelect.value =
         selectedValue;
-
 }
 
-
-// ======================================================
-// INCOME SOURCE DROPDOWN
-// ======================================================
 
 function updateIncomeSourceVisibility(
     selectedValue = ""
@@ -2190,40 +2615,30 @@ function updateIncomeSourceVisibility(
         transactionTypeSelect.value ===
         "income";
 
-
     if (!isIncome) {
 
         incomeSourceGroup.style.display =
             "none";
 
-
         customIncomeSourceGroup.style.display =
             "none";
-
 
         transactionIncomeSourceSelect.innerHTML =
             "";
 
-
         return;
-
     }
-
 
     incomeSourceGroup.style.display =
         "block";
 
-
     transactionIncomeSourceSelect.innerHTML =
         '<option value="">Select income source</option>';
-
 
     incomeSources
         .filter(
             source =>
-
                 source.is_active ||
-
                 source.id ===
                     selectedValue
         )
@@ -2231,110 +2646,73 @@ function updateIncomeSourceVisibility(
             function (source) {
 
                 addSelectOption(
-
                     transactionIncomeSourceSelect,
-
                     source.id,
-
                     source.name
-
                 );
-
             }
         );
 
-
     addSelectOption(
-
         transactionIncomeSourceSelect,
-
         "__other__",
-
         "Other / Create New"
-
     );
-
 
     transactionIncomeSourceSelect.value =
         selectedValue;
-
 }
 
 
 // ======================================================
-// TRANSACTION TYPE CHANGE
+// TRANSACTION DROPDOWN EVENTS
 // ======================================================
 
 transactionTypeSelect.addEventListener(
     "change",
-
     function () {
 
         populateCategorySelect();
 
         updateIncomeSourceVisibility();
 
-
         customCategoryGroup.style.display =
             "none";
-
 
         customIncomeSourceGroup.style.display =
             "none";
-
     }
 );
 
-
-// ======================================================
-// OTHER CATEGORY
-// ======================================================
 
 transactionCategorySelect.addEventListener(
     "change",
-
     function () {
 
         customCategoryGroup.style.display =
-
             transactionCategorySelect.value ===
-            "__other__"
-
+                "__other__"
                 ? "block"
-
                 : "none";
+    }
+);
 
+
+transactionIncomeSourceSelect.addEventListener(
+    "change",
+    function () {
+
+        customIncomeSourceGroup.style.display =
+            transactionIncomeSourceSelect.value ===
+                "__other__"
+                ? "block"
+                : "none";
     }
 );
 
 
 // ======================================================
-// OTHER INCOME SOURCE
-// ======================================================
-
-transactionIncomeSourceSelect
-    .addEventListener(
-
-        "change",
-
-        function () {
-
-            customIncomeSourceGroup.style.display =
-
-                transactionIncomeSourceSelect.value ===
-                "__other__"
-
-                    ? "block"
-
-                    : "none";
-
-        }
-
-    );
-
-
-// ======================================================
-// CREATE CATEGORY FROM TRANSACTION
+// CUSTOM CATEGORY
 // ======================================================
 
 async function createCategoryFromTransaction(
@@ -2346,7 +2724,6 @@ async function createCategoryFromTransaction(
             .value
             .trim();
 
-
     if (!name) {
 
         alert(
@@ -2354,38 +2731,28 @@ async function createCategoryFromTransaction(
         );
 
         return null;
-
     }
-
 
     const existing =
         categories.find(
             category =>
-
                 category.name
                     .toLowerCase() ===
-                name.toLowerCase()
-
+                    name.toLowerCase()
                 &&
-
                 (
                     category.type ===
                         type
-
                     ||
-
                     category.type ===
                         "both"
                 )
         );
 
-
     if (existing) {
 
         return existing;
-
     }
-
 
     const {
         data,
@@ -2399,13 +2766,10 @@ async function createCategoryFromTransaction(
                     currentUser.id,
 
                 name,
-
                 type
-
             })
             .select()
             .single();
-
 
     if (error) {
 
@@ -2414,22 +2778,22 @@ async function createCategoryFromTransaction(
         );
 
         return null;
-
     }
 
-
-    categories.push(data);
+    categories.push(
+        data
+    );
 
     renderCategories();
 
+    populateBudgetCategorySelect();
 
     return data;
-
 }
 
 
 // ======================================================
-// CREATE INCOME SOURCE FROM TRANSACTION
+// CUSTOM INCOME SOURCE
 // ======================================================
 
 async function createIncomeSourceFromTransaction() {
@@ -2439,7 +2803,6 @@ async function createIncomeSourceFromTransaction() {
             .value
             .trim();
 
-
     if (!name) {
 
         alert(
@@ -2447,26 +2810,20 @@ async function createIncomeSourceFromTransaction() {
         );
 
         return null;
-
     }
-
 
     const existing =
         incomeSources.find(
             source =>
-
                 source.name
                     .toLowerCase() ===
-                name.toLowerCase()
+                    name.toLowerCase()
         );
-
 
     if (existing) {
 
         return existing;
-
     }
-
 
     const {
         data,
@@ -2480,11 +2837,9 @@ async function createIncomeSourceFromTransaction() {
                     currentUser.id,
 
                 name
-
             })
             .select()
             .single();
-
 
     if (error) {
 
@@ -2493,88 +2848,67 @@ async function createIncomeSourceFromTransaction() {
         );
 
         return null;
-
     }
 
-
-    incomeSources.push(data);
+    incomeSources.push(
+        data
+    );
 
     renderIncomeSources();
 
-
     return data;
-
 }
 
 
 // ======================================================
-// ADD / UPDATE TRANSACTION
+// CREATE / UPDATE TRANSACTION
 // ======================================================
 
 transactionForm.addEventListener(
     "submit",
-
     async function (event) {
 
         event.preventDefault();
-
 
         if (!currentUser) {
             return;
         }
 
-
         const description =
             document
-                .getElementById(
-                    "description"
-                )
+                .getElementById("description")
                 .value
                 .trim();
-
 
         const accountId =
             transactionAccountSelect.value;
 
-
         const type =
             transactionTypeSelect.value;
-
 
         let categoryId =
             transactionCategorySelect.value;
 
-
         let incomeSourceId =
             null;
-
 
         const amount =
             parseFloat(
                 document
-                    .getElementById(
-                        "amount"
-                    )
+                    .getElementById("amount")
                     .value
             );
 
-
         const transactionDate =
             document
-                .getElementById(
-                    "date"
-                )
+                .getElementById("date")
                 .value;
-
 
         const notes =
             document
-                .getElementById(
-                    "notes"
-                )
+                .getElementById("notes")
                 .value
                 .trim();
-
 
         if (
             !description ||
@@ -2590,31 +2924,31 @@ transactionForm.addEventListener(
             );
 
             return;
-
         }
 
+
+        // CUSTOM CATEGORY
 
         if (
             categoryId ===
             "__other__"
         ) {
 
-            const newCategory =
+            const category =
                 await createCategoryFromTransaction(
                     type
                 );
 
-
-            if (!newCategory) {
+            if (!category) {
                 return;
             }
 
-
             categoryId =
-                newCategory.id;
-
+                category.id;
         }
 
+
+        // INCOME SOURCE
 
         if (
             type === "income"
@@ -2623,7 +2957,6 @@ transactionForm.addEventListener(
             incomeSourceId =
                 transactionIncomeSourceSelect.value;
 
-
             if (!incomeSourceId) {
 
                 alert(
@@ -2631,35 +2964,27 @@ transactionForm.addEventListener(
                 );
 
                 return;
-
             }
-
 
             if (
                 incomeSourceId ===
                 "__other__"
             ) {
 
-                const newSource =
+                const source =
                     await createIncomeSourceFromTransaction();
 
-
-                if (!newSource) {
+                if (!source) {
                     return;
                 }
 
-
                 incomeSourceId =
-                    newSource.id;
-
+                    source.id;
             }
-
         }
-
 
         submitButton.disabled =
             true;
-
 
         submitButton.textContent =
             "Saving...";
@@ -2690,16 +3015,13 @@ transactionForm.addEventListener(
 
             transaction_date:
                 transactionDate
-
         };
 
 
         let result;
 
-
         if (
-            editingTransactionId ===
-            null
+            editingTransactionId === null
         ) {
 
             result =
@@ -2721,13 +3043,10 @@ transactionForm.addEventListener(
                         "id",
                         editingTransactionId
                     );
-
         }
-
 
         submitButton.disabled =
             false;
-
 
         if (result.error) {
 
@@ -2735,40 +3054,33 @@ transactionForm.addEventListener(
                 result.error
             );
 
-
             alert(
                 result.error.message
             );
-
 
             submitButton.textContent =
                 editingTransactionId
                     ? "Save Changes"
                     : "+ Add Transaction";
 
-
             return;
-
         }
-
 
         resetTransactionForm();
 
         await loadTransactions();
-
     }
 );
 
 
 // ======================================================
-// RENDER ACTIVE TRANSACTIONS
+// RENDER TRANSACTIONS
 // ======================================================
 
 function renderTransactions() {
 
     transactionList.innerHTML =
         "";
-
 
     if (!transactions.length) {
 
@@ -2778,9 +3090,7 @@ function renderTransactions() {
         );
 
         return;
-
     }
-
 
     transactions.forEach(
         function (transaction) {
@@ -2789,7 +3099,6 @@ function renderTransactions() {
                 document.createElement(
                     "div"
                 );
-
 
             row.className =
                 "transaction";
@@ -2800,7 +3109,6 @@ function renderTransactions() {
                     "div"
                 );
 
-
             left.className =
                 "transaction-info";
 
@@ -2810,10 +3118,8 @@ function renderTransactions() {
                     "p"
                 );
 
-
             name.className =
                 "transaction-name";
-
 
             name.textContent =
                 transaction.description;
@@ -2824,29 +3130,17 @@ function renderTransactions() {
                     "p"
                 );
 
-
             category.className =
                 "transaction-category";
 
-
-            const categoryName =
-                getCategoryName(
-                    transaction.category_id
-                )
-                ||
-                "Uncategorized";
-
-
-            const accountName =
-                getAccountName(
-                    transaction.account_id
-                )
-                ||
-                "Unknown Account";
-
-
             category.textContent =
-                `${categoryName} • ${accountName}`;
+                `${getCategoryName(
+                    transaction.category_id
+                ) || "Uncategorized"} • ${
+                    getAccountName(
+                        transaction.account_id
+                    ) || "Unknown Account"
+                }`;
 
 
             const date =
@@ -2854,10 +3148,8 @@ function renderTransactions() {
                     "p"
                 );
 
-
             date.className =
                 "transaction-date";
-
 
             date.textContent =
                 formatDate(
@@ -2866,9 +3158,7 @@ function renderTransactions() {
 
 
             left.appendChild(name);
-
             left.appendChild(category);
-
             left.appendChild(date);
 
 
@@ -2882,7 +3172,6 @@ function renderTransactions() {
                         transaction.income_source_id
                     );
 
-
                 if (sourceName) {
 
                     const source =
@@ -2890,46 +3179,35 @@ function renderTransactions() {
                             "p"
                         );
 
-
                     source.className =
                         "transaction-date";
-
 
                     source.textContent =
                         `Source: ${sourceName}`;
 
-
                     left.appendChild(
                         source
                     );
-
                 }
-
             }
 
 
-            if (
-                transaction.notes
-            ) {
+            if (transaction.notes) {
 
                 const note =
                     document.createElement(
                         "p"
                     );
 
-
                 note.className =
                     "transaction-note";
-
 
                 note.textContent =
                     transaction.notes;
 
-
                 left.appendChild(
                     note
                 );
-
             }
 
 
@@ -2937,7 +3215,6 @@ function renderTransactions() {
                 document.createElement(
                     "div"
                 );
-
 
             right.className =
                 "transaction-actions";
@@ -2948,22 +3225,17 @@ function renderTransactions() {
                     "p"
                 );
 
-
             amount.className =
                 `transaction-amount ${transaction.type}`;
 
-
-            const sign =
-                transaction.type ===
-                "income"
-
-                    ? "+"
-
-                    : "-";
-
-
             amount.textContent =
-                sign +
+                (
+                    transaction.type ===
+                    "income"
+                        ? "+"
+                        : "-"
+                )
+                +
                 formatMoney(
                     transaction.amount
                 );
@@ -2973,7 +3245,6 @@ function renderTransactions() {
                 document.createElement(
                     "div"
                 );
-
 
             buttons.className =
                 "action-buttons";
@@ -2995,26 +3266,22 @@ function renderTransactions() {
 
             editButton.addEventListener(
                 "click",
-
                 function () {
 
                     editTransaction(
                         transaction.id
                     );
-
                 }
             );
 
 
             deleteButton.addEventListener(
                 "click",
-
                 function () {
 
                     deleteTransaction(
                         transaction.id
                     );
-
                 }
             );
 
@@ -3023,34 +3290,34 @@ function renderTransactions() {
                 editButton
             );
 
-
             buttons.appendChild(
                 deleteButton
             );
 
 
-            right.appendChild(amount);
+            right.appendChild(
+                amount
+            );
 
-            right.appendChild(buttons);
+            right.appendChild(
+                buttons
+            );
 
 
             row.appendChild(left);
-
             row.appendChild(right);
 
 
             transactionList.appendChild(
                 row
             );
-
         }
     );
-
 }
 
 
 // ======================================================
-// RENDER DELETED TRANSACTIONS
+// RENDER DELETED
 // ======================================================
 
 function renderDeletedTransactions() {
@@ -3058,10 +3325,7 @@ function renderDeletedTransactions() {
     deletedTransactionList.innerHTML =
         "";
 
-
-    if (
-        deletedTransactions.length === 0
-    ) {
+    if (!deletedTransactions.length) {
 
         renderEmptyState(
             deletedTransactionList,
@@ -3069,9 +3333,7 @@ function renderDeletedTransactions() {
         );
 
         return;
-
     }
-
 
     deletedTransactions.forEach(
         function (transaction) {
@@ -3080,7 +3342,6 @@ function renderDeletedTransactions() {
                 document.createElement(
                     "div"
                 );
-
 
             row.className =
                 "deleted-transaction";
@@ -3097,10 +3358,8 @@ function renderDeletedTransactions() {
                     "p"
                 );
 
-
             name.className =
                 "deleted-name";
-
 
             name.textContent =
                 transaction.description;
@@ -3111,10 +3370,8 @@ function renderDeletedTransactions() {
                     "p"
                 );
 
-
             meta.className =
                 "deleted-meta";
-
 
             meta.textContent =
                 `${formatMoney(
@@ -3125,37 +3382,23 @@ function renderDeletedTransactions() {
 
 
             left.appendChild(name);
-
             left.appendChild(meta);
 
 
-            const restoreButton =
-                document.createElement(
-                    "button"
+            const restore =
+                createTextButton(
+                    "Restore",
+                    "restore-button"
                 );
 
 
-            restoreButton.type =
-                "button";
-
-
-            restoreButton.className =
-                "restore-button";
-
-
-            restoreButton.textContent =
-                "Restore";
-
-
-            restoreButton.addEventListener(
+            restore.addEventListener(
                 "click",
-
                 function () {
 
                     restoreTransaction(
                         transaction.id
                     );
-
                 }
             );
 
@@ -3163,17 +3406,15 @@ function renderDeletedTransactions() {
             row.appendChild(left);
 
             row.appendChild(
-                restoreButton
+                restore
             );
 
 
             deletedTransactionList.appendChild(
                 row
             );
-
         }
     );
-
 }
 
 
@@ -3189,68 +3430,48 @@ function editTransaction(id) {
                 item.id === id
         );
 
-
     if (!transaction) {
         return;
     }
 
-
     document
-        .getElementById(
-            "description"
-        )
+        .getElementById("description")
         .value =
         transaction.description;
 
-
     document
-        .getElementById(
-            "amount"
-        )
+        .getElementById("amount")
         .value =
         transaction.amount;
 
-
     document
-        .getElementById(
-            "date"
-        )
+        .getElementById("date")
         .value =
         transaction.transaction_date;
 
-
     document
-        .getElementById(
-            "notes"
-        )
+        .getElementById("notes")
         .value =
         transaction.notes || "";
-
 
     transactionTypeSelect.value =
         transaction.type;
 
-
     editingTransactionId =
         transaction.id;
-
 
     refreshTransactionDropdowns(
         transaction
     );
 
-
     formTitle.textContent =
         "Edit Transaction";
-
 
     submitButton.textContent =
         "Save Changes";
 
-
     cancelEditButton.style.display =
         "block";
-
 
     transactionForm.scrollIntoView({
 
@@ -3259,14 +3480,12 @@ function editTransaction(id) {
 
         block:
             "start"
-
     });
-
 }
 
 
 // ======================================================
-// SOFT DELETE
+// SOFT DELETE TRANSACTION
 // ======================================================
 
 async function deleteTransaction(id) {
@@ -3277,22 +3496,18 @@ async function deleteTransaction(id) {
                 item.id === id
         );
 
-
     if (!transaction) {
         return;
     }
-
 
     const confirmed =
         confirm(
             `Delete "${transaction.description}"?`
         );
 
-
     if (!confirmed) {
         return;
     }
-
 
     const {
         error
@@ -3304,39 +3519,31 @@ async function deleteTransaction(id) {
                 deleted_at:
                     new Date()
                         .toISOString()
-
             })
             .eq(
                 "id",
                 id
             );
 
-
     if (error) {
-
-        console.error(error);
 
         alert(
             error.message
         );
 
         return;
-
     }
 
-
     resetTransactionForm();
-
 
     await loadTransactions();
 
     await loadDeletedTransactions();
-
 }
 
 
 // ======================================================
-// RESTORE TRANSACTION
+// RESTORE
 // ======================================================
 
 async function restoreTransaction(id) {
@@ -3347,34 +3554,25 @@ async function restoreTransaction(id) {
         await supabase
             .from("transactions")
             .update({
-
-                deleted_at:
-                    null
-
+                deleted_at: null
             })
             .eq(
                 "id",
                 id
             );
 
-
     if (error) {
-
-        console.error(error);
 
         alert(
             error.message
         );
 
         return;
-
     }
-
 
     await loadTransactions();
 
     await loadDeletedTransactions();
-
 }
 
 
@@ -3387,44 +3585,33 @@ function resetTransactionForm() {
     editingTransactionId =
         null;
 
-
     transactionForm.reset();
-
 
     transactionTypeSelect.value =
         "expense";
 
-
     dateInput.value =
         getTodayDate();
-
 
     formTitle.textContent =
         "Add Transaction";
 
-
     submitButton.textContent =
         "+ Add Transaction";
-
 
     submitButton.disabled =
         false;
 
-
     cancelEditButton.style.display =
         "none";
-
 
     customCategoryGroup.style.display =
         "none";
 
-
     customIncomeSourceGroup.style.display =
         "none";
 
-
     refreshTransactionDropdowns();
-
 }
 
 
@@ -3440,10 +3627,11 @@ cancelEditButton.addEventListener(
 
 function updateDashboard() {
 
-    let totalIncome = 0;
+    let totalIncome =
+        0;
 
-    let totalExpenses = 0;
-
+    let totalExpenses =
+        0;
 
     transactions.forEach(
         function (transaction) {
@@ -3453,7 +3641,6 @@ function updateDashboard() {
                     transaction.amount
                 );
 
-
             if (
                 transaction.type ===
                 "income"
@@ -3462,80 +3649,58 @@ function updateDashboard() {
                 totalIncome +=
                     amount;
 
-            }
-
-
-            if (
-                transaction.type ===
-                "expense"
-            ) {
+            } else {
 
                 totalExpenses +=
                     amount;
-
             }
-
         }
     );
 
 
-    let totalOpeningBalance = 0;
+    const totalOpeningBalance =
+        accounts.reduce(
+            function (
+                total,
+                account
+            ) {
 
-
-    accounts.forEach(
-        function (account) {
-
-            totalOpeningBalance +=
-                Number(
-                    account.opening_balance
+                return (
+                    total +
+                    Number(
+                        account.opening_balance
+                    )
                 );
-
-        }
-    );
+            },
+            0
+        );
 
 
     const totalBalance =
-        totalOpeningBalance
-        +
-        totalIncome
-        -
+        totalOpeningBalance +
+        totalIncome -
         totalExpenses;
 
 
-    document
-        .getElementById(
-            "income"
-        )
-        .textContent =
+    incomeElement.textContent =
         formatMoney(
             totalIncome
         );
 
-
-    document
-        .getElementById(
-            "expenses"
-        )
-        .textContent =
+    expensesElement.textContent =
         formatMoney(
             totalExpenses
         );
 
-
-    document
-        .getElementById(
-            "balance"
-        )
-        .textContent =
+    balanceElement.textContent =
         formatMoney(
             totalBalance
         );
-
 }
 
 
 // ======================================================
-// ACCOUNT CURRENT BALANCE
+// ACCOUNT BALANCE
 // ======================================================
 
 function calculateAccountBalance(
@@ -3548,23 +3713,20 @@ function calculateAccountBalance(
                 item.id === accountId
         );
 
-
     if (!account) {
         return 0;
     }
-
 
     let balance =
         Number(
             account.opening_balance
         );
 
-
     transactions
         .filter(
             transaction =>
                 transaction.account_id ===
-                accountId
+                    accountId
         )
         .forEach(
             function (transaction) {
@@ -3573,7 +3735,6 @@ function calculateAccountBalance(
                     Number(
                         transaction.amount
                     );
-
 
                 if (
                     transaction.type ===
@@ -3587,34 +3748,24 @@ function calculateAccountBalance(
 
                     balance -=
                         amount;
-
                 }
-
             }
         );
 
-
     return balance;
-
 }
 
 
 // ======================================================
-// MANAGEMENT CARD HELPERS
+// GENERIC MANAGEMENT CARD
 // ======================================================
 
 function createSimpleManagementCard({
-
     name,
-
     meta,
-
     active,
-
     onEdit,
-
     onToggle
-
 }) {
 
     const card =
@@ -3622,17 +3773,14 @@ function createSimpleManagementCard({
             "div"
         );
 
-
     card.className =
         "management-card";
-
 
     if (!active) {
 
         card.classList.add(
             "inactive"
         );
-
     }
 
 
@@ -3647,10 +3795,8 @@ function createSimpleManagementCard({
             "p"
         );
 
-
     title.className =
         "management-name";
-
 
     title.textContent =
         name;
@@ -3661,56 +3807,36 @@ function createSimpleManagementCard({
             "p"
         );
 
-
     subtitle.className =
         "management-meta";
 
-
     subtitle.textContent =
         meta;
-
 
     if (!active) {
 
         subtitle.textContent +=
             " • Inactive";
-
     }
 
 
     left.appendChild(title);
-
     left.appendChild(subtitle);
 
 
-    const actions =
-        document.createElement(
-            "div"
+    const buttons =
+        createManagementButtons(
+            onEdit,
+            onToggle,
+            active
         );
 
 
-    actions.appendChild(
-
-        createManagementButtons(
-
-            onEdit,
-
-            onToggle,
-
-            active
-
-        )
-
-    );
-
-
     card.appendChild(left);
-
-    card.appendChild(actions);
+    card.appendChild(buttons);
 
 
     return card;
-
 }
 
 
@@ -3719,20 +3845,15 @@ function createSimpleManagementCard({
 // ======================================================
 
 function createManagementButtons(
-
     onEdit,
-
     onToggle,
-
     active
-
 ) {
 
     const buttons =
         document.createElement(
             "div"
         );
-
 
     buttons.className =
         "management-buttons";
@@ -3745,23 +3866,20 @@ function createManagementButtons(
         );
 
 
-    edit.addEventListener(
-        "click",
-        onEdit
-    );
-
-
     const status =
         createTextButton(
-
             active
                 ? "Deactivate"
                 : "Activate",
 
             "status-button"
-
         );
 
+
+    edit.addEventListener(
+        "click",
+        onEdit
+    );
 
     status.addEventListener(
         "click",
@@ -3770,17 +3888,15 @@ function createManagementButtons(
 
 
     buttons.appendChild(edit);
-
     buttons.appendChild(status);
 
 
     return buttons;
-
 }
 
 
 // ======================================================
-// TEXT BUTTON
+// BUTTON HELPER
 // ======================================================
 
 function createTextButton(
@@ -3793,21 +3909,16 @@ function createTextButton(
             "button"
         );
 
-
     button.type =
         "button";
-
 
     button.className =
         className;
 
-
     button.textContent =
         text;
 
-
     return button;
-
 }
 
 
@@ -3825,19 +3936,15 @@ function renderEmptyState(
             "div"
         );
 
-
     empty.className =
         "empty-state";
-
 
     empty.textContent =
         text;
 
-
     element.appendChild(
         empty
     );
-
 }
 
 
@@ -3846,13 +3953,9 @@ function renderEmptyState(
 // ======================================================
 
 function addSelectOption(
-
     select,
-
     value,
-
     label
-
 ) {
 
     const option =
@@ -3860,24 +3963,20 @@ function addSelectOption(
             "option"
         );
 
-
     option.value =
         value;
-
 
     option.textContent =
         label;
 
-
     select.appendChild(
         option
     );
-
 }
 
 
 // ======================================================
-// LOOKUP HELPERS
+// LOOKUPS
 // ======================================================
 
 function getAccountName(id) {
@@ -3886,7 +3985,6 @@ function getAccountName(id) {
         item =>
             item.id === id
     )?.name;
-
 }
 
 
@@ -3896,7 +3994,6 @@ function getCategoryName(id) {
         item =>
             item.id === id
     )?.name;
-
 }
 
 
@@ -3906,96 +4003,52 @@ function getIncomeSourceName(id) {
         item =>
             item.id === id
     )?.name;
-
 }
 
 
 // ======================================================
-// FORMAT ACCOUNT TYPE
+// FORMATTING
 // ======================================================
 
 function formatAccountType(type) {
 
     const values = {
-
-        bank:
-            "Bank",
-
-        cash:
-            "Cash",
-
-        e_wallet:
-            "E-Wallet",
-
-        savings:
-            "Savings",
-
-        other:
-            "Other"
-
+        bank: "Bank",
+        cash: "Cash",
+        e_wallet: "E-Wallet",
+        savings: "Savings",
+        other: "Other"
     };
 
-
     return values[type] || type;
-
 }
 
-
-// ======================================================
-// FORMAT CATEGORY TYPE
-// ======================================================
 
 function formatCategoryType(type) {
 
     const values = {
-
-        expense:
-            "Expense",
-
-        income:
-            "Income",
-
-        both:
-            "Income & Expense"
-
+        expense: "Expense",
+        income: "Income",
+        both: "Income & Expense"
     };
 
-
     return values[type] || type;
-
 }
 
-
-// ======================================================
-// MONEY
-// ======================================================
 
 function formatMoney(amount) {
 
     return new Intl.NumberFormat(
-
         "en-MY",
-
         {
-
-            style:
-                "currency",
-
-            currency:
-                "MYR"
-
+            style: "currency",
+            currency: "MYR"
         }
-
     ).format(
         Number(amount)
     );
-
 }
 
-
-// ======================================================
-// TRANSACTION DATE
-// ======================================================
 
 function formatDate(date) {
 
@@ -4003,36 +4056,18 @@ function formatDate(date) {
         return "No date";
     }
 
-
     return new Date(
-        date +
-        "T00:00:00"
-    )
-        .toLocaleDateString(
-
-            "en-MY",
-
-            {
-
-                day:
-                    "2-digit",
-
-                month:
-                    "short",
-
-                year:
-                    "numeric"
-
-            }
-
-        );
-
+        `${date}T00:00:00`
+    ).toLocaleDateString(
+        "en-MY",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        }
+    );
 }
 
-
-// ======================================================
-// DELETED DATE
-// ======================================================
 
 function formatDeletedDate(date) {
 
@@ -4040,38 +4075,51 @@ function formatDeletedDate(date) {
         return "";
     }
 
-
     return new Date(date)
         .toLocaleString(
-
             "en-MY",
-
             {
-
-                day:
-                    "2-digit",
-
-                month:
-                    "short",
-
-                year:
-                    "numeric",
-
-                hour:
-                    "2-digit",
-
-                minute:
-                    "2-digit"
-
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
             }
+        );
+}
 
+
+function formatBudgetMonth(month) {
+
+    if (!month) {
+        return "";
+    }
+
+    const [
+        year,
+        monthNumber
+    ] =
+        month.split("-");
+
+    const date =
+        new Date(
+            Number(year),
+            Number(monthNumber) - 1,
+            1
         );
 
+    return date.toLocaleDateString(
+        "en-MY",
+        {
+            month: "long",
+            year: "numeric"
+        }
+    );
 }
 
 
 // ======================================================
-// TODAY
+// DATE HELPERS
 // ======================================================
 
 function getTodayDate() {
@@ -4079,35 +4127,46 @@ function getTodayDate() {
     const today =
         new Date();
 
-
     const year =
         today.getFullYear();
-
 
     const month =
         String(
             today.getMonth() + 1
-        )
-            .padStart(
-                2,
-                "0"
-            );
-
+        ).padStart(
+            2,
+            "0"
+        );
 
     const day =
         String(
             today.getDate()
-        )
-            .padStart(
-                2,
-                "0"
-            );
+        ).padStart(
+            2,
+            "0"
+        );
+
+    return `${year}-${month}-${day}`;
+}
 
 
-    return (
-        `${year}-${month}-${day}`
-    );
+function getCurrentMonthValue() {
 
+    const today =
+        new Date();
+
+    const year =
+        today.getFullYear();
+
+    const month =
+        String(
+            today.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+    return `${year}-${month}`;
 }
 
 
@@ -4118,5 +4177,7 @@ function getTodayDate() {
 dateInput.value =
     getTodayDate();
 
+budgetMonthInput.value =
+    getCurrentMonthValue();
 
 initializeAuth();

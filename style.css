@@ -33,13 +33,14 @@ button {
 
 button:disabled {
     cursor: not-allowed;
+
     opacity: 0.6;
 }
 
 
-/* ===================================
+/* =========================
    AUTH
-=================================== */
+========================= */
 
 .auth-section {
     min-height: calc(100vh - 80px);
@@ -68,14 +69,14 @@ button:disabled {
 
 
 .auth-card h1 {
-    margin: 0 0 8px 0;
+    margin: 0 0 8px;
 
     font-size: 32px;
 }
 
 
 .auth-subtitle {
-    margin: 0 0 24px 0;
+    margin: 0 0 24px;
 
     color: #6b7280;
 }
@@ -144,24 +145,24 @@ button:disabled {
 }
 
 
-/* ===================================
+/* =========================
    APP
-=================================== */
+========================= */
 
 .app {
     display: none;
 
     width: 100%;
 
-    max-width: 560px;
+    max-width: 620px;
 
     margin: 0 auto;
 }
 
 
-/* ===================================
+/* =========================
    HEADER
-=================================== */
+========================= */
 
 .page-header {
     display: flex;
@@ -177,7 +178,7 @@ button:disabled {
 
 
 h1 {
-    margin: 0 0 10px 0;
+    margin: 0 0 10px;
 
     font-size: 36px;
 }
@@ -207,9 +208,9 @@ h1 {
 }
 
 
-/* ===================================
+/* =========================
    BALANCE
-=================================== */
+========================= */
 
 .balance-card {
     padding: 24px;
@@ -223,7 +224,7 @@ h1 {
 
 
 .balance-card p {
-    margin: 0 0 8px 0;
+    margin: 0 0 8px;
 
     color: #d1d5db;
 
@@ -232,7 +233,7 @@ h1 {
 
 
 .balance-card h2 {
-    margin: 0 0 8px 0;
+    margin: 0 0 8px;
 
     font-size: 36px;
 }
@@ -245,9 +246,9 @@ h1 {
 }
 
 
-/* ===================================
+/* =========================
    SUMMARY
-=================================== */
+========================= */
 
 .summary-grid {
     display: grid;
@@ -273,7 +274,7 @@ h1 {
 
 
 .summary-card p {
-    margin: 0 0 8px 0;
+    margin: 0 0 8px;
 
     color: #6b7280;
 
@@ -288,9 +289,9 @@ h1 {
 }
 
 
-/* ===================================
-   COMMON SECTIONS
-=================================== */
+/* =========================
+   SECTIONS
+========================= */
 
 .management-section,
 .transactions-section {
@@ -305,6 +306,8 @@ h1 {
 
     align-items: center;
 
+    gap: 12px;
+
     margin-bottom: 14px;
 }
 
@@ -316,6 +319,28 @@ h1 {
 }
 
 
+.section-subtitle {
+    margin: 4px 0 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+
+.month-picker {
+    width: auto;
+
+    padding: 9px 10px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    background-color: white;
+}
+
+
 .management-list {
     display: grid;
 
@@ -323,9 +348,9 @@ h1 {
 }
 
 
-/* ===================================
+/* =========================
    MANAGEMENT CARDS
-=================================== */
+========================= */
 
 .management-card {
     display: flex;
@@ -352,7 +377,7 @@ h1 {
 
 
 .management-name {
-    margin: 0 0 4px 0;
+    margin: 0 0 4px;
 
     font-weight: 600;
 }
@@ -388,7 +413,8 @@ h1 {
 
 
 .management-buttons,
-.action-buttons {
+.action-buttons,
+.budget-buttons {
     display: flex;
 
     gap: 10px;
@@ -396,7 +422,8 @@ h1 {
 
 
 .management-buttons button,
-.action-buttons button {
+.action-buttons button,
+.budget-buttons button {
     padding: 0;
 
     border: none;
@@ -418,9 +445,9 @@ h1 {
 }
 
 
-/* ===================================
+/* =========================
    FORMS
-=================================== */
+========================= */
 
 .management-form,
 .transaction-form {
@@ -438,7 +465,7 @@ h1 {
 
 .management-form h2,
 .transaction-form h2 {
-    margin: 0 0 20px 0;
+    margin: 0 0 20px;
 
     font-size: 18px;
 }
@@ -533,9 +560,162 @@ h1 {
 }
 
 
-/* ===================================
+/* =========================
+   BUDGET
+========================= */
+
+.budget-insight {
+    margin-bottom: 14px;
+
+    padding: 14px 16px;
+
+    border: 1px solid #dbeafe;
+
+    border-radius: 14px;
+
+    background-color: #eff6ff;
+
+    color: #1e3a8a;
+
+    font-size: 14px;
+
+    line-height: 1.45;
+}
+
+
+.budget-insight.insight-warning {
+    border-color: #fed7aa;
+
+    background-color: #fff7ed;
+
+    color: #9a3412;
+}
+
+
+.budget-list {
+    display: grid;
+
+    gap: 10px;
+}
+
+
+.budget-card {
+    padding: 16px;
+
+    background-color: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 16px;
+}
+
+
+.budget-card-top {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 16px;
+}
+
+
+.budget-category-name {
+    margin: 0 0 4px;
+
+    font-weight: 600;
+}
+
+
+.budget-numbers {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+
+.budget-percentage {
+    margin: 0;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.budget-progress {
+    height: 9px;
+
+    margin-top: 14px;
+
+    overflow: hidden;
+
+    border-radius: 999px;
+
+    background-color: #e5e7eb;
+}
+
+
+.budget-progress-fill {
+    height: 100%;
+
+    border-radius: inherit;
+
+    background-color: #2563eb;
+
+    transition: width 0.2s ease;
+}
+
+
+.budget-progress-fill.budget-warning {
+    background-color: #d97706;
+}
+
+
+.budget-progress-fill.budget-over {
+    background-color: #b42318;
+}
+
+
+.budget-card-footer {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-top: 10px;
+}
+
+
+.budget-remaining,
+.budget-over-text {
+    margin: 0;
+
+    font-size: 12px;
+}
+
+
+.budget-remaining {
+    color: #6b7280;
+}
+
+
+.budget-over-text {
+    color: #b42318;
+
+    font-weight: 600;
+}
+
+
+/* =========================
    TRANSACTIONS
-=================================== */
+========================= */
 
 .view-all-button {
     border: none;
@@ -591,14 +771,14 @@ h1 {
 
 
 .transaction-name {
-    margin: 0 0 4px 0;
+    margin: 0 0 4px;
 
     font-weight: 600;
 }
 
 
 .transaction-category {
-    margin: 0 0 4px 0;
+    margin: 0 0 4px;
 
     color: #6b7280;
 
@@ -607,7 +787,7 @@ h1 {
 
 
 .transaction-date {
-    margin: 0 0 3px 0;
+    margin: 0 0 3px;
 
     color: #9ca3af;
 
@@ -616,7 +796,7 @@ h1 {
 
 
 .transaction-note {
-    margin: 6px 0 0 0;
+    margin: 6px 0 0;
 
     color: #6b7280;
 
@@ -658,9 +838,9 @@ h1 {
 }
 
 
-/* ===================================
+/* =========================
    RECENTLY DELETED
-=================================== */
+========================= */
 
 .deleted-section {
     margin-top: 28px;
@@ -691,7 +871,7 @@ h1 {
 
 
 .deleted-name {
-    margin: 0 0 4px 0;
+    margin: 0 0 4px;
 
     font-weight: 600;
 }
@@ -721,9 +901,9 @@ h1 {
 }
 
 
-/* ===================================
+/* =========================
    EMPTY STATE
-=================================== */
+========================= */
 
 .empty-state {
     padding: 24px;
@@ -740,13 +920,11 @@ h1 {
 }
 
 
-/* ===================================
+/* =========================
    MOBILE
-=================================== */
+========================= */
 
-@media (
-    max-width: 600px
-) {
+@media (max-width: 600px) {
 
     body {
         padding: 20px;
@@ -769,6 +947,11 @@ h1 {
     }
 
 
+    .summary-card h3 {
+        font-size: 18px;
+    }
+
+
     .management-card,
     .transaction,
     .deleted-transaction {
@@ -776,8 +959,13 @@ h1 {
     }
 
 
-    .summary-card h3 {
-        font-size: 18px;
+    .section-heading {
+        align-items: flex-start;
+    }
+
+
+    .budget-card-footer {
+        align-items: flex-start;
     }
 
 }
