@@ -62,12 +62,127 @@ const accountMessage =
 
 
 // ====================================
+// CATEGORY ELEMENTS
+// ====================================
+
+const categoryForm =
+    document.getElementById(
+        "category-form"
+    );
+
+const categoryList =
+    document.getElementById(
+        "category-list"
+    );
+
+const categoryFormTitle =
+    document.getElementById(
+        "category-form-title"
+    );
+
+const saveCategoryButton =
+    document.getElementById(
+        "save-category-button"
+    );
+
+const cancelCategoryEditButton =
+    document.getElementById(
+        "cancel-category-edit-button"
+    );
+
+const categoryMessage =
+    document.getElementById(
+        "category-message"
+    );
+
+
+// ====================================
+// INCOME SOURCE ELEMENTS
+// ====================================
+
+const incomeSourceForm =
+    document.getElementById(
+        "income-source-form"
+    );
+
+const incomeSourceList =
+    document.getElementById(
+        "income-source-list"
+    );
+
+const incomeSourceFormTitle =
+    document.getElementById(
+        "income-source-form-title"
+    );
+
+const saveIncomeSourceButton =
+    document.getElementById(
+        "save-income-source-button"
+    );
+
+const cancelIncomeSourceEditButton =
+    document.getElementById(
+        "cancel-income-source-edit-button"
+    );
+
+const incomeSourceMessage =
+    document.getElementById(
+        "income-source-message"
+    );
+
+
+// ====================================
 // TRANSACTION ELEMENTS
 // ====================================
 
 const transactionForm =
     document.getElementById(
         "transaction-form"
+    );
+
+const transactionAccountSelect =
+    document.getElementById(
+        "transaction-account"
+    );
+
+const transactionTypeSelect =
+    document.getElementById(
+        "type"
+    );
+
+const transactionCategorySelect =
+    document.getElementById(
+        "transaction-category"
+    );
+
+const customCategoryGroup =
+    document.getElementById(
+        "custom-category-group"
+    );
+
+const customCategoryInput =
+    document.getElementById(
+        "custom-category-name"
+    );
+
+const incomeSourceGroup =
+    document.getElementById(
+        "income-source-group"
+    );
+
+const transactionIncomeSourceSelect =
+    document.getElementById(
+        "transaction-income-source"
+    );
+
+const customIncomeSourceGroup =
+    document.getElementById(
+        "custom-income-source-group"
+    );
+
+const customIncomeSourceInput =
+    document.getElementById(
+        "custom-income-source-name"
     );
 
 const cancelEditButton =
@@ -99,61 +214,149 @@ let currentUser = null;
 
 let accounts = [];
 
+let categories = [];
+
+let incomeSources = [];
+
 let editingAccountId = null;
 
-let editingId = null;
+let editingCategoryId = null;
+
+let editingIncomeSourceId = null;
+
+let editingTransactionId = null;
 
 
 // ====================================
-// DEFAULT LOCAL TRANSACTIONS
-// Temporary until Supabase transaction
-// migration is completed.
+// STARTER DATA
+// ====================================
+
+const starterCategories = [
+
+    {
+        name: "Food & Dining",
+        type: "expense"
+    },
+
+    {
+        name: "Transportation",
+        type: "expense"
+    },
+
+    {
+        name: "Bills",
+        type: "expense"
+    },
+
+    {
+        name: "Shopping",
+        type: "expense"
+    },
+
+    {
+        name: "Entertainment",
+        type: "expense"
+    },
+
+    {
+        name: "Health",
+        type: "expense"
+    },
+
+    {
+        name: "Salary",
+        type: "income"
+    },
+
+    {
+        name: "Side Income",
+        type: "income"
+    },
+
+    {
+        name: "Investment",
+        type: "income"
+    }
+
+];
+
+
+const starterIncomeSources = [
+
+    "Salary",
+    "Grab",
+    "Freelance",
+    "Business",
+    "Investment",
+    "Bonus"
+
+];
+
+
+// ====================================
+// TEMPORARY LOCAL TRANSACTIONS
 // ====================================
 
 const defaultTransactions = [
 
     {
         id: generateId(),
+
         description: "Salary",
+
         category: "Income",
+
         amount: 2750,
+
         type: "income",
+
         date: "2026-09-01"
     },
 
     {
         id: generateId(),
+
         description: "Grab",
+
         category: "Side Income",
+
         amount: 1200,
+
         type: "income",
+
         date: "2026-09-07"
     },
 
     {
         id: generateId(),
+
         description: "Petrol",
+
         category: "Transportation",
+
         amount: 50,
+
         type: "expense",
+
         date: "2026-09-08"
     },
 
     {
         id: generateId(),
+
         description: "Nasi Kandar",
+
         category: "Food & Dining",
+
         amount: 18,
+
         type: "expense",
+
         date: "2026-09-08"
     }
 
 ];
 
-
-// ====================================
-// LOAD LOCAL TRANSACTIONS
-// ====================================
 
 const savedTransactions =
     localStorage.getItem(
@@ -176,7 +379,7 @@ if (savedTransactions) {
     } catch (error) {
 
         console.error(
-            "Failed to load transactions:",
+            "Failed to read local transactions:",
             error
         );
 
@@ -198,10 +401,10 @@ if (savedTransactions) {
 
 
 // ====================================
-// MIGRATE OLD LOCAL TRANSACTIONS
+// MIGRATE OLD LOCAL DATA
 // ====================================
 
-let dataChanged = false;
+let localDataChanged = false;
 
 
 transactions =
@@ -210,11 +413,15 @@ transactions =
 
             if (!transaction.id) {
 
-                dataChanged = true;
+                localDataChanged =
+                    true;
 
                 return {
+
                     ...transaction,
+
                     id: generateId()
+
                 };
 
             }
@@ -225,7 +432,7 @@ transactions =
     );
 
 
-if (dataChanged) {
+if (localDataChanged) {
 
     saveTransactions();
 
@@ -233,7 +440,7 @@ if (dataChanged) {
 
 
 // ====================================
-// AUTH UI STATE
+// AUTH UI
 // ====================================
 
 function showLoggedOutState() {
@@ -241,6 +448,10 @@ function showLoggedOutState() {
     currentUser = null;
 
     accounts = [];
+
+    categories = [];
+
+    incomeSources = [];
 
     authSection.style.display =
         "flex";
@@ -253,7 +464,8 @@ function showLoggedOutState() {
 
 async function showLoggedInState(user) {
 
-    currentUser = user;
+    currentUser =
+        user;
 
     authSection.style.display =
         "none";
@@ -262,12 +474,25 @@ async function showLoggedInState(user) {
         "block";
 
     userEmail.textContent =
-        user.email || "Signed in";
+        user.email ||
+        "Signed in";
 
     authMessage.textContent =
         "";
 
+
     await loadAccounts();
+
+    await loadCategories();
+
+    await loadIncomeSources();
+
+    await seedStarterData();
+
+
+    refreshTransactionDropdowns();
+
+    renderTransactions();
 
 }
 
@@ -324,9 +549,9 @@ registerButton.addEventListener(
         } =
             await supabase.auth.signUp({
 
-                email: email,
+                email,
 
-                password: password,
+                password,
 
                 options: {
 
@@ -398,19 +623,6 @@ authForm.addEventListener(
                 .value;
 
 
-        if (
-            !email ||
-            !password
-        ) {
-
-            authMessage.textContent =
-                "Enter your email and password.";
-
-            return;
-
-        }
-
-
         loginButton.disabled =
             true;
 
@@ -426,9 +638,9 @@ authForm.addEventListener(
             await supabase.auth
                 .signInWithPassword({
 
-                    email: email,
+                    email,
 
-                    password: password
+                    password
 
                 });
 
@@ -463,18 +675,10 @@ logoutButton.addEventListener(
     "click",
     async function () {
 
-        logoutButton.disabled =
-            true;
-
-
         const {
             error
         } =
             await supabase.auth.signOut();
-
-
-        logoutButton.disabled =
-            false;
 
 
         if (error) {
@@ -487,8 +691,6 @@ logoutButton.addEventListener(
 
         }
 
-
-        resetAccountForm();
 
         showLoggedOutState();
 
@@ -513,7 +715,6 @@ async function initializeAuth() {
     if (error) {
 
         console.error(
-            "Session error:",
             error
         );
 
@@ -539,28 +740,18 @@ async function initializeAuth() {
 }
 
 
-// ====================================
-// AUTH STATE CHANGE
-// ====================================
-
 supabase.auth.onAuthStateChange(
     function (event, session) {
 
         console.log(
-            "Auth event:",
+            "Auth:",
             event
         );
 
 
-        if (session) {
+        if (!session) {
 
-            currentUser =
-                session.user;
-
-        } else {
-
-            currentUser =
-                null;
+            currentUser = null;
 
         }
 
@@ -569,20 +760,14 @@ supabase.auth.onAuthStateChange(
 
 
 // ====================================
-// LOAD ACCOUNTS
+// ACCOUNTS
 // ====================================
 
 async function loadAccounts() {
 
     if (!currentUser) {
-
         return;
-
     }
-
-
-    accountMessage.textContent =
-        "Loading accounts...";
 
 
     const {
@@ -602,15 +787,8 @@ async function loadAccounts() {
 
     if (error) {
 
-        console.error(
-            "Load accounts error:",
-            error
-        );
-
-
         accountMessage.textContent =
             error.message;
-
 
         return;
 
@@ -630,38 +808,18 @@ async function loadAccounts() {
 }
 
 
-// ====================================
-// RENDER ACCOUNTS
-// ====================================
-
 function renderAccounts() {
 
     accountList.innerHTML =
         "";
 
 
-    if (
-        accounts.length === 0
-    ) {
+    if (!accounts.length) {
 
-        const emptyState =
-            document.createElement(
-                "div"
-            );
-
-
-        emptyState.className =
-            "empty-state";
-
-
-        emptyState.textContent =
-            "No accounts yet.";
-
-
-        accountList.appendChild(
-            emptyState
+        renderEmptyState(
+            accountList,
+            "No accounts yet."
         );
-
 
         return;
 
@@ -678,7 +836,7 @@ function renderAccounts() {
 
 
             card.className =
-                "account-card";
+                "management-card";
 
 
             if (!account.is_active) {
@@ -690,14 +848,10 @@ function renderAccounts() {
             }
 
 
-            const info =
+            const left =
                 document.createElement(
                     "div"
                 );
-
-
-            info.className =
-                "account-info";
 
 
             const name =
@@ -707,24 +861,24 @@ function renderAccounts() {
 
 
             name.className =
-                "account-name";
+                "management-name";
 
 
             name.textContent =
                 account.name;
 
 
-            const type =
+            const meta =
                 document.createElement(
                     "p"
                 );
 
 
-            type.className =
-                "account-type";
+            meta.className =
+                "management-meta";
 
 
-            type.textContent =
+            meta.textContent =
                 formatAccountType(
                     account.account_type
                 );
@@ -732,30 +886,30 @@ function renderAccounts() {
 
             if (!account.is_active) {
 
-                type.textContent +=
+                meta.textContent +=
                     " • Inactive";
 
             }
 
 
-            info.appendChild(
+            left.appendChild(
                 name
             );
 
 
-            info.appendChild(
-                type
+            left.appendChild(
+                meta
             );
 
 
-            const actions =
+            const right =
                 document.createElement(
                     "div"
                 );
 
 
-            actions.className =
-                "account-actions";
+            right.className =
+                "management-actions";
 
 
             const balance =
@@ -765,7 +919,7 @@ function renderAccounts() {
 
 
             balance.className =
-                "account-balance";
+                "management-value";
 
 
             balance.textContent =
@@ -775,104 +929,46 @@ function renderAccounts() {
 
 
             const buttons =
-                document.createElement(
-                    "div"
+                createManagementButtons(
+
+                    function () {
+
+                        editAccount(
+                            account.id
+                        );
+
+                    },
+
+                    function () {
+
+                        toggleAccountStatus(
+                            account.id
+                        );
+
+                    },
+
+                    account.is_active
+
                 );
 
 
-            buttons.className =
-                "account-buttons";
-
-
-            const editButton =
-                document.createElement(
-                    "button"
-                );
-
-
-            editButton.type =
-                "button";
-
-
-            editButton.className =
-                "account-edit-button";
-
-
-            editButton.textContent =
-                "Edit";
-
-
-            editButton.addEventListener(
-                "click",
-                function () {
-
-                    editAccount(
-                        account.id
-                    );
-
-                }
-            );
-
-
-            const statusButton =
-                document.createElement(
-                    "button"
-                );
-
-
-            statusButton.type =
-                "button";
-
-
-            statusButton.className =
-                "account-status-button";
-
-
-            statusButton.textContent =
-                account.is_active
-                    ? "Deactivate"
-                    : "Activate";
-
-
-            statusButton.addEventListener(
-                "click",
-                function () {
-
-                    toggleAccountStatus(
-                        account.id
-                    );
-
-                }
-            );
-
-
-            buttons.appendChild(
-                editButton
-            );
-
-
-            buttons.appendChild(
-                statusButton
-            );
-
-
-            actions.appendChild(
+            right.appendChild(
                 balance
             );
 
 
-            actions.appendChild(
+            right.appendChild(
                 buttons
             );
 
 
             card.appendChild(
-                info
+                left
             );
 
 
             card.appendChild(
-                actions
+                right
             );
 
 
@@ -886,22 +982,11 @@ function renderAccounts() {
 }
 
 
-// ====================================
-// ADD / UPDATE ACCOUNT
-// ====================================
-
 accountForm.addEventListener(
     "submit",
     async function (event) {
 
         event.preventDefault();
-
-
-        if (!currentUser) {
-
-            return;
-
-        }
 
 
         const name =
@@ -938,29 +1023,19 @@ accountForm.addEventListener(
             )
         ) {
 
-            accountMessage.textContent =
-                "Enter valid account details.";
-
             return;
 
         }
 
 
-        saveAccountButton.disabled =
-            true;
-
-
-        accountMessage.textContent =
-            "Saving account...";
+        let queryResult;
 
 
         if (
             editingAccountId === null
         ) {
 
-            const {
-                error
-            } =
+            queryResult =
                 await supabase
                     .from("accounts")
                     .insert({
@@ -968,8 +1043,7 @@ accountForm.addEventListener(
                         user_id:
                             currentUser.id,
 
-                        name:
-                            name,
+                        name,
 
                         account_type:
                             accountType,
@@ -979,32 +1053,14 @@ accountForm.addEventListener(
 
                     });
 
-
-            if (error) {
-
-                saveAccountButton.disabled =
-                    false;
-
-
-                accountMessage.textContent =
-                    error.message;
-
-
-                return;
-
-            }
-
         } else {
 
-            const {
-                error
-            } =
+            queryResult =
                 await supabase
                     .from("accounts")
                     .update({
 
-                        name:
-                            name,
+                        name,
 
                         account_type:
                             accountType,
@@ -1018,59 +1074,40 @@ accountForm.addEventListener(
                         editingAccountId
                     );
 
-
-            if (error) {
-
-                saveAccountButton.disabled =
-                    false;
+        }
 
 
-                accountMessage.textContent =
-                    error.message;
+        if (queryResult.error) {
 
+            accountMessage.textContent =
+                queryResult.error.message;
 
-                return;
-
-            }
+            return;
 
         }
 
 
-        saveAccountButton.disabled =
-            false;
-
-
         resetAccountForm();
 
-
         await loadAccounts();
+
+        refreshTransactionDropdowns();
 
     }
 );
 
 
-// ====================================
-// EDIT ACCOUNT
-// ====================================
-
 function editAccount(id) {
 
     const account =
         accounts.find(
-            function (account) {
-
-                return (
-                    account.id === id
-                );
-
-            }
+            item =>
+                item.id === id
         );
 
 
     if (!account) {
-
         return;
-
     }
 
 
@@ -1099,7 +1136,7 @@ function editAccount(id) {
 
 
     editingAccountId =
-        account.id;
+        id;
 
 
     accountFormTitle.textContent =
@@ -1113,45 +1150,21 @@ function editAccount(id) {
     cancelAccountEditButton.style.display =
         "block";
 
-
-    accountForm.scrollIntoView({
-
-        behavior: "smooth",
-
-        block: "start"
-
-    });
-
 }
 
-
-// ====================================
-// ACCOUNT STATUS
-// ====================================
 
 async function toggleAccountStatus(id) {
 
     const account =
         accounts.find(
-            function (account) {
-
-                return (
-                    account.id === id
-                );
-
-            }
+            item =>
+                item.id === id
         );
 
 
     if (!account) {
-
         return;
-
     }
-
-
-    const newStatus =
-        !account.is_active;
 
 
     const {
@@ -1162,12 +1175,12 @@ async function toggleAccountStatus(id) {
             .update({
 
                 is_active:
-                    newStatus
+                    !account.is_active
 
             })
             .eq(
                 "id",
-                account.id
+                id
             );
 
 
@@ -1184,12 +1197,10 @@ async function toggleAccountStatus(id) {
 
     await loadAccounts();
 
+    refreshTransactionDropdowns();
+
 }
 
-
-// ====================================
-// RESET ACCOUNT FORM
-// ====================================
 
 function resetAccountForm() {
 
@@ -1219,134 +1230,1397 @@ function resetAccountForm() {
     cancelAccountEditButton.style.display =
         "none";
 
+}
 
-    accountMessage.textContent =
+
+cancelAccountEditButton
+    .addEventListener(
+        "click",
+        resetAccountForm
+    );
+
+
+// ====================================
+// CATEGORIES
+// ====================================
+
+async function loadCategories() {
+
+    if (!currentUser) {
+        return;
+    }
+
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("categories")
+            .select("*")
+            .order(
+                "name",
+                {
+                    ascending: true
+                }
+            );
+
+
+    if (error) {
+
+        categoryMessage.textContent =
+            error.message;
+
+        return;
+
+    }
+
+
+    categories =
+        data || [];
+
+
+    categoryMessage.textContent =
         "";
+
+
+    renderCategories();
 
 }
 
 
-cancelAccountEditButton.addEventListener(
-    "click",
+function renderCategories() {
+
+    categoryList.innerHTML =
+        "";
+
+
+    if (!categories.length) {
+
+        renderEmptyState(
+            categoryList,
+            "No categories yet."
+        );
+
+        return;
+
+    }
+
+
+    categories.forEach(
+        function (category) {
+
+            const card =
+                createSimpleManagementCard({
+
+                    name:
+                        category.name,
+
+                    meta:
+                        formatCategoryType(
+                            category.type
+                        ),
+
+                    active:
+                        category.is_active,
+
+                    onEdit:
+                        function () {
+
+                            editCategory(
+                                category.id
+                            );
+
+                        },
+
+                    onToggle:
+                        function () {
+
+                            toggleCategoryStatus(
+                                category.id
+                            );
+
+                        }
+
+                });
+
+
+            categoryList.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+categoryForm.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        const name =
+            document
+                .getElementById(
+                    "category-name"
+                )
+                .value
+                .trim();
+
+
+        const type =
+            document
+                .getElementById(
+                    "category-type"
+                )
+                .value;
+
+
+        if (!name) {
+            return;
+        }
+
+
+        let result;
+
+
+        if (
+            editingCategoryId === null
+        ) {
+
+            result =
+                await supabase
+                    .from("categories")
+                    .insert({
+
+                        user_id:
+                            currentUser.id,
+
+                        name,
+
+                        type
+
+                    });
+
+        } else {
+
+            result =
+                await supabase
+                    .from("categories")
+                    .update({
+
+                        name,
+
+                        type
+
+                    })
+                    .eq(
+                        "id",
+                        editingCategoryId
+                    );
+
+        }
+
+
+        if (result.error) {
+
+            categoryMessage.textContent =
+                result.error.message;
+
+            return;
+
+        }
+
+
+        resetCategoryForm();
+
+        await loadCategories();
+
+        refreshTransactionDropdowns();
+
+    }
+);
+
+
+function editCategory(id) {
+
+    const category =
+        categories.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!category) {
+        return;
+    }
+
+
+    document
+        .getElementById(
+            "category-name"
+        )
+        .value =
+        category.name;
+
+
+    document
+        .getElementById(
+            "category-type"
+        )
+        .value =
+        category.type;
+
+
+    editingCategoryId =
+        id;
+
+
+    categoryFormTitle.textContent =
+        "Edit Category";
+
+
+    saveCategoryButton.textContent =
+        "Save Changes";
+
+
+    cancelCategoryEditButton.style.display =
+        "block";
+
+}
+
+
+async function toggleCategoryStatus(id) {
+
+    const category =
+        categories.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!category) {
+        return;
+    }
+
+
+    const {
+        error
+    } =
+        await supabase
+            .from("categories")
+            .update({
+
+                is_active:
+                    !category.is_active
+
+            })
+            .eq(
+                "id",
+                id
+            );
+
+
+    if (error) {
+
+        alert(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    await loadCategories();
+
+    refreshTransactionDropdowns();
+
+}
+
+
+function resetCategoryForm() {
+
+    editingCategoryId =
+        null;
+
+
+    categoryForm.reset();
+
+
+    categoryFormTitle.textContent =
+        "Add Category";
+
+
+    saveCategoryButton.textContent =
+        "+ Add Category";
+
+
+    cancelCategoryEditButton.style.display =
+        "none";
+
+}
+
+
+cancelCategoryEditButton
+    .addEventListener(
+        "click",
+        resetCategoryForm
+    );
+
+
+// ====================================
+// INCOME SOURCES
+// ====================================
+
+async function loadIncomeSources() {
+
+    if (!currentUser) {
+        return;
+    }
+
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("income_sources")
+            .select("*")
+            .order(
+                "name",
+                {
+                    ascending: true
+                }
+            );
+
+
+    if (error) {
+
+        incomeSourceMessage.textContent =
+            error.message;
+
+        return;
+
+    }
+
+
+    incomeSources =
+        data || [];
+
+
+    incomeSourceMessage.textContent =
+        "";
+
+
+    renderIncomeSources();
+
+}
+
+
+function renderIncomeSources() {
+
+    incomeSourceList.innerHTML =
+        "";
+
+
+    if (!incomeSources.length) {
+
+        renderEmptyState(
+
+            incomeSourceList,
+
+            "No income sources yet."
+
+        );
+
+        return;
+
+    }
+
+
+    incomeSources.forEach(
+        function (source) {
+
+            const card =
+                createSimpleManagementCard({
+
+                    name:
+                        source.name,
+
+                    meta:
+                        "Income Source",
+
+                    active:
+                        source.is_active,
+
+                    onEdit:
+                        function () {
+
+                            editIncomeSource(
+                                source.id
+                            );
+
+                        },
+
+                    onToggle:
+                        function () {
+
+                            toggleIncomeSourceStatus(
+                                source.id
+                            );
+
+                        }
+
+                });
+
+
+            incomeSourceList.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+incomeSourceForm.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        const name =
+            document
+                .getElementById(
+                    "income-source-name"
+                )
+                .value
+                .trim();
+
+
+        if (!name) {
+            return;
+        }
+
+
+        let result;
+
+
+        if (
+            editingIncomeSourceId === null
+        ) {
+
+            result =
+                await supabase
+                    .from("income_sources")
+                    .insert({
+
+                        user_id:
+                            currentUser.id,
+
+                        name
+
+                    });
+
+        } else {
+
+            result =
+                await supabase
+                    .from("income_sources")
+                    .update({
+
+                        name
+
+                    })
+                    .eq(
+                        "id",
+                        editingIncomeSourceId
+                    );
+
+        }
+
+
+        if (result.error) {
+
+            incomeSourceMessage.textContent =
+                result.error.message;
+
+            return;
+
+        }
+
+
+        resetIncomeSourceForm();
+
+        await loadIncomeSources();
+
+        refreshTransactionDropdowns();
+
+    }
+);
+
+
+function editIncomeSource(id) {
+
+    const source =
+        incomeSources.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!source) {
+        return;
+    }
+
+
+    document
+        .getElementById(
+            "income-source-name"
+        )
+        .value =
+        source.name;
+
+
+    editingIncomeSourceId =
+        id;
+
+
+    incomeSourceFormTitle.textContent =
+        "Edit Income Source";
+
+
+    saveIncomeSourceButton.textContent =
+        "Save Changes";
+
+
+    cancelIncomeSourceEditButton.style.display =
+        "block";
+
+}
+
+
+async function toggleIncomeSourceStatus(id) {
+
+    const source =
+        incomeSources.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!source) {
+        return;
+    }
+
+
+    const {
+        error
+    } =
+        await supabase
+            .from("income_sources")
+            .update({
+
+                is_active:
+                    !source.is_active
+
+            })
+            .eq(
+                "id",
+                id
+            );
+
+
+    if (error) {
+
+        alert(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    await loadIncomeSources();
+
+    refreshTransactionDropdowns();
+
+}
+
+
+function resetIncomeSourceForm() {
+
+    editingIncomeSourceId =
+        null;
+
+
+    incomeSourceForm.reset();
+
+
+    incomeSourceFormTitle.textContent =
+        "Add Income Source";
+
+
+    saveIncomeSourceButton.textContent =
+        "+ Add Income Source";
+
+
+    cancelIncomeSourceEditButton.style.display =
+        "none";
+
+}
+
+
+cancelIncomeSourceEditButton
+    .addEventListener(
+        "click",
+        resetIncomeSourceForm
+    );
+
+
+// ====================================
+// STARTER DATA
+// ====================================
+
+async function seedStarterData() {
+
+    let changed =
+        false;
+
+
+    if (
+        categories.length === 0
+    ) {
+
+        const rows =
+            starterCategories.map(
+                item => ({
+
+                    user_id:
+                        currentUser.id,
+
+                    name:
+                        item.name,
+
+                    type:
+                        item.type
+
+                })
+            );
+
+
+        const {
+            error
+        } =
+            await supabase
+                .from("categories")
+                .insert(rows);
+
+
+        if (!error) {
+
+            changed =
+                true;
+
+        }
+
+    }
+
+
+    if (
+        incomeSources.length === 0
+    ) {
+
+        const rows =
+            starterIncomeSources.map(
+                name => ({
+
+                    user_id:
+                        currentUser.id,
+
+                    name
+
+                })
+            );
+
+
+        const {
+            error
+        } =
+            await supabase
+                .from("income_sources")
+                .insert(rows);
+
+
+        if (!error) {
+
+            changed =
+                true;
+
+        }
+
+    }
+
+
+    if (changed) {
+
+        await loadCategories();
+
+        await loadIncomeSources();
+
+    }
+
+}
+
+
+// ====================================
+// TRANSACTION DROPDOWNS
+// ====================================
+
+function refreshTransactionDropdowns(
+    transaction = null
+) {
+
+    populateAccountSelect(
+        transaction?.accountId || ""
+    );
+
+
+    populateCategorySelect(
+        transaction?.categoryId || ""
+    );
+
+
+    updateIncomeSourceVisibility(
+        transaction?.incomeSourceId || ""
+    );
+
+
+    customCategoryGroup.style.display =
+        "none";
+
+
+    customIncomeSourceGroup.style.display =
+        "none";
+
+}
+
+
+function populateAccountSelect(
+    selectedValue = ""
+) {
+
+    transactionAccountSelect.innerHTML =
+        '<option value="">Select account</option>';
+
+
+    const activeAccounts =
+        accounts.filter(
+            account =>
+                account.is_active
+        );
+
+
+    activeAccounts.forEach(
+        function (account) {
+
+            addSelectOption(
+
+                transactionAccountSelect,
+
+                account.id,
+
+                account.name
+
+            );
+
+        }
+    );
+
+
+    transactionAccountSelect.value =
+        selectedValue;
+
+}
+
+
+function populateCategorySelect(
+    selectedValue = ""
+) {
+
+    const transactionType =
+        transactionTypeSelect.value;
+
+
+    transactionCategorySelect.innerHTML =
+        '<option value="">Select category</option>';
+
+
+    categories
+        .filter(
+            category =>
+
+                category.is_active &&
+
+                (
+                    category.type ===
+                        transactionType ||
+
+                    category.type ===
+                        "both"
+                )
+        )
+        .forEach(
+            function (category) {
+
+                addSelectOption(
+
+                    transactionCategorySelect,
+
+                    category.id,
+
+                    category.name
+
+                );
+
+            }
+        );
+
+
+    addSelectOption(
+
+        transactionCategorySelect,
+
+        "__other__",
+
+        "Other / Create New"
+
+    );
+
+
+    transactionCategorySelect.value =
+        selectedValue;
+
+}
+
+
+function updateIncomeSourceVisibility(
+    selectedValue = ""
+) {
+
+    const isIncome =
+        transactionTypeSelect.value ===
+        "income";
+
+
+    if (!isIncome) {
+
+        incomeSourceGroup.style.display =
+            "none";
+
+
+        customIncomeSourceGroup.style.display =
+            "none";
+
+
+        transactionIncomeSourceSelect.innerHTML =
+            "";
+
+
+        return;
+
+    }
+
+
+    incomeSourceGroup.style.display =
+        "block";
+
+
+    transactionIncomeSourceSelect.innerHTML =
+        '<option value="">Select income source</option>';
+
+
+    incomeSources
+        .filter(
+            source =>
+                source.is_active
+        )
+        .forEach(
+            function (source) {
+
+                addSelectOption(
+
+                    transactionIncomeSourceSelect,
+
+                    source.id,
+
+                    source.name
+
+                );
+
+            }
+        );
+
+
+    addSelectOption(
+
+        transactionIncomeSourceSelect,
+
+        "__other__",
+
+        "Other / Create New"
+
+    );
+
+
+    transactionIncomeSourceSelect.value =
+        selectedValue;
+
+}
+
+
+transactionTypeSelect.addEventListener(
+    "change",
     function () {
 
-        resetAccountForm();
+        populateCategorySelect();
+
+        updateIncomeSourceVisibility();
+
+        customCategoryGroup.style.display =
+            "none";
+
+    }
+);
+
+
+transactionCategorySelect
+    .addEventListener(
+        "change",
+        function () {
+
+            customCategoryGroup.style.display =
+
+                transactionCategorySelect.value ===
+                "__other__"
+
+                    ? "block"
+
+                    : "none";
+
+        }
+    );
+
+
+transactionIncomeSourceSelect
+    .addEventListener(
+        "change",
+        function () {
+
+            customIncomeSourceGroup.style.display =
+
+                transactionIncomeSourceSelect.value ===
+                "__other__"
+
+                    ? "block"
+
+                    : "none";
+
+        }
+    );
+
+
+// ====================================
+// TRANSACTION SUBMIT
+// Still LocalStorage
+// ====================================
+
+transactionForm.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        const description =
+            document
+                .getElementById(
+                    "description"
+                )
+                .value
+                .trim();
+
+
+        const accountId =
+            transactionAccountSelect.value;
+
+
+        const type =
+            transactionTypeSelect.value;
+
+
+        let categoryId =
+            transactionCategorySelect.value;
+
+
+        let incomeSourceId =
+            null;
+
+
+        const amount =
+            parseFloat(
+                document
+                    .getElementById(
+                        "amount"
+                    )
+                    .value
+            );
+
+
+        const date =
+            document
+                .getElementById(
+                    "date"
+                )
+                .value;
+
+
+        const notes =
+            document
+                .getElementById(
+                    "notes"
+                )
+                .value
+                .trim();
+
+
+        if (
+            !description ||
+            !accountId ||
+            !categoryId ||
+            !date ||
+            Number.isNaN(amount) ||
+            amount <= 0
+        ) {
+
+            alert(
+                "Please complete all required transaction fields."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            categoryId ===
+            "__other__"
+        ) {
+
+            const newCategory =
+                await createCategoryFromTransaction(
+                    type
+                );
+
+
+            if (!newCategory) {
+                return;
+            }
+
+
+            categoryId =
+                newCategory.id;
+
+        }
+
+
+        if (
+            type === "income"
+        ) {
+
+            incomeSourceId =
+                transactionIncomeSourceSelect.value;
+
+
+            if (!incomeSourceId) {
+
+                alert(
+                    "Please select an income source."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                incomeSourceId ===
+                "__other__"
+            ) {
+
+                const newSource =
+                    await createIncomeSourceFromTransaction();
+
+
+                if (!newSource) {
+                    return;
+                }
+
+
+                incomeSourceId =
+                    newSource.id;
+
+            }
+
+        }
+
+
+        const transactionData = {
+
+            id:
+                editingTransactionId ||
+                generateId(),
+
+            description,
+
+            accountId,
+
+            categoryId,
+
+            incomeSourceId,
+
+            amount,
+
+            type,
+
+            date,
+
+            notes
+
+        };
+
+
+        if (
+            editingTransactionId === null
+        ) {
+
+            transactions.push(
+                transactionData
+            );
+
+        } else {
+
+            const index =
+                transactions.findIndex(
+
+                    transaction =>
+                        transaction.id ===
+                        editingTransactionId
+
+                );
+
+
+            if (index >= 0) {
+
+                transactions[index] =
+                    transactionData;
+
+            }
+
+        }
+
+
+        saveTransactions();
+
+        updateDashboard();
+
+        renderTransactions();
+
+        resetTransactionForm();
 
     }
 );
 
 
 // ====================================
-// FORMAT ACCOUNT TYPE
+// CUSTOM CATEGORY FROM TRANSACTION
 // ====================================
 
-function formatAccountType(type) {
+async function createCategoryFromTransaction(
+    type
+) {
 
-    const labels = {
-
-        bank:
-            "Bank",
-
-        cash:
-            "Cash",
-
-        e_wallet:
-            "E-Wallet",
-
-        savings:
-            "Savings",
-
-        other:
-            "Other"
-
-    };
+    const name =
+        customCategoryInput
+            .value
+            .trim();
 
 
-    return (
-        labels[type] ||
-        type
+    if (!name) {
+
+        alert(
+            "Enter a new category name."
+        );
+
+        return null;
+
+    }
+
+
+    const existing =
+        categories.find(
+            category =>
+
+                category.name
+                    .toLowerCase() ===
+                name.toLowerCase() &&
+
+                (
+                    category.type ===
+                    type ||
+
+                    category.type ===
+                    "both"
+                )
+        );
+
+
+    if (existing) {
+
+        return existing;
+
+    }
+
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("categories")
+            .insert({
+
+                user_id:
+                    currentUser.id,
+
+                name,
+
+                type
+
+            })
+            .select()
+            .single();
+
+
+    if (error) {
+
+        alert(
+            error.message
+        );
+
+        return null;
+
+    }
+
+
+    categories.push(
+        data
     );
+
+
+    renderCategories();
+
+
+    return data;
 
 }
 
 
 // ====================================
-// DASHBOARD
+// CUSTOM INCOME SOURCE
 // ====================================
 
-function updateDashboard() {
+async function createIncomeSourceFromTransaction() {
 
-    let totalIncome = 0;
-
-    let totalExpenses = 0;
-
-
-    for (
-        const transaction
-        of transactions
-    ) {
-
-        if (
-            transaction.type ===
-            "income"
-        ) {
-
-            totalIncome +=
-                Number(
-                    transaction.amount
-                );
-
-        }
+    const name =
+        customIncomeSourceInput
+            .value
+            .trim();
 
 
-        if (
-            transaction.type ===
-            "expense"
-        ) {
+    if (!name) {
 
-            totalExpenses +=
-                Number(
-                    transaction.amount
-                );
+        alert(
+            "Enter a new income source name."
+        );
 
-        }
+        return null;
 
     }
 
 
-    const balance =
-        totalIncome -
-        totalExpenses;
+    const existing =
+        incomeSources.find(
+            source =>
 
-
-    document
-        .getElementById(
-            "balance"
-        )
-        .textContent =
-        formatMoney(
-            balance
+                source.name
+                    .toLowerCase() ===
+                name.toLowerCase()
         );
 
 
-    document
-        .getElementById(
-            "income"
-        )
-        .textContent =
-        formatMoney(
-            totalIncome
-        );
+    if (existing) {
+
+        return existing;
+
+    }
 
 
-    document
-        .getElementById(
-            "expenses"
-        )
-        .textContent =
-        formatMoney(
-            totalExpenses
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("income_sources")
+            .insert({
+
+                user_id:
+                    currentUser.id,
+
+                name
+
+            })
+            .select()
+            .single();
+
+
+    if (error) {
+
+        alert(
+            error.message
         );
+
+        return null;
+
+    }
+
+
+    incomeSources.push(
+        data
+    );
+
+
+    renderIncomeSources();
+
+
+    return data;
 
 }
 
@@ -1367,28 +2641,15 @@ function renderTransactions() {
         "";
 
 
-    if (
-        transactions.length === 0
-    ) {
+    if (!transactions.length) {
 
-        const emptyState =
-            document.createElement(
-                "div"
-            );
+        renderEmptyState(
 
+            transactionList,
 
-        emptyState.className =
-            "empty-state";
+            "No transactions yet."
 
-
-        emptyState.textContent =
-            "No transactions yet.";
-
-
-        transactionList.appendChild(
-            emptyState
         );
-
 
         return;
 
@@ -1398,163 +2659,214 @@ function renderTransactions() {
     transactions.forEach(
         function (transaction) {
 
-            const transactionElement =
+            const row =
                 document.createElement(
                     "div"
                 );
 
 
-            transactionElement.className =
+            row.className =
                 "transaction";
 
 
-            const transactionInfo =
+            const left =
                 document.createElement(
                     "div"
                 );
 
 
-            transactionInfo.className =
+            left.className =
                 "transaction-info";
 
 
-            const transactionName =
+            const name =
                 document.createElement(
                     "p"
                 );
 
 
-            transactionName.className =
+            name.className =
                 "transaction-name";
 
 
-            transactionName.textContent =
+            name.textContent =
                 transaction.description;
 
 
-            const transactionCategory =
+            const category =
                 document.createElement(
                     "p"
                 );
 
 
-            transactionCategory.className =
+            category.className =
                 "transaction-category";
 
 
-            transactionCategory.textContent =
-                transaction.category;
+            const categoryName =
+                getCategoryName(
+                    transaction.categoryId
+                ) ||
+
+                transaction.category ||
+
+                "Uncategorized";
 
 
-            const transactionDate =
+            const accountName =
+                getAccountName(
+                    transaction.accountId
+                ) ||
+
+                "No account";
+
+
+            category.textContent =
+                `${categoryName} • ${accountName}`;
+
+
+            const date =
                 document.createElement(
                     "p"
                 );
 
 
-            transactionDate.className =
+            date.className =
                 "transaction-date";
 
 
-            transactionDate.textContent =
+            date.textContent =
                 formatDate(
                     transaction.date
                 );
 
 
-            transactionInfo.appendChild(
-                transactionName
-            );
+            left.appendChild(name);
+
+            left.appendChild(category);
+
+            left.appendChild(date);
 
 
-            transactionInfo.appendChild(
-                transactionCategory
-            );
+            if (
+                transaction.type ===
+                "income"
+            ) {
+
+                const sourceName =
+                    getIncomeSourceName(
+                        transaction.incomeSourceId
+                    );
 
 
-            transactionInfo.appendChild(
-                transactionDate
-            );
+                if (sourceName) {
+
+                    const source =
+                        document.createElement(
+                            "p"
+                        );
 
 
-            const transactionActions =
+                    source.className =
+                        "transaction-date";
+
+
+                    source.textContent =
+                        `Source: ${sourceName}`;
+
+
+                    left.appendChild(
+                        source
+                    );
+
+                }
+
+            }
+
+
+            if (transaction.notes) {
+
+                const note =
+                    document.createElement(
+                        "p"
+                    );
+
+
+                note.className =
+                    "transaction-note";
+
+
+                note.textContent =
+                    transaction.notes;
+
+
+                left.appendChild(
+                    note
+                );
+
+            }
+
+
+            const right =
                 document.createElement(
                     "div"
                 );
 
 
-            transactionActions.className =
+            right.className =
                 "transaction-actions";
 
 
-            const transactionAmount =
+            const amount =
                 document.createElement(
                     "p"
                 );
 
 
-            transactionAmount.className =
+            amount.className =
                 `transaction-amount ${transaction.type}`;
 
 
-            const sign =
-                transaction.type ===
-                "income"
-                    ? "+"
-                    : "-";
+            amount.textContent =
 
+                (
+                    transaction.type ===
+                    "income"
 
-            transactionAmount.textContent =
-                sign +
+                        ? "+"
+
+                        : "-"
+                )
+
+                +
+
                 formatMoney(
                     transaction.amount
                 );
 
 
-            const actionButtons =
+            const buttons =
                 document.createElement(
                     "div"
                 );
 
 
-            actionButtons.className =
+            buttons.className =
                 "action-buttons";
 
 
             const editButton =
-                document.createElement(
-                    "button"
+                createTextButton(
+                    "Edit",
+                    "edit-button"
                 );
-
-
-            editButton.type =
-                "button";
-
-
-            editButton.className =
-                "edit-button";
-
-
-            editButton.textContent =
-                "Edit";
 
 
             const deleteButton =
-                document.createElement(
-                    "button"
+                createTextButton(
+                    "Delete",
+                    "delete-button"
                 );
-
-
-            deleteButton.type =
-                "button";
-
-
-            deleteButton.className =
-                "delete-button";
-
-
-            deleteButton.textContent =
-                "Delete";
 
 
             editButton.addEventListener(
@@ -1581,38 +2893,38 @@ function renderTransactions() {
             );
 
 
-            actionButtons.appendChild(
+            buttons.appendChild(
                 editButton
             );
 
 
-            actionButtons.appendChild(
+            buttons.appendChild(
                 deleteButton
             );
 
 
-            transactionActions.appendChild(
-                transactionAmount
+            right.appendChild(
+                amount
             );
 
 
-            transactionActions.appendChild(
-                actionButtons
+            right.appendChild(
+                buttons
             );
 
 
-            transactionElement.appendChild(
-                transactionInfo
+            row.appendChild(
+                left
             );
 
 
-            transactionElement.appendChild(
-                transactionActions
+            row.appendChild(
+                right
             );
 
 
             transactionList.appendChild(
-                transactionElement
+                row
             );
 
         }
@@ -1622,7 +2934,257 @@ function renderTransactions() {
 
 
 // ====================================
-// SAVE LOCAL TRANSACTIONS
+// EDIT TRANSACTION
+// ====================================
+
+function editTransaction(id) {
+
+    const transaction =
+        transactions.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!transaction) {
+        return;
+    }
+
+
+    document
+        .getElementById(
+            "description"
+        )
+        .value =
+        transaction.description;
+
+
+    document
+        .getElementById(
+            "amount"
+        )
+        .value =
+        transaction.amount;
+
+
+    document
+        .getElementById(
+            "date"
+        )
+        .value =
+        transaction.date;
+
+
+    document
+        .getElementById(
+            "notes"
+        )
+        .value =
+        transaction.notes || "";
+
+
+    transactionTypeSelect.value =
+        transaction.type;
+
+
+    refreshTransactionDropdowns(
+        transaction
+    );
+
+
+    editingTransactionId =
+        id;
+
+
+    formTitle.textContent =
+        "Edit Transaction";
+
+
+    submitButton.textContent =
+        "Save Changes";
+
+
+    cancelEditButton.style.display =
+        "block";
+
+
+    transactionForm.scrollIntoView({
+
+        behavior:
+            "smooth"
+
+    });
+
+}
+
+
+// ====================================
+// DELETE TRANSACTION
+// ====================================
+
+function deleteTransaction(id) {
+
+    const transaction =
+        transactions.find(
+            item =>
+                item.id === id
+        );
+
+
+    if (!transaction) {
+        return;
+    }
+
+
+    if (
+        !confirm(
+            `Delete "${transaction.description}"?`
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    transactions =
+        transactions.filter(
+            item =>
+                item.id !== id
+        );
+
+
+    saveTransactions();
+
+    updateDashboard();
+
+    renderTransactions();
+
+    resetTransactionForm();
+
+}
+
+
+// ====================================
+// RESET TRANSACTION
+// ====================================
+
+function resetTransactionForm() {
+
+    editingTransactionId =
+        null;
+
+
+    transactionForm.reset();
+
+
+    transactionTypeSelect.value =
+        "expense";
+
+
+    dateInput.value =
+        getTodayDate();
+
+
+    formTitle.textContent =
+        "Add Transaction";
+
+
+    submitButton.textContent =
+        "+ Add Transaction";
+
+
+    cancelEditButton.style.display =
+        "none";
+
+
+    customCategoryGroup.style.display =
+        "none";
+
+
+    customIncomeSourceGroup.style.display =
+        "none";
+
+
+    refreshTransactionDropdowns();
+
+}
+
+
+cancelEditButton.addEventListener(
+    "click",
+    resetTransactionForm
+);
+
+
+// ====================================
+// DASHBOARD
+// ====================================
+
+function updateDashboard() {
+
+    let income = 0;
+
+    let expenses = 0;
+
+
+    transactions.forEach(
+        function (transaction) {
+
+            if (
+                transaction.type ===
+                "income"
+            ) {
+
+                income +=
+                    Number(
+                        transaction.amount
+                    );
+
+            } else {
+
+                expenses +=
+                    Number(
+                        transaction.amount
+                    );
+
+            }
+
+        }
+    );
+
+
+    document
+        .getElementById(
+            "income"
+        )
+        .textContent =
+        formatMoney(income);
+
+
+    document
+        .getElementById(
+            "expenses"
+        )
+        .textContent =
+        formatMoney(expenses);
+
+
+    document
+        .getElementById(
+            "balance"
+        )
+        .textContent =
+        formatMoney(
+            income -
+            expenses
+        );
+
+}
+
+
+// ====================================
+// LOCAL STORAGE
 // ====================================
 
 function saveTransactions() {
@@ -1641,376 +3203,315 @@ function saveTransactions() {
 
 
 // ====================================
-// DELETE LOCAL TRANSACTION
+// HELPERS
 // ====================================
 
-function deleteTransaction(id) {
+function createSimpleManagementCard({
+    name,
+    meta,
+    active,
+    onEdit,
+    onToggle
+}) {
 
-    const transaction =
-        transactions.find(
-            function (transaction) {
-
-                return (
-                    transaction.id === id
-                );
-
-            }
+    const card =
+        document.createElement(
+            "div"
         );
 
 
-    if (!transaction) {
+    card.className =
+        "management-card";
 
-        return;
+
+    if (!active) {
+
+        card.classList.add(
+            "inactive"
+        );
 
     }
 
 
-    const confirmed =
-        confirm(
-            `Delete "${transaction.description}"?`
+    const left =
+        document.createElement(
+            "div"
         );
 
 
-    if (!confirmed) {
+    const title =
+        document.createElement(
+            "p"
+        );
 
-        return;
+
+    title.className =
+        "management-name";
+
+
+    title.textContent =
+        name;
+
+
+    const subtitle =
+        document.createElement(
+            "p"
+        );
+
+
+    subtitle.className =
+        "management-meta";
+
+
+    subtitle.textContent =
+        meta;
+
+
+    if (!active) {
+
+        subtitle.textContent +=
+            " • Inactive";
 
     }
 
 
-    transactions =
-        transactions.filter(
-            function (transaction) {
+    left.appendChild(title);
 
-                return (
-                    transaction.id !== id
-                );
+    left.appendChild(subtitle);
 
-            }
+
+    const actions =
+        document.createElement(
+            "div"
         );
 
 
-    resetTransactionForm();
+    actions.appendChild(
+        createManagementButtons(
+            onEdit,
+            onToggle,
+            active
+        )
+    );
 
-    saveTransactions();
 
-    updateDashboard();
+    card.appendChild(left);
 
-    renderTransactions();
+    card.appendChild(actions);
+
+
+    return card;
 
 }
 
 
-// ====================================
-// EDIT LOCAL TRANSACTION
-// ====================================
+function createManagementButtons(
+    onEdit,
+    onToggle,
+    active
+) {
 
-function editTransaction(id) {
-
-    const transaction =
-        transactions.find(
-            function (transaction) {
-
-                return (
-                    transaction.id === id
-                );
-
-            }
+    const buttons =
+        document.createElement(
+            "div"
         );
 
 
-    if (!transaction) {
-
-        return;
-
-    }
+    buttons.className =
+        "management-buttons";
 
 
-    document
-        .getElementById(
-            "description"
-        )
-        .value =
-        transaction.description;
+    const edit =
+        createTextButton(
+            "Edit",
+            "edit-button"
+        );
 
 
-    document
-        .getElementById(
-            "category"
-        )
-        .value =
-        transaction.category;
+    edit.addEventListener(
+        "click",
+        onEdit
+    );
 
 
-    document
-        .getElementById(
-            "amount"
-        )
-        .value =
-        transaction.amount;
+    const status =
+        createTextButton(
+
+            active
+                ? "Deactivate"
+                : "Activate",
+
+            "status-button"
+
+        );
 
 
-    document
-        .getElementById(
-            "date"
-        )
-        .value =
-        transaction.date || "";
+    status.addEventListener(
+        "click",
+        onToggle
+    );
 
 
-    document
-        .getElementById(
-            "type"
-        )
-        .value =
-        transaction.type;
+    buttons.appendChild(edit);
+
+    buttons.appendChild(status);
 
 
-    editingId =
-        transaction.id;
-
-
-    formTitle.textContent =
-        "Edit Transaction";
-
-
-    submitButton.textContent =
-        "Save Changes";
-
-
-    cancelEditButton.style.display =
-        "block";
-
-
-    transactionForm.scrollIntoView({
-
-        behavior: "smooth",
-
-        block: "start"
-
-    });
+    return buttons;
 
 }
 
 
-// ====================================
-// RESET TRANSACTION FORM
-// ====================================
+function createTextButton(
+    text,
+    className
+) {
 
-function resetTransactionForm() {
-
-    editingId =
-        null;
-
-
-    transactionForm.reset();
+    const button =
+        document.createElement(
+            "button"
+        );
 
 
-    formTitle.textContent =
-        "Add Transaction";
+    button.type =
+        "button";
 
 
-    submitButton.textContent =
-        "+ Add Transaction";
+    button.className =
+        className;
 
 
-    cancelEditButton.style.display =
-        "none";
+    button.textContent =
+        text;
 
 
-    dateInput.value =
-        getTodayDate();
+    return button;
 
 }
 
 
-cancelEditButton.addEventListener(
-    "click",
-    function () {
+function renderEmptyState(
+    element,
+    text
+) {
 
-        resetTransactionForm();
-
-    }
-);
-
-
-// ====================================
-// ADD / UPDATE LOCAL TRANSACTION
-// ====================================
-
-transactionForm.addEventListener(
-    "submit",
-    function (event) {
-
-        event.preventDefault();
+    const empty =
+        document.createElement(
+            "div"
+        );
 
 
-        const description =
-            document
-                .getElementById(
-                    "description"
-                )
-                .value
-                .trim();
+    empty.className =
+        "empty-state";
 
 
-        const category =
-            document
-                .getElementById(
-                    "category"
-                )
-                .value
-                .trim();
+    empty.textContent =
+        text;
 
 
-        const amount =
-            parseFloat(
-                document
-                    .getElementById(
-                        "amount"
-                    )
-                    .value
-            );
+    element.appendChild(
+        empty
+    );
+
+}
 
 
-        const date =
-            document
-                .getElementById(
-                    "date"
-                )
-                .value;
+function addSelectOption(
+    select,
+    value,
+    label
+) {
+
+    const option =
+        document.createElement(
+            "option"
+        );
 
 
-        const type =
-            document
-                .getElementById(
-                    "type"
-                )
-                .value;
+    option.value =
+        value;
 
 
-        if (
-            !description ||
-            !category ||
-            !date ||
-            Number.isNaN(amount) ||
-            amount <= 0
-        ) {
-
-            alert(
-                "Please enter valid transaction details."
-            );
-
-            return;
-
-        }
+    option.textContent =
+        label;
 
 
-        if (
-            editingId === null
-        ) {
+    select.appendChild(
+        option
+    );
 
-            const newTransaction = {
-
-                id:
-                    generateId(),
-
-                description:
-                    description,
-
-                category:
-                    category,
-
-                amount:
-                    amount,
-
-                date:
-                    date,
-
-                type:
-                    type
-
-            };
+}
 
 
-            transactions.push(
-                newTransaction
-            );
+function getAccountName(id) {
 
-        } else {
+    return accounts.find(
+        item =>
+            item.id === id
+    )?.name;
 
-            const transactionIndex =
-                transactions.findIndex(
-                    function (transaction) {
-
-                        return (
-                            transaction.id ===
-                            editingId
-                        );
-
-                    }
-                );
+}
 
 
-            if (
-                transactionIndex === -1
-            ) {
+function getCategoryName(id) {
 
-                alert(
-                    "Transaction could not be found."
-                );
+    return categories.find(
+        item =>
+            item.id === id
+    )?.name;
 
-
-                resetTransactionForm();
+}
 
 
-                return;
+function getIncomeSourceName(id) {
 
-            }
+    return incomeSources.find(
+        item =>
+            item.id === id
+    )?.name;
 
-
-            transactions[
-                transactionIndex
-            ] = {
-
-                id:
-                    editingId,
-
-                description:
-                    description,
-
-                category:
-                    category,
-
-                amount:
-                    amount,
-
-                date:
-                    date,
-
-                type:
-                    type
-
-            };
-
-        }
+}
 
 
-        saveTransactions();
+function formatAccountType(type) {
 
-        updateDashboard();
+    const values = {
 
-        renderTransactions();
+        bank: "Bank",
 
-        resetTransactionForm();
+        cash: "Cash",
 
-    }
-);
+        e_wallet: "E-Wallet",
+
+        savings: "Savings",
+
+        other: "Other"
+
+    };
 
 
-// ====================================
-// FORMAT MONEY
-// ====================================
+    return values[type] || type;
+
+}
+
+
+function formatCategoryType(type) {
+
+    const values = {
+
+        expense: "Expense",
+
+        income: "Income",
+
+        both: "Income & Expense"
+
+    };
+
+
+    return values[type] || type;
+
+}
+
 
 function formatMoney(amount) {
 
@@ -2035,10 +3536,6 @@ function formatMoney(amount) {
 }
 
 
-// ====================================
-// FORMAT DATE
-// ====================================
-
 function formatDate(date) {
 
     if (!date) {
@@ -2048,14 +3545,10 @@ function formatDate(date) {
     }
 
 
-    const dateObject =
-        new Date(
-            date +
-            "T00:00:00"
-        );
-
-
-    return dateObject
+    return new Date(
+        date +
+        "T00:00:00"
+    )
         .toLocaleDateString(
 
             "en-MY",
@@ -2078,10 +3571,6 @@ function formatDate(date) {
 }
 
 
-// ====================================
-// TODAY
-// ====================================
-
 function getTodayDate() {
 
     const today =
@@ -2096,32 +3585,26 @@ function getTodayDate() {
         String(
             today.getMonth() + 1
         )
-        .padStart(
-            2,
-            "0"
-        );
+            .padStart(
+                2,
+                "0"
+            );
 
 
     const day =
         String(
             today.getDate()
         )
-        .padStart(
-            2,
-            "0"
-        );
+            .padStart(
+                2,
+                "0"
+            );
 
 
-    return (
-        `${year}-${month}-${day}`
-    );
+    return `${year}-${month}-${day}`;
 
 }
 
-
-// ====================================
-// UNIQUE LOCAL ID
-// ====================================
 
 function generateId() {
 
@@ -2131,9 +3614,8 @@ function generateId() {
             "function"
     ) {
 
-        return (
-            window.crypto.randomUUID()
-        );
+        return window.crypto
+            .randomUUID();
 
     }
 
@@ -2168,5 +3650,7 @@ renderTransactions();
 
 dateInput.value =
     getTodayDate();
+
+refreshTransactionDropdowns();
 
 initializeAuth();

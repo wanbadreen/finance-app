@@ -11,10 +11,7 @@
 
     <title>My Finance</title>
 
-    <link
-        rel="stylesheet"
-        href="/style.css"
-    >
+    <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
@@ -50,7 +47,6 @@
                     required
                 >
 
-
                 <label for="auth-password">
                     Password
                 </label>
@@ -64,14 +60,12 @@
                     required
                 >
 
-
                 <button
                     type="submit"
                     id="login-button"
                 >
                     Login
                 </button>
-
 
                 <button
                     type="button"
@@ -81,7 +75,6 @@
                 </button>
 
             </form>
-
 
             <p
                 id="auth-message"
@@ -119,7 +112,6 @@
 
             </div>
 
-
             <button
                 type="button"
                 id="logout-button"
@@ -134,9 +126,7 @@
 
         <section class="balance-card">
 
-            <p>
-                Total Balance
-            </p>
+            <p>Total Balance</p>
 
             <h2 id="balance">
                 RM 0.00
@@ -163,7 +153,6 @@
 
             </article>
 
-
             <article class="summary-card">
 
                 <p>Expenses</p>
@@ -181,32 +170,26 @@
              ACCOUNTS
         ==================================== -->
 
-        <section class="accounts-section">
+        <section class="management-section">
 
             <div class="section-heading">
-
-                <h2>
-                    My Accounts
-                </h2>
-
+                <h2>My Accounts</h2>
             </div>
-
 
             <div
                 id="account-list"
-                class="account-list"
+                class="management-list"
             ></div>
 
 
             <form
                 id="account-form"
-                class="account-form"
+                class="management-form"
             >
 
                 <h2 id="account-form-title">
                     Add Account
                 </h2>
-
 
                 <label for="account-name">
                     Account Name
@@ -218,7 +201,6 @@
                     placeholder="e.g. Maybank"
                     required
                 >
-
 
                 <label for="account-type">
                     Account Type
@@ -251,7 +233,6 @@
 
                 </select>
 
-
                 <label for="opening-balance">
                     Opening Balance
                 </label>
@@ -264,26 +245,172 @@
                     required
                 >
 
-
                 <button
                     type="submit"
                     id="save-account-button"
+                    class="primary-button"
                 >
                     + Add Account
                 </button>
 
-
                 <button
                     type="button"
                     id="cancel-account-edit-button"
+                    class="secondary-button hidden-button"
                 >
                     Cancel Edit
                 </button>
 
-
                 <p
                     id="account-message"
-                    class="account-message"
+                    class="form-message"
+                ></p>
+
+            </form>
+
+        </section>
+
+
+        <!-- ===================================
+             CATEGORIES
+        ==================================== -->
+
+        <section class="management-section">
+
+            <div class="section-heading">
+                <h2>Categories</h2>
+            </div>
+
+            <div
+                id="category-list"
+                class="management-list"
+            ></div>
+
+
+            <form
+                id="category-form"
+                class="management-form"
+            >
+
+                <h2 id="category-form-title">
+                    Add Category
+                </h2>
+
+                <label for="category-name">
+                    Category Name
+                </label>
+
+                <input
+                    type="text"
+                    id="category-name"
+                    placeholder="e.g. Food & Dining"
+                    required
+                >
+
+                <label for="category-type">
+                    Category Type
+                </label>
+
+                <select
+                    id="category-type"
+                    required
+                >
+
+                    <option value="expense">
+                        Expense
+                    </option>
+
+                    <option value="income">
+                        Income
+                    </option>
+
+                    <option value="both">
+                        Both
+                    </option>
+
+                </select>
+
+                <button
+                    type="submit"
+                    id="save-category-button"
+                    class="primary-button"
+                >
+                    + Add Category
+                </button>
+
+                <button
+                    type="button"
+                    id="cancel-category-edit-button"
+                    class="secondary-button hidden-button"
+                >
+                    Cancel Edit
+                </button>
+
+                <p
+                    id="category-message"
+                    class="form-message"
+                ></p>
+
+            </form>
+
+        </section>
+
+
+        <!-- ===================================
+             INCOME SOURCES
+        ==================================== -->
+
+        <section class="management-section">
+
+            <div class="section-heading">
+                <h2>Income Sources</h2>
+            </div>
+
+            <div
+                id="income-source-list"
+                class="management-list"
+            ></div>
+
+
+            <form
+                id="income-source-form"
+                class="management-form"
+            >
+
+                <h2 id="income-source-form-title">
+                    Add Income Source
+                </h2>
+
+                <label for="income-source-name">
+                    Income Source Name
+                </label>
+
+                <input
+                    type="text"
+                    id="income-source-name"
+                    placeholder="e.g. Salary"
+                    required
+                >
+
+                <button
+                    type="submit"
+                    id="save-income-source-button"
+                    class="primary-button"
+                >
+                    + Add Income Source
+                </button>
+
+                <button
+                    type="button"
+                    id="cancel-income-source-edit-button"
+                    class="secondary-button hidden-button"
+                >
+                    Cancel Edit
+                </button>
+
+                <p
+                    id="income-source-message"
+                    class="form-message"
                 ></p>
 
             </form>
@@ -303,7 +430,6 @@
                     Recent Transactions
                 </h2>
 
-
                 <button
                     type="button"
                     class="view-all-button"
@@ -312,7 +438,6 @@
                 </button>
 
             </div>
-
 
             <div id="transaction-list"></div>
 
@@ -339,16 +464,93 @@
                 >
 
 
-                <label for="category">
+                <label for="transaction-account">
+                    Account
+                </label>
+
+                <select
+                    id="transaction-account"
+                    required
+                ></select>
+
+
+                <label for="type">
+                    Type
+                </label>
+
+                <select
+                    id="type"
+                    required
+                >
+
+                    <option value="expense">
+                        Expense
+                    </option>
+
+                    <option value="income">
+                        Income
+                    </option>
+
+                </select>
+
+
+                <label for="transaction-category">
                     Category
                 </label>
 
-                <input
-                    type="text"
-                    id="category"
-                    placeholder="e.g. Transportation"
+                <select
+                    id="transaction-category"
                     required
+                ></select>
+
+
+                <div
+                    id="custom-category-group"
+                    class="conditional-field"
                 >
+
+                    <label for="custom-category-name">
+                        New Category
+                    </label>
+
+                    <input
+                        type="text"
+                        id="custom-category-name"
+                        placeholder="e.g. Motorcycle Service"
+                    >
+
+                </div>
+
+
+                <div id="income-source-group">
+
+                    <label for="transaction-income-source">
+                        Income Source
+                    </label>
+
+                    <select
+                        id="transaction-income-source"
+                    ></select>
+
+                </div>
+
+
+                <div
+                    id="custom-income-source-group"
+                    class="conditional-field"
+                >
+
+                    <label for="custom-income-source-name">
+                        New Income Source
+                    </label>
+
+                    <input
+                        type="text"
+                        id="custom-income-source-name"
+                        placeholder="e.g. Part-time Work"
+                    >
+
+                </div>
 
 
                 <label for="amount">
@@ -376,29 +578,21 @@
                 >
 
 
-                <label for="type">
-                    Type
+                <label for="notes">
+                    Notes
                 </label>
 
-                <select
-                    id="type"
-                    required
-                >
-
-                    <option value="expense">
-                        Expense
-                    </option>
-
-                    <option value="income">
-                        Income
-                    </option>
-
-                </select>
+                <textarea
+                    id="notes"
+                    placeholder="Optional notes..."
+                    rows="3"
+                ></textarea>
 
 
                 <button
                     type="submit"
                     id="submit-button"
+                    class="primary-button"
                 >
                     + Add Transaction
                 </button>
@@ -407,6 +601,7 @@
                 <button
                     type="button"
                     id="cancel-edit-button"
+                    class="secondary-button hidden-button"
                 >
                     Cancel Edit
                 </button>
