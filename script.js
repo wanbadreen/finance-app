@@ -129,6 +129,11 @@ const transactionList =
         "transaction-list"
     );
 
+const deletedTransactionList =
+    document.getElementById(
+        "deleted-transaction-list"
+    );
+
 const transactionAccountSelect =
     document.getElementById(
         "transaction-account"
@@ -204,6 +209,8 @@ let categories = [];
 let incomeSources = [];
 
 let transactions = [];
+
+let deletedTransactions = [];
 
 let editingAccountId = null;
 
@@ -296,6 +303,8 @@ function showLoggedOutState() {
 
     transactions = [];
 
+    deletedTransactions = [];
+
 
     authSection.style.display =
         "flex";
@@ -332,12 +341,11 @@ async function showLoggedInState(user) {
 
     await loadIncomeSources();
 
-
     await seedStarterData();
-
 
     await loadTransactions();
 
+    await loadDeletedTransactions();
 
     refreshTransactionDropdowns();
 
@@ -950,9 +958,7 @@ accountForm.addEventListener(
 
         resetAccountForm();
 
-
         await loadAccounts();
-
 
         updateDashboard();
 
@@ -1070,7 +1076,6 @@ async function toggleAccountStatus(id) {
 
     await loadAccounts();
 
-
     refreshTransactionDropdowns();
 
 }
@@ -1083,7 +1088,6 @@ async function toggleAccountStatus(id) {
 function resetAccountForm() {
 
     editingAccountId = null;
-
 
     accountForm.reset();
 
@@ -1329,9 +1333,7 @@ categoryForm.addEventListener(
 
         resetCategoryForm();
 
-
         await loadCategories();
-
 
         refreshTransactionDropdowns();
 
@@ -1439,7 +1441,6 @@ async function toggleCategoryStatus(id) {
 
     await loadCategories();
 
-
     refreshTransactionDropdowns();
 
 }
@@ -1452,7 +1453,6 @@ async function toggleCategoryStatus(id) {
 function resetCategoryForm() {
 
     editingCategoryId = null;
-
 
     categoryForm.reset();
 
@@ -1546,11 +1546,8 @@ function renderIncomeSources() {
     if (!incomeSources.length) {
 
         renderEmptyState(
-
             incomeSourceList,
-
             "No income sources yet."
-
         );
 
         return;
@@ -1679,9 +1676,7 @@ incomeSourceForm.addEventListener(
 
         resetIncomeSourceForm();
 
-
         await loadIncomeSources();
-
 
         refreshTransactionDropdowns();
 
@@ -1780,7 +1775,6 @@ async function toggleIncomeSourceStatus(id) {
 
 
     await loadIncomeSources();
-
 
     refreshTransactionDropdowns();
 
@@ -1918,7 +1912,7 @@ async function seedStarterData() {
 
 
 // ======================================================
-// LOAD TRANSACTIONS FROM SUPABASE
+// LOAD ACTIVE TRANSACTIONS
 // ======================================================
 
 async function loadTransactions() {
@@ -1978,6 +1972,58 @@ async function loadTransactions() {
     renderTransactions();
 
     renderAccounts();
+
+}
+
+
+// ======================================================
+// LOAD DELETED TRANSACTIONS
+// ======================================================
+
+async function loadDeletedTransactions() {
+
+    if (!currentUser) {
+        return;
+    }
+
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("transactions")
+            .select("*")
+            .not(
+                "deleted_at",
+                "is",
+                null
+            )
+            .order(
+                "deleted_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "Load deleted transactions error:",
+            error
+        );
+
+        return;
+
+    }
+
+
+    deletedTransactions =
+        data || [];
+
+
+    renderDeletedTransactions();
 
 }
 
@@ -2374,7 +2420,6 @@ async function createCategoryFromTransaction(
 
     categories.push(data);
 
-
     renderCategories();
 
 
@@ -2454,7 +2499,6 @@ async function createIncomeSourceFromTransaction() {
 
     incomeSources.push(data);
 
-
     renderIncomeSources();
 
 
@@ -2464,7 +2508,7 @@ async function createIncomeSourceFromTransaction() {
 
 
 // ======================================================
-// ADD / UPDATE TRANSACTION IN SUPABASE
+// ADD / UPDATE TRANSACTION
 // ======================================================
 
 transactionForm.addEventListener(
@@ -2476,9 +2520,7 @@ transactionForm.addEventListener(
 
 
         if (!currentUser) {
-
             return;
-
         }
 
 
@@ -2552,8 +2594,6 @@ transactionForm.addEventListener(
         }
 
 
-        // CREATE CUSTOM CATEGORY
-
         if (
             categoryId ===
             "__other__"
@@ -2575,8 +2615,6 @@ transactionForm.addEventListener(
 
         }
 
-
-        // INCOME SOURCE
 
         if (
             type === "income"
@@ -2641,17 +2679,14 @@ transactionForm.addEventListener(
             income_source_id:
                 incomeSourceId,
 
-            description:
-                description,
+            description,
 
             notes:
                 notes || null,
 
-            amount:
-                amount,
+            amount,
 
-            type:
-                type,
+            type,
 
             transaction_date:
                 transactionDate
@@ -2661,8 +2696,6 @@ transactionForm.addEventListener(
 
         let result;
 
-
-        // CREATE
 
         if (
             editingTransactionId ===
@@ -2676,12 +2709,7 @@ transactionForm.addEventListener(
                         transactionData
                     );
 
-        }
-
-
-        // UPDATE
-
-        else {
+        } else {
 
             result =
                 await supabase
@@ -2726,7 +2754,6 @@ transactionForm.addEventListener(
 
         resetTransactionForm();
 
-
         await loadTransactions();
 
     }
@@ -2734,7 +2761,7 @@ transactionForm.addEventListener(
 
 
 // ======================================================
-// RENDER TRANSACTIONS
+// RENDER ACTIVE TRANSACTIONS
 // ======================================================
 
 function renderTransactions() {
@@ -2746,11 +2773,8 @@ function renderTransactions() {
     if (!transactions.length) {
 
         renderEmptyState(
-
             transactionList,
-
             "No transactions yet."
-
         );
 
         return;
@@ -3026,6 +3050,134 @@ function renderTransactions() {
 
 
 // ======================================================
+// RENDER DELETED TRANSACTIONS
+// ======================================================
+
+function renderDeletedTransactions() {
+
+    deletedTransactionList.innerHTML =
+        "";
+
+
+    if (
+        deletedTransactions.length === 0
+    ) {
+
+        renderEmptyState(
+            deletedTransactionList,
+            "No deleted transactions."
+        );
+
+        return;
+
+    }
+
+
+    deletedTransactions.forEach(
+        function (transaction) {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "deleted-transaction";
+
+
+            const left =
+                document.createElement(
+                    "div"
+                );
+
+
+            const name =
+                document.createElement(
+                    "p"
+                );
+
+
+            name.className =
+                "deleted-name";
+
+
+            name.textContent =
+                transaction.description;
+
+
+            const meta =
+                document.createElement(
+                    "p"
+                );
+
+
+            meta.className =
+                "deleted-meta";
+
+
+            meta.textContent =
+                `${formatMoney(
+                    transaction.amount
+                )} • Deleted ${formatDeletedDate(
+                    transaction.deleted_at
+                )}`;
+
+
+            left.appendChild(name);
+
+            left.appendChild(meta);
+
+
+            const restoreButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            restoreButton.type =
+                "button";
+
+
+            restoreButton.className =
+                "restore-button";
+
+
+            restoreButton.textContent =
+                "Restore";
+
+
+            restoreButton.addEventListener(
+                "click",
+
+                function () {
+
+                    restoreTransaction(
+                        transaction.id
+                    );
+
+                }
+            );
+
+
+            row.appendChild(left);
+
+            row.appendChild(
+                restoreButton
+            );
+
+
+            deletedTransactionList.appendChild(
+                row
+            );
+
+        }
+    );
+
+}
+
+
+// ======================================================
 // EDIT TRANSACTION
 // ======================================================
 
@@ -3114,7 +3266,7 @@ function editTransaction(id) {
 
 
 // ======================================================
-// SOFT DELETE TRANSACTION
+// SOFT DELETE
 // ======================================================
 
 async function deleteTransaction(id) {
@@ -3138,9 +3290,7 @@ async function deleteTransaction(id) {
 
 
     if (!confirmed) {
-
         return;
-
     }
 
 
@@ -3179,6 +3329,51 @@ async function deleteTransaction(id) {
 
 
     await loadTransactions();
+
+    await loadDeletedTransactions();
+
+}
+
+
+// ======================================================
+// RESTORE TRANSACTION
+// ======================================================
+
+async function restoreTransaction(id) {
+
+    const {
+        error
+    } =
+        await supabase
+            .from("transactions")
+            .update({
+
+                deleted_at:
+                    null
+
+            })
+            .eq(
+                "id",
+                id
+            );
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    await loadTransactions();
+
+    await loadDeletedTransactions();
 
 }
 
@@ -3284,8 +3479,7 @@ function updateDashboard() {
     );
 
 
-    let totalOpeningBalance =
-        0;
+    let totalOpeningBalance = 0;
 
 
     accounts.forEach(
@@ -3356,9 +3550,7 @@ function calculateAccountBalance(
 
 
     if (!account) {
-
         return 0;
-
     }
 
 
@@ -3802,15 +3994,13 @@ function formatMoney(amount) {
 
 
 // ======================================================
-// DATE
+// TRANSACTION DATE
 // ======================================================
 
 function formatDate(date) {
 
     if (!date) {
-
         return "No date";
-
     }
 
 
@@ -3832,6 +4022,46 @@ function formatDate(date) {
 
                 year:
                     "numeric"
+
+            }
+
+        );
+
+}
+
+
+// ======================================================
+// DELETED DATE
+// ======================================================
+
+function formatDeletedDate(date) {
+
+    if (!date) {
+        return "";
+    }
+
+
+    return new Date(date)
+        .toLocaleString(
+
+            "en-MY",
+
+            {
+
+                day:
+                    "2-digit",
+
+                month:
+                    "short",
+
+                year:
+                    "numeric",
+
+                hour:
+                    "2-digit",
+
+                minute:
+                    "2-digit"
 
             }
 

@@ -289,7 +289,7 @@ h1 {
 
 
 /* ===================================
-   COMMON
+   COMMON SECTIONS
 =================================== */
 
 .management-section,
@@ -322,6 +322,10 @@ h1 {
     gap: 10px;
 }
 
+
+/* ===================================
+   MANAGEMENT CARDS
+=================================== */
 
 .management-card {
     display: flex;
@@ -655,6 +659,69 @@ h1 {
 
 
 /* ===================================
+   RECENTLY DELETED
+=================================== */
+
+.deleted-section {
+    margin-top: 28px;
+}
+
+
+.deleted-transaction {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 14px;
+
+    margin-bottom: 8px;
+
+    background-color: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 12px;
+
+    opacity: 0.75;
+}
+
+
+.deleted-name {
+    margin: 0 0 4px 0;
+
+    font-weight: 600;
+}
+
+
+.deleted-meta {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 12px;
+}
+
+
+.restore-button {
+    flex-shrink: 0;
+
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    color: #2563eb;
+
+    font-size: 13px;
+}
+
+
+/* ===================================
    EMPTY STATE
 =================================== */
 
@@ -703,7 +770,8 @@ h1 {
 
 
     .management-card,
-    .transaction {
+    .transaction,
+    .deleted-transaction {
         align-items: flex-start;
     }
 
