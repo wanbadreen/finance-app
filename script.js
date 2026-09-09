@@ -25,6 +25,53 @@ const balanceElement = document.getElementById("balance");
 const incomeElement = document.getElementById("income");
 const expensesElement = document.getElementById("expenses");
 
+// SPENDING ANALYTICS
+
+const spendingPeriodLabel =
+    document.getElementById(
+        "spending-period-label"
+    );
+
+const currentSpendingLabel =
+    document.getElementById(
+        "current-spending-label"
+    );
+
+const previousSpendingLabel =
+    document.getElementById(
+        "previous-spending-label"
+    );
+
+const currentMonthSpendingElement =
+    document.getElementById(
+        "current-month-spending"
+    );
+
+const previousMonthSpendingElement =
+    document.getElementById(
+        "previous-month-spending"
+    );
+
+const spendingChangeCard =
+    document.getElementById(
+        "spending-change-card"
+    );
+
+const spendingChangeAmount =
+    document.getElementById(
+        "spending-change-amount"
+    );
+
+const spendingChangePercent =
+    document.getElementById(
+        "spending-change-percent"
+    );
+
+const dashboardInsights =
+    document.getElementById(
+        "dashboard-insights"
+    );
+
 
 // BUDGET
 
@@ -2391,6 +2438,7 @@ function updateBudgetInsight(stats) {
 // LOAD ACTIVE TRANSACTIONS
 // ======================================================
 
+
 async function loadTransactions() {
 
     if (!currentUser) {
@@ -2443,6 +2491,8 @@ async function loadTransactions() {
     renderTransactions();
 
     renderAccounts();
+
+    renderSpendingDashboard();
 
     if (
         budgetMonthInput.value &&
@@ -3755,6 +3805,748 @@ function calculateAccountBalance(
     return balance;
 }
 
+// ======================================================
+// SPENDING ANALYTICS
+// ======================================================
+
+function renderSpendingDashboard() {
+
+    const currentMonth =
+        getCurrentMonthValue();
+
+    const previousMonth =
+        getPreviousMonthValue(
+            currentMonth
+        );
+
+    const currentMonthName =
+        formatBudgetMonth(
+            currentMonth
+        );
+
+    const previousMonthName =
+        formatBudgetMonth(
+            previousMonth
+        );
+
+    const currentSpending =
+        getMonthlyExpenseTotal(
+            currentMonth
+        );
+
+    const previousSpending =
+        getMonthlyExpenseTotal(
+            previousMonth
+        );
+
+
+    spendingPeriodLabel.textContent =
+        `${currentMonthName} vs ${previousMonthName}`;
+
+    currentSpendingLabel.textContent =
+        currentMonthName;
+
+    previousSpendingLabel.textContent =
+        previousMonthName;
+
+    currentMonthSpendingElement.textContent =
+        formatMoney(
+            currentSpending
+        );
+
+    previousMonthSpendingElement.textContent =
+        formatMoney(
+            previousSpending
+        );
+
+
+    renderSpendingChange(
+        currentSpending,
+        previousSpending,
+        previousMonthName
+    );
+
+
+    renderAutomaticInsights(
+        currentMonth,
+        previousMonth,
+        currentSpending,
+        previousSpending
+    );
+}
+
+
+// ======================================================
+// MONTHLY EXPENSE TOTAL
+// ======================================================
+
+function getMonthlyExpenseTotal(month) {
+
+    return transactions
+        .filter(
+            (transaction) => (
+                transaction.type === "expense"
+                &&
+                transaction.transaction_date
+                    ?.startsWith(month)
+            )
+        )
+        .reduce(
+            (total, transaction) =>
+                total +
+                Number(
+                    transaction.amount
+                ),
+            0
+        );
+}
+
+
+// ======================================================
+// SPENDING CHANGE
+// ======================================================
+
+function renderSpendingChange(
+    currentSpending,
+    previousSpending,
+    previousMonthName
+) {
+
+    spendingChangeCard.classList.remove(
+        "positive",
+        "negative",
+        "neutral"
+    );
+
+
+    const difference =
+        currentSpending -
+        previousSpending;
+
+
+    if (
+        currentSpending === 0 &&
+        previousSpending === 0
+    ) {
+
+        spendingChangeCard.classList.add(
+            "neutral"
+        );
+
+        spendingChangeAmount.textContent =
+            "No spending recorded for these two months.";
+
+        spendingChangePercent.textContent =
+            "";
+
+        return;
+    }
+
+
+    if (
+        previousSpending === 0
+    ) {
+
+        spendingChangeCard.classList.add(
+            "negative"
+        );
+
+        spendingChangeAmount.textContent =
+            `↑ ${formatMoney(
+                currentSpending
+            )}`;
+
+        spendingChangePercent.textContent =
+            `No spending was recorded in ${previousMonthName}.`;
+
+        return;
+    }
+
+
+    const percentage =
+        (
+            Math.abs(
+                difference
+            )
+            /
+            previousSpending
+        )
+        *
+        100;
+
+
+    if (
+        difference > 0
+    ) {
+
+        spendingChangeCard.classList.add(
+            "negative"
+        );
+
+        spendingChangeAmount.textContent =
+            `↑ ${formatMoney(
+                difference
+            )}`;
+
+        spendingChangePercent.textContent =
+            `${percentage.toFixed(
+                1
+            )}% higher than ${previousMonthName}`;
+
+        return;
+    }
+
+
+    if (
+        difference < 0
+    ) {
+
+        spendingChangeCard.classList.add(
+            "positive"
+        );
+
+        spendingChangeAmount.textContent =
+            `↓ ${formatMoney(
+                Math.abs(
+                    difference
+                )
+            )}`;
+
+        spendingChangePercent.textContent =
+            `${percentage.toFixed(
+                1
+            )}% lower than ${previousMonthName}`;
+
+        return;
+    }
+
+
+    spendingChangeCard.classList.add(
+        "neutral"
+    );
+
+    spendingChangeAmount.textContent =
+        "No change";
+
+    spendingChangePercent.textContent =
+        `Spending is the same as ${previousMonthName}.`;
+}
+
+
+// ======================================================
+// AUTOMATIC INSIGHTS
+// ======================================================
+
+function renderAutomaticInsights(
+    currentMonth,
+    previousMonth,
+    currentSpending,
+    previousSpending
+) {
+
+    dashboardInsights.innerHTML =
+        "";
+
+
+    const insights =
+        [];
+
+
+    // TOTAL SPENDING CHANGE
+
+    if (
+        previousSpending > 0
+    ) {
+
+        const difference =
+            currentSpending -
+            previousSpending;
+
+
+        const percentage =
+            (
+                Math.abs(
+                    difference
+                )
+                /
+                previousSpending
+            )
+            *
+            100;
+
+
+        if (
+            difference > 0
+        ) {
+
+            insights.push({
+                type: "warning",
+
+                text:
+                    `Your spending increased ${percentage.toFixed(
+                        1
+                    )}% compared with last month.`
+            });
+
+        } else if (
+            difference < 0
+        ) {
+
+            insights.push({
+                type: "good",
+
+                text:
+                    `Your spending decreased ${percentage.toFixed(
+                        1
+                    )}% compared with last month.`
+            });
+
+        } else {
+
+            insights.push({
+                type: "neutral",
+
+                text:
+                    "Your total spending is unchanged compared with last month."
+            });
+        }
+
+    } else if (
+        currentSpending > 0
+    ) {
+
+        insights.push({
+            type: "neutral",
+
+            text:
+                "There is no spending from last month available for comparison yet."
+        });
+    }
+
+
+    const currentCategories =
+        getCategorySpendingMap(
+            currentMonth
+        );
+
+
+    const previousCategories =
+        getCategorySpendingMap(
+            previousMonth
+        );
+
+
+    const currentEntries =
+        Object.entries(
+            currentCategories
+        );
+
+
+    // HIGHEST SPENDING CATEGORY
+
+    if (
+        currentEntries.length
+    ) {
+
+        const [
+            highestCategoryId,
+            highestAmount
+        ] =
+            [...currentEntries]
+                .sort(
+                    (
+                        a,
+                        b
+                    ) =>
+                        b[1] -
+                        a[1]
+                )[0];
+
+
+        const highestCategoryName =
+            getCategoryName(
+                highestCategoryId
+            )
+            ||
+            "Unknown Category";
+
+
+        const share =
+            currentSpending > 0
+                ? (
+                    highestAmount /
+                    currentSpending
+                ) * 100
+                : 0;
+
+
+        insights.push({
+            type: "neutral",
+
+            text:
+                `${highestCategoryName} is your highest spending category at ${formatMoney(
+                    highestAmount
+                )}, representing ${share.toFixed(
+                    1
+                )}% of this month's expenses.`
+        });
+    }
+
+
+    // BIGGEST CATEGORY INCREASE
+
+    let biggestIncrease =
+        null;
+
+
+    currentEntries.forEach(
+        ([
+            categoryId,
+            currentAmount
+        ]) => {
+
+            const previousAmount =
+                previousCategories[
+                    categoryId
+                ]
+                ||
+                0;
+
+
+            const increase =
+                currentAmount -
+                previousAmount;
+
+
+            if (
+                increase <= 0
+            ) {
+                return;
+            }
+
+
+            if (
+                !biggestIncrease ||
+                increase >
+                    biggestIncrease.increase
+            ) {
+
+                biggestIncrease = {
+                    categoryId,
+                    currentAmount,
+                    previousAmount,
+                    increase
+                };
+            }
+        }
+    );
+
+
+    if (
+        biggestIncrease
+    ) {
+
+        const categoryName =
+            getCategoryName(
+                biggestIncrease.categoryId
+            )
+            ||
+            "A category";
+
+
+        if (
+            biggestIncrease.previousAmount >
+            0
+        ) {
+
+            const percentage =
+                (
+                    biggestIncrease.increase
+                    /
+                    biggestIncrease.previousAmount
+                )
+                *
+                100;
+
+
+            insights.push({
+                type: "warning",
+
+                text:
+                    `${categoryName} increased by ${formatMoney(
+                        biggestIncrease.increase
+                    )} (${percentage.toFixed(
+                        1
+                    )}%) compared with last month.`
+            });
+
+        } else {
+
+            insights.push({
+                type: "neutral",
+
+                text:
+                    `${categoryName} has ${formatMoney(
+                        biggestIncrease.currentAmount
+                    )} of spending this month, with no spending recorded last month.`
+            });
+        }
+    }
+
+
+    // BIGGEST CATEGORY DECREASE
+
+    let biggestDecrease =
+        null;
+
+
+    Object.entries(
+        previousCategories
+    )
+        .forEach(
+            ([
+                categoryId,
+                previousAmount
+            ]) => {
+
+                const currentAmount =
+                    currentCategories[
+                        categoryId
+                    ]
+                    ||
+                    0;
+
+
+                const decrease =
+                    previousAmount -
+                    currentAmount;
+
+
+                if (
+                    decrease <= 0
+                ) {
+                    return;
+                }
+
+
+                if (
+                    !biggestDecrease ||
+                    decrease >
+                        biggestDecrease.decrease
+                ) {
+
+                    biggestDecrease = {
+                        categoryId,
+                        currentAmount,
+                        previousAmount,
+                        decrease
+                    };
+                }
+            }
+        );
+
+
+    if (
+        biggestDecrease
+    ) {
+
+        const categoryName =
+            getCategoryName(
+                biggestDecrease.categoryId
+            )
+            ||
+            "A category";
+
+
+        insights.push({
+            type: "good",
+
+            text:
+                `${categoryName} spending decreased by ${formatMoney(
+                    biggestDecrease.decrease
+                )} compared with last month.`
+        });
+    }
+
+
+    // EMPTY STATE
+
+    if (
+        insights.length === 0
+    ) {
+
+        const empty =
+            document.createElement(
+                "p"
+            );
+
+
+        empty.className =
+            "insight-empty";
+
+
+        empty.textContent =
+            "Add more transactions to generate useful spending insights.";
+
+
+        dashboardInsights.appendChild(
+            empty
+        );
+
+
+        return;
+    }
+
+
+    // MAXIMUM 4 INSIGHTS
+
+    insights
+        .slice(
+            0,
+            4
+        )
+        .forEach(
+            (insight) => {
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                item.className =
+                    `dashboard-insight ${insight.type}`;
+
+
+                const dot =
+                    document.createElement(
+                        "span"
+                    );
+
+
+                dot.className =
+                    "insight-dot";
+
+
+                const text =
+                    document.createElement(
+                        "p"
+                    );
+
+
+                text.textContent =
+                    insight.text;
+
+
+                item.appendChild(
+                    dot
+                );
+
+                item.appendChild(
+                    text
+                );
+
+
+                dashboardInsights.appendChild(
+                    item
+                );
+            }
+        );
+}
+
+
+// ======================================================
+// CATEGORY SPENDING MAP
+// ======================================================
+
+function getCategorySpendingMap(month) {
+
+    const spending =
+        {};
+
+
+    transactions
+        .filter(
+            (transaction) => (
+                transaction.type ===
+                    "expense"
+                &&
+                transaction.transaction_date
+                    ?.startsWith(
+                        month
+                    )
+                &&
+                transaction.category_id
+            )
+        )
+        .forEach(
+            (transaction) => {
+
+                const categoryId =
+                    transaction.category_id;
+
+
+                spending[
+                    categoryId
+                ] =
+                    (
+                        spending[
+                            categoryId
+                        ]
+                        ||
+                        0
+                    )
+                    +
+                    Number(
+                        transaction.amount
+                    );
+            }
+        );
+
+
+    return spending;
+}
+
+
+// ======================================================
+// PREVIOUS MONTH
+// ======================================================
+
+function getPreviousMonthValue(month) {
+
+    const [
+        year,
+        monthNumber
+    ] =
+        month
+            .split("-")
+            .map(Number);
+
+
+    const date =
+        new Date(
+            year,
+            monthNumber - 2,
+            1
+        );
+
+
+    const previousYear =
+        date.getFullYear();
+
+
+    const previousMonth =
+        String(
+            date.getMonth() + 1
+        )
+            .padStart(
+                2,
+                "0"
+            );
+
+
+    return `${previousYear}-${previousMonth}`;
+}
 
 // ======================================================
 // GENERIC MANAGEMENT CARD
@@ -4181,3 +4973,4 @@ budgetMonthInput.value =
     getCurrentMonthValue();
 
 initializeAuth();
+

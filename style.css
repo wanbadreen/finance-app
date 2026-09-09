@@ -288,6 +288,211 @@ h1 {
     font-size: 22px;
 }
 
+/* =========================
+   SPENDING ANALYTICS
+========================= */
+
+.spending-analytics-section {
+    margin-top: 32px;
+}
+
+
+.spending-comparison-grid {
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 12px;
+}
+
+
+.spending-stat-card {
+    padding: 18px;
+
+    background-color: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 16px;
+}
+
+
+.spending-stat-card p {
+    margin: 0 0 8px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+
+.spending-stat-card h3 {
+    margin: 0;
+
+    font-size: 21px;
+}
+
+
+.spending-change-card {
+    margin-top: 12px;
+
+    padding: 14px 16px;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 14px;
+
+    background-color: white;
+}
+
+
+.spending-change-card p {
+    margin: 0 0 4px;
+
+    font-size: 16px;
+
+    font-weight: 700;
+}
+
+
+.spending-change-card span {
+    font-size: 13px;
+
+    color: #6b7280;
+}
+
+
+.spending-change-card.positive {
+    border-color: #bbf7d0;
+
+    background-color: #f0fdf4;
+}
+
+
+.spending-change-card.positive p {
+    color: #15803d;
+}
+
+
+.spending-change-card.negative {
+    border-color: #fecaca;
+
+    background-color: #fef2f2;
+}
+
+
+.spending-change-card.negative p {
+    color: #b42318;
+}
+
+
+.spending-change-card.neutral {
+    border-color: #e5e7eb;
+
+    background-color: white;
+}
+
+
+/* AUTOMATIC INSIGHTS */
+
+.automatic-insights-card {
+    margin-top: 12px;
+
+    padding: 18px;
+
+    background-color: white;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 16px;
+}
+
+
+.automatic-insights-card h3 {
+    margin: 0 0 14px;
+
+    font-size: 15px;
+}
+
+
+.dashboard-insight {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    padding: 11px 0;
+
+    border-bottom: 1px solid #f3f4f6;
+}
+
+
+.dashboard-insight:last-child {
+    border-bottom: none;
+
+    padding-bottom: 0;
+}
+
+
+.dashboard-insight:first-child {
+    padding-top: 0;
+}
+
+
+.dashboard-insight p {
+    margin: 0;
+
+    color: #4b5563;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+.insight-dot {
+    width: 8px;
+
+    height: 8px;
+
+    margin-top: 5px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background-color: #6b7280;
+}
+
+
+.dashboard-insight.good
+.insight-dot {
+    background-color: #15803d;
+}
+
+
+.dashboard-insight.warning
+.insight-dot {
+    background-color: #b42318;
+}
+
+
+.dashboard-insight.neutral
+.insight-dot {
+    background-color: #2563eb;
+}
+
+
+.insight-empty {
+    margin: 0;
+
+    color: #9ca3af;
+
+    font-size: 13px;
+}
+
 
 /* =========================
    SECTIONS
