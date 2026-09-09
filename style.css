@@ -5,7 +5,6 @@
 
 body {
     margin: 0;
-
     padding: 40px;
 
     font-family:
@@ -37,7 +36,6 @@ button:disabled {
 }
 
 
-
 /* ===================================
    AUTH
 =================================== */
@@ -60,8 +58,7 @@ button:disabled {
 
     padding: 28px;
 
-    border:
-        1px solid #e5e7eb;
+    border: 1px solid #e5e7eb;
 
     border-radius: 20px;
 
@@ -105,8 +102,7 @@ button:disabled {
 
     margin-bottom: 16px;
 
-    border:
-        1px solid #d1d5db;
+    border: 1px solid #d1d5db;
 
     border-radius: 10px;
 
@@ -117,11 +113,9 @@ button:disabled {
 
 
 .auth-card input:focus {
-    outline:
-        2px solid #dbeafe;
+    outline: 2px solid #dbeafe;
 
-    border-color:
-        #2563eb;
+    border-color: #2563eb;
 }
 
 
@@ -150,8 +144,7 @@ button:disabled {
 
 
 #register-button {
-    border:
-        1px solid #d1d5db;
+    border: 1px solid #d1d5db;
 
     background-color: white;
 
@@ -172,7 +165,6 @@ button:disabled {
 }
 
 
-
 /* ===================================
    APP
 =================================== */
@@ -188,7 +180,6 @@ button:disabled {
 }
 
 
-
 /* ===================================
    HEADER
 =================================== */
@@ -196,11 +187,9 @@ button:disabled {
 .page-header {
     display: flex;
 
-    justify-content:
-        space-between;
+    justify-content: space-between;
 
-    align-items:
-        flex-start;
+    align-items: flex-start;
 
     gap: 16px;
 
@@ -235,8 +224,7 @@ h1 {
 
     padding: 8px 12px;
 
-    border:
-        1px solid #d1d5db;
+    border: 1px solid #d1d5db;
 
     border-radius: 10px;
 
@@ -244,7 +232,6 @@ h1 {
 
     color: #111827;
 }
-
 
 
 /* ===================================
@@ -289,7 +276,6 @@ h1 {
 }
 
 
-
 /* ===================================
    SUMMARY
 =================================== */
@@ -309,8 +295,7 @@ h1 {
 .summary-card {
     padding: 18px;
 
-    border:
-        1px solid #e5e7eb;
+    border: 1px solid #e5e7eb;
 
     border-radius: 16px;
 
@@ -338,21 +323,14 @@ h1 {
 }
 
 
-
 /* ===================================
-   TRANSACTIONS
+   COMMON SECTION
 =================================== */
-
-.transactions-section {
-    margin-top: 32px;
-}
-
 
 .section-heading {
     display: flex;
 
-    justify-content:
-        space-between;
+    justify-content: space-between;
 
     align-items: center;
 
@@ -367,6 +345,239 @@ h1 {
 }
 
 
+/* ===================================
+   ACCOUNTS
+=================================== */
+
+.accounts-section {
+    margin-top: 32px;
+}
+
+
+.account-list {
+    display: grid;
+
+    gap: 10px;
+}
+
+
+.account-card {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 16px;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 16px;
+
+    background-color: white;
+}
+
+
+.account-card.inactive {
+    opacity: 0.55;
+}
+
+
+.account-info {
+    min-width: 0;
+}
+
+
+.account-name {
+    margin: 0 0 4px 0;
+
+    font-weight: 600;
+
+    color: #111827;
+
+    overflow-wrap: anywhere;
+}
+
+
+.account-type {
+    margin: 0;
+
+    font-size: 13px;
+
+    color: #6b7280;
+}
+
+
+.account-actions {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-end;
+
+    gap: 8px;
+
+    flex-shrink: 0;
+}
+
+
+.account-balance {
+    margin: 0;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.account-buttons {
+    display: flex;
+
+    gap: 10px;
+}
+
+
+.account-buttons button {
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    font-size: 13px;
+}
+
+
+.account-edit-button {
+    color: #2563eb;
+}
+
+
+.account-status-button {
+    color: #b42318;
+}
+
+
+/* ===================================
+   ACCOUNT FORM
+=================================== */
+
+.account-form {
+    margin-top: 16px;
+
+    padding: 20px;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 16px;
+
+    background-color: white;
+}
+
+
+.account-form h2 {
+    margin-top: 0;
+
+    margin-bottom: 20px;
+
+    font-size: 18px;
+}
+
+
+.account-form label {
+    display: block;
+
+    margin-bottom: 6px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+
+.account-form input,
+.account-form select {
+    width: 100%;
+
+    padding: 12px;
+
+    margin-bottom: 16px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    background-color: white;
+
+    font-size: 16px;
+}
+
+
+.account-form input:focus,
+.account-form select:focus {
+    outline: 2px solid #dbeafe;
+
+    border-color: #2563eb;
+}
+
+
+.account-form button {
+    width: 100%;
+
+    padding: 14px;
+
+    border-radius: 12px;
+
+    font-size: 16px;
+
+    font-weight: 600;
+}
+
+
+#save-account-button {
+    border: none;
+
+    background-color: #111827;
+
+    color: white;
+}
+
+
+#cancel-account-edit-button {
+    display: none;
+
+    margin-top: 10px;
+
+    border: 1px solid #d1d5db;
+
+    background-color: white;
+
+    color: #111827;
+}
+
+
+.account-message {
+    margin-top: 12px;
+
+    margin-bottom: 0;
+
+    font-size: 14px;
+
+    color: #6b7280;
+}
+
+
+/* ===================================
+   TRANSACTIONS
+=================================== */
+
+.transactions-section {
+    margin-top: 32px;
+}
+
+
 .view-all-button {
     border: none;
 
@@ -376,16 +587,10 @@ h1 {
 }
 
 
-
-/* ===================================
-   TRANSACTION ROW
-=================================== */
-
 .transaction {
     display: flex;
 
-    justify-content:
-        space-between;
+    justify-content: space-between;
 
     align-items: center;
 
@@ -393,8 +598,7 @@ h1 {
 
     padding: 16px;
 
-    border:
-        1px solid #e5e7eb;
+    border: 1px solid #e5e7eb;
 
     background-color: white;
 }
@@ -524,7 +728,6 @@ h1 {
 }
 
 
-
 /* ===================================
    EMPTY STATE
 =================================== */
@@ -532,8 +735,7 @@ h1 {
 .empty-state {
     padding: 30px;
 
-    border:
-        1px solid #e5e7eb;
+    border: 1px solid #e5e7eb;
 
     border-radius: 16px;
 
@@ -545,7 +747,6 @@ h1 {
 }
 
 
-
 /* ===================================
    TRANSACTION FORM
 =================================== */
@@ -555,8 +756,7 @@ h1 {
 
     padding: 20px;
 
-    border:
-        1px solid #e5e7eb;
+    border: 1px solid #e5e7eb;
 
     border-radius: 16px;
 
@@ -592,8 +792,7 @@ h1 {
 
     margin-bottom: 16px;
 
-    border:
-        1px solid #d1d5db;
+    border: 1px solid #d1d5db;
 
     border-radius: 10px;
 
@@ -605,11 +804,9 @@ h1 {
 
 .transaction-form input:focus,
 .transaction-form select:focus {
-    outline:
-        2px solid #dbeafe;
+    outline: 2px solid #dbeafe;
 
-    border-color:
-        #2563eb;
+    border-color: #2563eb;
 }
 
 
@@ -640,14 +837,12 @@ h1 {
 
     margin-top: 10px;
 
-    border:
-        1px solid #d1d5db;
+    border: 1px solid #d1d5db;
 
     background-color: white;
 
     color: #111827;
 }
-
 
 
 /* ===================================
@@ -684,13 +879,13 @@ h1 {
     }
 
 
-    .transaction {
+    .account-card {
         align-items: flex-start;
     }
 
 
-    .transaction-actions {
-        flex-shrink: 0;
+    .transaction {
+        align-items: flex-start;
     }
 
 }

@@ -6,50 +6,63 @@ import { supabase } from "./supabase.js";
 // ====================================
 
 const authSection =
-    document.getElementById(
-        "auth-section"
-    );
-
+    document.getElementById("auth-section");
 
 const financeApp =
-    document.getElementById(
-        "finance-app"
-    );
-
+    document.getElementById("finance-app");
 
 const authForm =
-    document.getElementById(
-        "auth-form"
-    );
-
+    document.getElementById("auth-form");
 
 const registerButton =
-    document.getElementById(
-        "register-button"
-    );
+    document.getElementById("register-button");
 
+const loginButton =
+    document.getElementById("login-button");
 
 const logoutButton =
-    document.getElementById(
-        "logout-button"
-    );
-
+    document.getElementById("logout-button");
 
 const authMessage =
-    document.getElementById(
-        "auth-message"
-    );
-
+    document.getElementById("auth-message");
 
 const userEmail =
-    document.getElementById(
-        "user-email"
-    );
-
+    document.getElementById("user-email");
 
 
 // ====================================
-// FINANCE ELEMENTS
+// ACCOUNT ELEMENTS
+// ====================================
+
+const accountForm =
+    document.getElementById("account-form");
+
+const accountList =
+    document.getElementById("account-list");
+
+const accountFormTitle =
+    document.getElementById(
+        "account-form-title"
+    );
+
+const saveAccountButton =
+    document.getElementById(
+        "save-account-button"
+    );
+
+const cancelAccountEditButton =
+    document.getElementById(
+        "cancel-account-edit-button"
+    );
+
+const accountMessage =
+    document.getElementById(
+        "account-message"
+    );
+
+
+// ====================================
+// TRANSACTION ELEMENTS
 // ====================================
 
 const transactionForm =
@@ -57,24 +70,20 @@ const transactionForm =
         "transaction-form"
     );
 
-
 const cancelEditButton =
     document.getElementById(
         "cancel-edit-button"
     );
-
 
 const submitButton =
     document.getElementById(
         "submit-button"
     );
 
-
 const formTitle =
     document.getElementById(
         "form-title"
     );
-
 
 const dateInput =
     document.getElementById(
@@ -82,9 +91,23 @@ const dateInput =
     );
 
 
+// ====================================
+// APP STATE
+// ====================================
+
+let currentUser = null;
+
+let accounts = [];
+
+let editingAccountId = null;
+
+let editingId = null;
+
 
 // ====================================
-// DEFAULT LOCAL DATA
+// DEFAULT LOCAL TRANSACTIONS
+// Temporary until Supabase transaction
+// migration is completed.
 // ====================================
 
 const defaultTransactions = [
@@ -128,9 +151,8 @@ const defaultTransactions = [
 ];
 
 
-
 // ====================================
-// LOAD LOCAL STORAGE
+// LOAD LOCAL TRANSACTIONS
 // ====================================
 
 const savedTransactions =
@@ -140,8 +162,6 @@ const savedTransactions =
 
 
 let transactions;
-
-let editingId = null;
 
 
 if (savedTransactions) {
@@ -177,9 +197,8 @@ if (savedTransactions) {
 }
 
 
-
 // ====================================
-// MIGRATE OLD TRANSACTIONS
+// MIGRATE OLD LOCAL TRANSACTIONS
 // ====================================
 
 let dataChanged = false;
@@ -194,15 +213,11 @@ transactions =
                 dataChanged = true;
 
                 return {
-
                     ...transaction,
-
                     id: generateId()
-
                 };
 
             }
-
 
             return transaction;
 
@@ -217,12 +232,15 @@ if (dataChanged) {
 }
 
 
-
 // ====================================
-// AUTH UI STATES
+// AUTH UI STATE
 // ====================================
 
 function showLoggedOutState() {
+
+    currentUser = null;
+
+    accounts = [];
 
     authSection.style.display =
         "flex";
@@ -233,8 +251,9 @@ function showLoggedOutState() {
 }
 
 
+async function showLoggedInState(user) {
 
-function showLoggedInState(user) {
+    currentUser = user;
 
     authSection.style.display =
         "none";
@@ -242,16 +261,15 @@ function showLoggedInState(user) {
     financeApp.style.display =
         "block";
 
-
     userEmail.textContent =
         user.email || "Signed in";
-
 
     authMessage.textContent =
         "";
 
-}
+    await loadAccounts();
 
+}
 
 
 // ====================================
@@ -294,6 +312,7 @@ registerButton.addEventListener(
 
         registerButton.disabled =
             true;
+
 
         authMessage.textContent =
             "Creating account...";
@@ -343,13 +362,12 @@ registerButton.addEventListener(
         }
 
 
-        showLoggedInState(
+        await showLoggedInState(
             data.user
         );
 
     }
 );
-
 
 
 // ====================================
@@ -393,12 +411,6 @@ authForm.addEventListener(
         }
 
 
-        const loginButton =
-            document.getElementById(
-                "login-button"
-            );
-
-
         loginButton.disabled =
             true;
 
@@ -435,13 +447,12 @@ authForm.addEventListener(
         }
 
 
-        showLoggedInState(
+        await showLoggedInState(
             data.user
         );
 
     }
 );
-
 
 
 // ====================================
@@ -459,8 +470,7 @@ logoutButton.addEventListener(
         const {
             error
         } =
-            await supabase.auth
-                .signOut();
+            await supabase.auth.signOut();
 
 
         logoutButton.disabled =
@@ -478,15 +488,16 @@ logoutButton.addEventListener(
         }
 
 
+        resetAccountForm();
+
         showLoggedOutState();
 
     }
 );
 
 
-
 // ====================================
-// INITIAL AUTH SESSION
+// INITIAL AUTH
 // ====================================
 
 async function initializeAuth() {
@@ -515,7 +526,7 @@ async function initializeAuth() {
 
     if (data.session) {
 
-        showLoggedInState(
+        await showLoggedInState(
             data.session.user
         );
 
@@ -528,9 +539,8 @@ async function initializeAuth() {
 }
 
 
-
 // ====================================
-// AUTH STATE LISTENER
+// AUTH STATE CHANGE
 // ====================================
 
 supabase.auth.onAuthStateChange(
@@ -544,13 +554,13 @@ supabase.auth.onAuthStateChange(
 
         if (session) {
 
-            showLoggedInState(
-                session.user
-            );
+            currentUser =
+                session.user;
 
         } else {
 
-            showLoggedOutState();
+            currentUser =
+                null;
 
         }
 
@@ -558,9 +568,710 @@ supabase.auth.onAuthStateChange(
 );
 
 
+// ====================================
+// LOAD ACCOUNTS
+// ====================================
+
+async function loadAccounts() {
+
+    if (!currentUser) {
+
+        return;
+
+    }
+
+
+    accountMessage.textContent =
+        "Loading accounts...";
+
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("accounts")
+            .select("*")
+            .order(
+                "created_at",
+                {
+                    ascending: true
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "Load accounts error:",
+            error
+        );
+
+
+        accountMessage.textContent =
+            error.message;
+
+
+        return;
+
+    }
+
+
+    accounts =
+        data || [];
+
+
+    accountMessage.textContent =
+        "";
+
+
+    renderAccounts();
+
+}
+
 
 // ====================================
-// DASHBOARD CALCULATION
+// RENDER ACCOUNTS
+// ====================================
+
+function renderAccounts() {
+
+    accountList.innerHTML =
+        "";
+
+
+    if (
+        accounts.length === 0
+    ) {
+
+        const emptyState =
+            document.createElement(
+                "div"
+            );
+
+
+        emptyState.className =
+            "empty-state";
+
+
+        emptyState.textContent =
+            "No accounts yet.";
+
+
+        accountList.appendChild(
+            emptyState
+        );
+
+
+        return;
+
+    }
+
+
+    accounts.forEach(
+        function (account) {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "account-card";
+
+
+            if (!account.is_active) {
+
+                card.classList.add(
+                    "inactive"
+                );
+
+            }
+
+
+            const info =
+                document.createElement(
+                    "div"
+                );
+
+
+            info.className =
+                "account-info";
+
+
+            const name =
+                document.createElement(
+                    "p"
+                );
+
+
+            name.className =
+                "account-name";
+
+
+            name.textContent =
+                account.name;
+
+
+            const type =
+                document.createElement(
+                    "p"
+                );
+
+
+            type.className =
+                "account-type";
+
+
+            type.textContent =
+                formatAccountType(
+                    account.account_type
+                );
+
+
+            if (!account.is_active) {
+
+                type.textContent +=
+                    " • Inactive";
+
+            }
+
+
+            info.appendChild(
+                name
+            );
+
+
+            info.appendChild(
+                type
+            );
+
+
+            const actions =
+                document.createElement(
+                    "div"
+                );
+
+
+            actions.className =
+                "account-actions";
+
+
+            const balance =
+                document.createElement(
+                    "p"
+                );
+
+
+            balance.className =
+                "account-balance";
+
+
+            balance.textContent =
+                formatMoney(
+                    account.opening_balance
+                );
+
+
+            const buttons =
+                document.createElement(
+                    "div"
+                );
+
+
+            buttons.className =
+                "account-buttons";
+
+
+            const editButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            editButton.type =
+                "button";
+
+
+            editButton.className =
+                "account-edit-button";
+
+
+            editButton.textContent =
+                "Edit";
+
+
+            editButton.addEventListener(
+                "click",
+                function () {
+
+                    editAccount(
+                        account.id
+                    );
+
+                }
+            );
+
+
+            const statusButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            statusButton.type =
+                "button";
+
+
+            statusButton.className =
+                "account-status-button";
+
+
+            statusButton.textContent =
+                account.is_active
+                    ? "Deactivate"
+                    : "Activate";
+
+
+            statusButton.addEventListener(
+                "click",
+                function () {
+
+                    toggleAccountStatus(
+                        account.id
+                    );
+
+                }
+            );
+
+
+            buttons.appendChild(
+                editButton
+            );
+
+
+            buttons.appendChild(
+                statusButton
+            );
+
+
+            actions.appendChild(
+                balance
+            );
+
+
+            actions.appendChild(
+                buttons
+            );
+
+
+            card.appendChild(
+                info
+            );
+
+
+            card.appendChild(
+                actions
+            );
+
+
+            accountList.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+// ====================================
+// ADD / UPDATE ACCOUNT
+// ====================================
+
+accountForm.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        if (!currentUser) {
+
+            return;
+
+        }
+
+
+        const name =
+            document
+                .getElementById(
+                    "account-name"
+                )
+                .value
+                .trim();
+
+
+        const accountType =
+            document
+                .getElementById(
+                    "account-type"
+                )
+                .value;
+
+
+        const openingBalance =
+            parseFloat(
+                document
+                    .getElementById(
+                        "opening-balance"
+                    )
+                    .value
+            );
+
+
+        if (
+            !name ||
+            Number.isNaN(
+                openingBalance
+            )
+        ) {
+
+            accountMessage.textContent =
+                "Enter valid account details.";
+
+            return;
+
+        }
+
+
+        saveAccountButton.disabled =
+            true;
+
+
+        accountMessage.textContent =
+            "Saving account...";
+
+
+        if (
+            editingAccountId === null
+        ) {
+
+            const {
+                error
+            } =
+                await supabase
+                    .from("accounts")
+                    .insert({
+
+                        user_id:
+                            currentUser.id,
+
+                        name:
+                            name,
+
+                        account_type:
+                            accountType,
+
+                        opening_balance:
+                            openingBalance
+
+                    });
+
+
+            if (error) {
+
+                saveAccountButton.disabled =
+                    false;
+
+
+                accountMessage.textContent =
+                    error.message;
+
+
+                return;
+
+            }
+
+        } else {
+
+            const {
+                error
+            } =
+                await supabase
+                    .from("accounts")
+                    .update({
+
+                        name:
+                            name,
+
+                        account_type:
+                            accountType,
+
+                        opening_balance:
+                            openingBalance
+
+                    })
+                    .eq(
+                        "id",
+                        editingAccountId
+                    );
+
+
+            if (error) {
+
+                saveAccountButton.disabled =
+                    false;
+
+
+                accountMessage.textContent =
+                    error.message;
+
+
+                return;
+
+            }
+
+        }
+
+
+        saveAccountButton.disabled =
+            false;
+
+
+        resetAccountForm();
+
+
+        await loadAccounts();
+
+    }
+);
+
+
+// ====================================
+// EDIT ACCOUNT
+// ====================================
+
+function editAccount(id) {
+
+    const account =
+        accounts.find(
+            function (account) {
+
+                return (
+                    account.id === id
+                );
+
+            }
+        );
+
+
+    if (!account) {
+
+        return;
+
+    }
+
+
+    document
+        .getElementById(
+            "account-name"
+        )
+        .value =
+        account.name;
+
+
+    document
+        .getElementById(
+            "account-type"
+        )
+        .value =
+        account.account_type;
+
+
+    document
+        .getElementById(
+            "opening-balance"
+        )
+        .value =
+        account.opening_balance;
+
+
+    editingAccountId =
+        account.id;
+
+
+    accountFormTitle.textContent =
+        "Edit Account";
+
+
+    saveAccountButton.textContent =
+        "Save Changes";
+
+
+    cancelAccountEditButton.style.display =
+        "block";
+
+
+    accountForm.scrollIntoView({
+
+        behavior: "smooth",
+
+        block: "start"
+
+    });
+
+}
+
+
+// ====================================
+// ACCOUNT STATUS
+// ====================================
+
+async function toggleAccountStatus(id) {
+
+    const account =
+        accounts.find(
+            function (account) {
+
+                return (
+                    account.id === id
+                );
+
+            }
+        );
+
+
+    if (!account) {
+
+        return;
+
+    }
+
+
+    const newStatus =
+        !account.is_active;
+
+
+    const {
+        error
+    } =
+        await supabase
+            .from("accounts")
+            .update({
+
+                is_active:
+                    newStatus
+
+            })
+            .eq(
+                "id",
+                account.id
+            );
+
+
+    if (error) {
+
+        alert(
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    await loadAccounts();
+
+}
+
+
+// ====================================
+// RESET ACCOUNT FORM
+// ====================================
+
+function resetAccountForm() {
+
+    editingAccountId =
+        null;
+
+
+    accountForm.reset();
+
+
+    document
+        .getElementById(
+            "opening-balance"
+        )
+        .value =
+        "0";
+
+
+    accountFormTitle.textContent =
+        "Add Account";
+
+
+    saveAccountButton.textContent =
+        "+ Add Account";
+
+
+    cancelAccountEditButton.style.display =
+        "none";
+
+
+    accountMessage.textContent =
+        "";
+
+}
+
+
+cancelAccountEditButton.addEventListener(
+    "click",
+    function () {
+
+        resetAccountForm();
+
+    }
+);
+
+
+// ====================================
+// FORMAT ACCOUNT TYPE
+// ====================================
+
+function formatAccountType(type) {
+
+    const labels = {
+
+        bank:
+            "Bank",
+
+        cash:
+            "Cash",
+
+        e_wallet:
+            "E-Wallet",
+
+        savings:
+            "Savings",
+
+        other:
+            "Other"
+
+    };
+
+
+    return (
+        labels[type] ||
+        type
+    );
+
+}
+
+
+// ====================================
+// DASHBOARD
 // ====================================
 
 function updateDashboard() {
@@ -640,7 +1351,6 @@ function updateDashboard() {
 }
 
 
-
 // ====================================
 // RENDER TRANSACTIONS
 // ====================================
@@ -688,7 +1398,6 @@ function renderTransactions() {
     transactions.forEach(
         function (transaction) {
 
-
             const transactionElement =
                 document.createElement(
                     "div"
@@ -698,8 +1407,6 @@ function renderTransactions() {
             transactionElement.className =
                 "transaction";
 
-
-            // LEFT SIDE
 
             const transactionInfo =
                 document.createElement(
@@ -769,9 +1476,6 @@ function renderTransactions() {
                 transactionDate
             );
 
-
-
-            // RIGHT SIDE
 
             const transactionActions =
                 document.createElement(
@@ -853,7 +1557,6 @@ function renderTransactions() {
                 "Delete";
 
 
-
             editButton.addEventListener(
                 "click",
                 function () {
@@ -918,9 +1621,8 @@ function renderTransactions() {
 }
 
 
-
 // ====================================
-// SAVE LOCAL STORAGE
+// SAVE LOCAL TRANSACTIONS
 // ====================================
 
 function saveTransactions() {
@@ -938,9 +1640,8 @@ function saveTransactions() {
 }
 
 
-
 // ====================================
-// DELETE
+// DELETE LOCAL TRANSACTION
 // ====================================
 
 function deleteTransaction(id) {
@@ -989,7 +1690,7 @@ function deleteTransaction(id) {
         );
 
 
-    resetForm();
+    resetTransactionForm();
 
     saveTransactions();
 
@@ -1000,9 +1701,8 @@ function deleteTransaction(id) {
 }
 
 
-
 // ====================================
-// EDIT
+// EDIT LOCAL TRANSACTION
 // ====================================
 
 function editTransaction(id) {
@@ -1093,14 +1793,14 @@ function editTransaction(id) {
 }
 
 
-
 // ====================================
 // RESET TRANSACTION FORM
 // ====================================
 
-function resetForm() {
+function resetTransactionForm() {
 
-    editingId = null;
+    editingId =
+        null;
 
 
     transactionForm.reset();
@@ -1124,24 +1824,18 @@ function resetForm() {
 }
 
 
-
-// ====================================
-// CANCEL EDIT
-// ====================================
-
 cancelEditButton.addEventListener(
     "click",
     function () {
 
-        resetForm();
+        resetTransactionForm();
 
     }
 );
 
 
-
 // ====================================
-// ADD / SAVE TRANSACTION
+// ADD / UPDATE LOCAL TRANSACTION
 // ====================================
 
 transactionForm.addEventListener(
@@ -1212,26 +1906,29 @@ transactionForm.addEventListener(
         }
 
 
-
-        // ADD NEW
-
         if (
             editingId === null
         ) {
 
             const newTransaction = {
 
-                id: generateId(),
+                id:
+                    generateId(),
 
-                description: description,
+                description:
+                    description,
 
-                category: category,
+                category:
+                    category,
 
-                amount: amount,
+                amount:
+                    amount,
 
-                date: date,
+                date:
+                    date,
 
-                type: type
+                type:
+                    type
 
             };
 
@@ -1240,12 +1937,7 @@ transactionForm.addEventListener(
                 newTransaction
             );
 
-        }
-
-
-        // UPDATE EXISTING
-
-        else {
+        } else {
 
             const transactionIndex =
                 transactions.findIndex(
@@ -1268,7 +1960,9 @@ transactionForm.addEventListener(
                     "Transaction could not be found."
                 );
 
-                resetForm();
+
+                resetTransactionForm();
+
 
                 return;
 
@@ -1279,17 +1973,23 @@ transactionForm.addEventListener(
                 transactionIndex
             ] = {
 
-                id: editingId,
+                id:
+                    editingId,
 
-                description: description,
+                description:
+                    description,
 
-                category: category,
+                category:
+                    category,
 
-                amount: amount,
+                amount:
+                    amount,
 
-                date: date,
+                date:
+                    date,
 
-                type: type
+                type:
+                    type
 
             };
 
@@ -1302,11 +2002,10 @@ transactionForm.addEventListener(
 
         renderTransactions();
 
-        resetForm();
+        resetTransactionForm();
 
     }
 );
-
 
 
 // ====================================
@@ -1321,9 +2020,11 @@ function formatMoney(amount) {
 
         {
 
-            style: "currency",
+            style:
+                "currency",
 
-            currency: "MYR"
+            currency:
+                "MYR"
 
         }
 
@@ -1332,7 +2033,6 @@ function formatMoney(amount) {
     );
 
 }
-
 
 
 // ====================================
@@ -1362,11 +2062,14 @@ function formatDate(date) {
 
             {
 
-                day: "2-digit",
+                day:
+                    "2-digit",
 
-                month: "short",
+                month:
+                    "short",
 
-                year: "numeric"
+                year:
+                    "numeric"
 
             }
 
@@ -1375,9 +2078,8 @@ function formatDate(date) {
 }
 
 
-
 // ====================================
-// TODAY DATE
+// TODAY
 // ====================================
 
 function getTodayDate() {
@@ -1417,9 +2119,8 @@ function getTodayDate() {
 }
 
 
-
 // ====================================
-// UNIQUE ID
+// UNIQUE LOCAL ID
 // ====================================
 
 function generateId() {
@@ -1427,7 +2128,7 @@ function generateId() {
     if (
         window.crypto &&
         typeof window.crypto.randomUUID ===
-        "function"
+            "function"
     ) {
 
         return (
@@ -1457,7 +2158,6 @@ function generateId() {
 }
 
 
-
 // ====================================
 // INITIAL LOAD
 // ====================================
@@ -1468,6 +2168,5 @@ renderTransactions();
 
 dateInput.value =
     getTodayDate();
-
 
 initializeAuth();
