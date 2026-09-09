@@ -1,35 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Personal finance management app"
+    >
 
     <title>My Finance</title>
 
-    <link rel="stylesheet" href="/style.css">
+    <link
+        rel="stylesheet"
+        href="/style.css"
+    >
 </head>
+
 
 <body>
 
-    <!-- =========================
-         AUTH
-    ========================== -->
 
-    <section id="auth-section" class="auth-section">
+    <!-- =====================================================
+         AUTH
+    ====================================================== -->
+
+    <section
+        id="auth-section"
+        class="auth-section"
+    >
 
         <div class="auth-card">
 
-            <h1>My Finance</h1>
+            <h1>
+                My Finance
+            </h1>
+
 
             <p class="auth-subtitle">
                 Sign in to manage your finances.
             </p>
 
+
             <form id="auth-form">
+
 
                 <label for="auth-email">
                     Email
                 </label>
+
 
                 <input
                     type="email"
@@ -39,9 +63,11 @@
                     required
                 >
 
+
                 <label for="auth-password">
                     Password
                 </label>
+
 
                 <input
                     type="password"
@@ -52,12 +78,14 @@
                     required
                 >
 
+
                 <button
                     type="submit"
                     id="login-button"
                 >
                     Login
                 </button>
+
 
                 <button
                     type="button"
@@ -67,6 +95,7 @@
                 </button>
 
             </form>
+
 
             <p
                 id="auth-message"
@@ -78,724 +107,1597 @@
     </section>
 
 
-    <!-- =========================
-         APP
-    ========================== -->
+
+    <!-- =====================================================
+         FINANCE APP
+    ====================================================== -->
 
     <main
         id="finance-app"
         class="app"
     >
 
-        <!-- HEADER -->
 
-        <header class="page-header">
-
-            <div>
-
-                <h1>My Finance</h1>
-
-                <p
-                    id="user-email"
-                    class="subtitle"
-                >
-                    My personal finance management app.
-                </p>
-
-            </div>
-
-            <button
-                type="button"
-                id="logout-button"
-            >
-                Logout
-            </button>
-
-        </header>
+        <div class="app-shell">
 
 
-        <!-- TOTAL BALANCE -->
+            <!-- =================================================
+                 DESKTOP SIDEBAR
+            ================================================== -->
 
-        <section class="balance-card">
-
-            <p>Total Balance</p>
-
-            <h2 id="balance">
-                RM 0.00
-            </h2>
-
-            <span>
-                Current financial position
-            </span>
-
-        </section>
+            <aside class="app-sidebar">
 
 
-        <!-- INCOME / EXPENSE -->
+                <!-- BRAND -->
 
-        <section class="summary-grid">
+                <div class="sidebar-brand">
 
-            <article class="summary-card">
+                    <div class="brand-icon">
+                        MF
+                    </div>
 
-                <p>Income</p>
 
-                <h3 id="income">
-                    RM 0.00
-                </h3>
+                    <div>
 
-            </article>
+                        <h2>
+                            My Finance
+                        </h2>
 
-            <article class="summary-card">
+                        <p>
+                            Personal Finance
+                        </p>
 
-                <p>Expenses</p>
-
-                <h3 id="expenses">
-                    RM 0.00
-                </h3>
-
-            </article>
-
-        </section>
-
-        <!-- =========================
-            SPENDING ANALYTICS
-        ========================== -->
-
-        <section class="spending-analytics-section">
-
-            <div class="section-heading">
-
-                <div>
-
-                    <h2>
-                        Spending Overview
-                    </h2>
-
-                    <p
-                        id="spending-period-label"
-                        class="section-subtitle"
-                    ></p>
+                    </div>
 
                 </div>
 
-            </div>
 
 
-            <div class="spending-comparison-grid">
+                <!-- PRIMARY NAVIGATION -->
 
-                <article class="spending-stat-card">
-
-                    <p id="current-spending-label">
-                        This Month
-                    </p>
-
-                    <h3 id="current-month-spending">
-                        RM 0.00
-                    </h3>
-
-                </article>
-
-
-                <article class="spending-stat-card">
-
-                    <p id="previous-spending-label">
-                        Last Month
-                    </p>
-
-                    <h3 id="previous-month-spending">
-                        RM 0.00
-                    </h3>
-
-                </article>
-
-            </div>
-
-
-            <div
-                id="spending-change-card"
-                class="spending-change-card neutral"
-            >
-
-                <p id="spending-change-amount">
-                    No comparison available yet.
-                </p>
-
-                <span id="spending-change-percent"></span>
-
-            </div>
-
-
-            <div class="automatic-insights-card">
-
-                <h3>
-                    Automatic Insights
-                </h3>
-
-                <div id="dashboard-insights">
-
-                    <p class="insight-empty">
-                        Add more transactions to generate insights.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </section>
-
-        <!-- =========================
-             MONTHLY BUDGET
-        ========================== -->
-
-        <section class="management-section">
-
-            <div class="section-heading">
-
-                <div>
-
-                    <h2>Monthly Budget</h2>
-
-                    <p
-                        id="budget-month-label"
-                        class="section-subtitle"
-                    ></p>
-
-                </div>
-
-                <input
-                    type="month"
-                    id="budget-month"
-                    class="month-picker"
-                >
-
-            </div>
-
-
-            <div
-                id="budget-insight"
-                class="budget-insight"
-            >
-                Set a category budget to start tracking your spending.
-            </div>
-
-
-            <div
-                id="budget-list"
-                class="budget-list"
-            ></div>
-
-
-            <form
-                id="budget-form"
-                class="management-form"
-            >
-
-                <h2 id="budget-form-title">
-                    Add Budget
-                </h2>
-
-
-                <label for="budget-category">
-                    Expense Category
-                </label>
-
-                <select
-                    id="budget-category"
-                    required
-                ></select>
-
-
-                <label for="budget-amount">
-                    Monthly Budget
-                </label>
-
-                <input
-                    type="number"
-                    id="budget-amount"
-                    placeholder="e.g. 500"
-                    min="0.01"
-                    step="0.01"
-                    required
+                <nav
+                    class="sidebar-navigation"
+                    aria-label="Main navigation"
                 >
 
 
-                <button
-                    type="submit"
-                    id="save-budget-button"
-                    class="primary-button"
-                >
-                    + Add Budget
-                </button>
-
-
-                <button
-                    type="button"
-                    id="cancel-budget-edit-button"
-                    class="secondary-button hidden-button"
-                >
-                    Cancel Edit
-                </button>
-
-
-                <p
-                    id="budget-message"
-                    class="form-message"
-                ></p>
-
-            </form>
-
-        </section>
-
-
-        <!-- =========================
-             ACCOUNTS
-        ========================== -->
-
-        <section class="management-section">
-
-            <div class="section-heading">
-                <h2>My Accounts</h2>
-            </div>
-
-            <div
-                id="account-list"
-                class="management-list"
-            ></div>
-
-
-            <form
-                id="account-form"
-                class="management-form"
-            >
-
-                <h2 id="account-form-title">
-                    Add Account
-                </h2>
-
-
-                <label for="account-name">
-                    Account Name
-                </label>
-
-                <input
-                    type="text"
-                    id="account-name"
-                    placeholder="e.g. Maybank"
-                    required
-                >
-
-
-                <label for="account-type">
-                    Account Type
-                </label>
-
-                <select
-                    id="account-type"
-                    required
-                >
-                    <option value="bank">Bank</option>
-                    <option value="cash">Cash</option>
-                    <option value="e_wallet">E-Wallet</option>
-                    <option value="savings">Savings</option>
-                    <option value="other">Other</option>
-                </select>
-
-
-                <label for="opening-balance">
-                    Opening Balance
-                </label>
-
-                <input
-                    type="number"
-                    id="opening-balance"
-                    value="0"
-                    step="0.01"
-                    required
-                >
-
-
-                <button
-                    type="submit"
-                    id="save-account-button"
-                    class="primary-button"
-                >
-                    + Add Account
-                </button>
-
-
-                <button
-                    type="button"
-                    id="cancel-account-edit-button"
-                    class="secondary-button hidden-button"
-                >
-                    Cancel Edit
-                </button>
-
-
-                <p
-                    id="account-message"
-                    class="form-message"
-                ></p>
-
-            </form>
-
-        </section>
-
-
-        <!-- =========================
-             CATEGORIES
-        ========================== -->
-
-        <section class="management-section">
-
-            <div class="section-heading">
-                <h2>Categories</h2>
-            </div>
-
-            <div
-                id="category-list"
-                class="management-list"
-            ></div>
-
-
-            <form
-                id="category-form"
-                class="management-form"
-            >
-
-                <h2 id="category-form-title">
-                    Add Category
-                </h2>
-
-
-                <label for="category-name">
-                    Category Name
-                </label>
-
-                <input
-                    type="text"
-                    id="category-name"
-                    placeholder="e.g. Food & Dining"
-                    required
-                >
-
-
-                <label for="category-type">
-                    Category Type
-                </label>
-
-                <select
-                    id="category-type"
-                    required
-                >
-                    <option value="expense">Expense</option>
-                    <option value="income">Income</option>
-                    <option value="both">Both</option>
-                </select>
-
-
-                <button
-                    type="submit"
-                    id="save-category-button"
-                    class="primary-button"
-                >
-                    + Add Category
-                </button>
-
-
-                <button
-                    type="button"
-                    id="cancel-category-edit-button"
-                    class="secondary-button hidden-button"
-                >
-                    Cancel Edit
-                </button>
-
-
-                <p
-                    id="category-message"
-                    class="form-message"
-                ></p>
-
-            </form>
-
-        </section>
-
-
-        <!-- =========================
-             INCOME SOURCES
-        ========================== -->
-
-        <section class="management-section">
-
-            <div class="section-heading">
-                <h2>Income Sources</h2>
-            </div>
-
-            <div
-                id="income-source-list"
-                class="management-list"
-            ></div>
-
-
-            <form
-                id="income-source-form"
-                class="management-form"
-            >
-
-                <h2 id="income-source-form-title">
-                    Add Income Source
-                </h2>
-
-
-                <label for="income-source-name">
-                    Income Source Name
-                </label>
-
-                <input
-                    type="text"
-                    id="income-source-name"
-                    placeholder="e.g. Salary"
-                    required
-                >
-
-
-                <button
-                    type="submit"
-                    id="save-income-source-button"
-                    class="primary-button"
-                >
-                    + Add Income Source
-                </button>
-
-
-                <button
-                    type="button"
-                    id="cancel-income-source-edit-button"
-                    class="secondary-button hidden-button"
-                >
-                    Cancel Edit
-                </button>
-
-
-                <p
-                    id="income-source-message"
-                    class="form-message"
-                ></p>
-
-            </form>
-
-        </section>
-
-
-        <!-- =========================
-             TRANSACTIONS
-        ========================== -->
-
-        <section class="transactions-section">
-
-            <div class="section-heading">
-
-                <h2>Recent Transactions</h2>
-
-                <button
-                    type="button"
-                    class="view-all-button"
-                >
-                    View All
-                </button>
-
-            </div>
-
-
-            <div id="transaction-list"></div>
-
-
-            <!-- RECENTLY DELETED -->
-
-            <section class="deleted-section">
-
-                <div class="section-heading">
-                    <h2>Recently Deleted</h2>
-                </div>
-
-                <div
-                    id="deleted-transaction-list"
-                ></div>
-
-            </section>
-
-
-            <!-- ADD TRANSACTION -->
-
-            <form
-                id="transaction-form"
-                class="transaction-form"
-            >
-
-                <h2 id="form-title">
-                    Add Transaction
-                </h2>
-
-
-                <label for="description">
-                    Description
-                </label>
-
-                <input
-                    type="text"
-                    id="description"
-                    placeholder="e.g. Petrol"
-                    required
-                >
-
-
-                <label for="transaction-account">
-                    Account
-                </label>
-
-                <select
-                    id="transaction-account"
-                    required
-                ></select>
-
-
-                <label for="type">
-                    Type
-                </label>
-
-                <select
-                    id="type"
-                    required
-                >
-                    <option value="expense">Expense</option>
-                    <option value="income">Income</option>
-                </select>
-
-
-                <label for="transaction-category">
-                    Category
-                </label>
-
-                <select
-                    id="transaction-category"
-                    required
-                ></select>
-
-
-                <div
-                    id="custom-category-group"
-                    class="conditional-field"
-                >
-
-                    <label for="custom-category-name">
-                        New Category
-                    </label>
-
-                    <input
-                        type="text"
-                        id="custom-category-name"
-                        placeholder="e.g. Motorcycle Service"
+                    <a
+                        href="#dashboard-page"
+                        class="nav-item active"
+                        data-page="dashboard"
                     >
 
-                </div>
+                        <span class="nav-icon">
+                            ◉
+                        </span>
+
+                        <span>
+                            Dashboard
+                        </span>
+
+                    </a>
 
 
-                <div id="income-source-group">
-
-                    <label for="transaction-income-source">
-                        Income Source
-                    </label>
-
-                    <select
-                        id="transaction-income-source"
-                    ></select>
-
-                </div>
-
-
-                <div
-                    id="custom-income-source-group"
-                    class="conditional-field"
-                >
-
-                    <label for="custom-income-source-name">
-                        New Income Source
-                    </label>
-
-                    <input
-                        type="text"
-                        id="custom-income-source-name"
-                        placeholder="e.g. Part-time Work"
+                    <a
+                        href="#transactions-page"
+                        class="nav-item"
+                        data-page="transactions"
                     >
 
+                        <span class="nav-icon">
+                            ⇄
+                        </span>
+
+                        <span>
+                            Transactions
+                        </span>
+
+                    </a>
+
+
+                    <a
+                        href="#budgets-page"
+                        class="nav-item"
+                        data-page="budgets"
+                    >
+
+                        <span class="nav-icon">
+                            ◫
+                        </span>
+
+                        <span>
+                            Budgets
+                        </span>
+
+                    </a>
+
+
+                    <a
+                        href="#accounts-page"
+                        class="nav-item"
+                        data-page="accounts"
+                    >
+
+                        <span class="nav-icon">
+                            ◇
+                        </span>
+
+                        <span>
+                            Accounts
+                        </span>
+
+                    </a>
+
+
+                    <a
+                        href="#manage-page"
+                        class="nav-item"
+                        data-page="manage"
+                    >
+
+                        <span class="nav-icon">
+                            ⚙
+                        </span>
+
+                        <span>
+                            Manage
+                        </span>
+
+                    </a>
+
+                </nav>
+
+
+
+                <!-- QUICK ACTION -->
+
+                <div class="sidebar-quick-action">
+
+                    <a
+                        href="#transaction-form"
+                        class="quick-add-button"
+                    >
+                        + Add Transaction
+                    </a>
+
                 </div>
 
 
-                <label for="amount">
-                    Amount
-                </label>
 
-                <input
-                    type="number"
-                    id="amount"
-                    placeholder="0.00"
-                    min="0.01"
-                    step="0.01"
-                    required
+                <!-- SIDEBAR USER -->
+
+                <div class="sidebar-user">
+
+                    <div class="sidebar-user-info">
+
+                        <p class="sidebar-user-label">
+                            Signed in as
+                        </p>
+
+
+                        <p
+                            id="user-email"
+                            class="subtitle"
+                        >
+                            My personal finance management app.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="logout-button"
+                    >
+                        Logout
+                    </button>
+
+                </div>
+
+            </aside>
+
+
+
+            <!-- =================================================
+                 MAIN CONTENT
+            ================================================== -->
+
+            <div class="app-content">
+
+
+                <!-- =============================================
+                     TOP HEADER
+                ============================================== -->
+
+                <header class="page-header app-topbar">
+
+
+                    <div>
+
+                        <p class="topbar-eyebrow">
+                            Personal Finance
+                        </p>
+
+
+                        <h1 id="app-page-title">
+                            Dashboard
+                        </h1>
+
+                    </div>
+
+
+                    <div class="topbar-actions">
+
+
+                        <a
+                            href="#transaction-form"
+                            class="topbar-add-button"
+                        >
+                            + Add Transaction
+                        </a>
+
+                    </div>
+
+                </header>
+
+
+
+                <!-- =================================================
+                     DASHBOARD PAGE
+                ================================================== -->
+
+                <section
+                    id="dashboard-page"
+                    class="app-page active-page"
+                    data-page="dashboard"
                 >
 
 
-                <label for="date">
-                    Transaction Date
-                </label>
+                    <!-- =============================================
+                         BALANCE
+                    ============================================== -->
 
-                <input
-                    type="date"
-                    id="date"
-                    required
+                    <section class="balance-card">
+
+                        <p>
+                            Total Balance
+                        </p>
+
+
+                        <h2 id="balance">
+                            RM 0.00
+                        </h2>
+
+
+                        <span>
+                            Current financial position
+                        </span>
+
+                    </section>
+
+
+
+                    <!-- =============================================
+                         INCOME / EXPENSE SUMMARY
+                    ============================================== -->
+
+                    <section class="summary-grid">
+
+
+                        <article class="summary-card">
+
+                            <p>
+                                Income
+                            </p>
+
+
+                            <h3 id="income">
+                                RM 0.00
+                            </h3>
+
+                        </article>
+
+
+                        <article class="summary-card">
+
+                            <p>
+                                Expenses
+                            </p>
+
+
+                            <h3 id="expenses">
+                                RM 0.00
+                            </h3>
+
+                        </article>
+
+
+                    </section>
+
+
+
+                    <!-- =============================================
+                         SPENDING ANALYTICS
+                    ============================================== -->
+
+                    <section class="spending-analytics-section">
+
+
+                        <div class="section-heading">
+
+
+                            <div>
+
+                                <h2>
+                                    Spending Overview
+                                </h2>
+
+
+                                <p
+                                    id="spending-period-label"
+                                    class="section-subtitle"
+                                ></p>
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <!-- CURRENT VS PREVIOUS MONTH -->
+
+                        <div class="spending-comparison-grid">
+
+
+                            <article class="spending-stat-card">
+
+                                <p id="current-spending-label">
+                                    This Month
+                                </p>
+
+
+                                <h3 id="current-month-spending">
+                                    RM 0.00
+                                </h3>
+
+                            </article>
+
+
+
+                            <article class="spending-stat-card">
+
+                                <p id="previous-spending-label">
+                                    Last Month
+                                </p>
+
+
+                                <h3 id="previous-month-spending">
+                                    RM 0.00
+                                </h3>
+
+                            </article>
+
+
+                        </div>
+
+
+
+                        <!-- MONTH-OVER-MONTH CHANGE -->
+
+                        <div
+                            id="spending-change-card"
+                            class="spending-change-card neutral"
+                        >
+
+                            <p id="spending-change-amount">
+                                No comparison available yet.
+                            </p>
+
+
+                            <span id="spending-change-percent"></span>
+
+                        </div>
+
+
+
+                        <!-- AUTOMATIC INSIGHTS -->
+
+                        <div class="automatic-insights-card">
+
+
+                            <div class="card-heading">
+
+                                <h3>
+                                    Automatic Insights
+                                </h3>
+
+                            </div>
+
+
+                            <div id="dashboard-insights">
+
+                                <p class="insight-empty">
+                                    Add more transactions to generate insights.
+                                </p>
+
+                            </div>
+
+
+                        </div>
+
+
+                    </section>
+
+
+
+                    <!-- =============================================
+                         DASHBOARD BUDGET SUMMARY PLACEHOLDER
+                    ============================================== -->
+
+                    <section class="dashboard-section">
+
+
+                        <div class="section-heading">
+
+
+                            <div>
+
+                                <h2>
+                                    Budget Summary
+                                </h2>
+
+
+                                <p class="section-subtitle">
+                                    Monthly spending progress
+                                </p>
+
+                            </div>
+
+
+                            <a
+                                href="#budgets-page"
+                                class="section-link"
+                            >
+                                View Budgets
+                            </a>
+
+
+                        </div>
+
+
+                        <div
+                            id="dashboard-budget-summary"
+                            class="dashboard-placeholder"
+                        >
+
+                            Your detailed budgets are available in the Budgets page.
+
+                        </div>
+
+
+                    </section>
+
+
+                    <!-- =============================================
+                         DASHBOARD RECENT TRANSACTIONS PLACEHOLDER
+                    ============================================== -->
+
+                    <section class="dashboard-section">
+
+
+                        <div class="section-heading">
+
+
+                            <div>
+
+                                <h2>
+                                    Recent Transactions
+                                </h2>
+
+
+                                <p class="section-subtitle">
+                                    Latest financial activity
+                                </p>
+
+                            </div>
+
+
+                            <a
+                                href="#transactions-page"
+                                class="section-link"
+                            >
+                                View All
+                            </a>
+
+
+                        </div>
+
+
+                        <div
+                            id="dashboard-recent-transactions"
+                            class="dashboard-placeholder"
+                        >
+
+                            Recent transaction preview will be connected in the next navigation step.
+
+                        </div>
+
+
+                    </section>
+
+
+                </section>
+
+
+
+                <!-- =================================================
+                     TRANSACTIONS PAGE
+                ================================================== -->
+
+                <section
+                    id="transactions-page"
+                    class="app-page"
+                    data-page="transactions"
                 >
 
 
-                <label for="notes">
-                    Notes
-                </label>
+                    <!-- PAGE TITLE -->
 
-                <textarea
-                    id="notes"
-                    placeholder="Optional notes..."
-                    rows="3"
-                ></textarea>
+                    <div class="content-page-header">
 
 
-                <button
-                    type="submit"
-                    id="submit-button"
-                    class="primary-button"
+                        <div>
+
+                            <h2>
+                                Transactions
+                            </h2>
+
+
+                            <p>
+                                Manage your income and expenses.
+                            </p>
+
+                        </div>
+
+
+                        <a
+                            href="#transaction-form"
+                            class="primary-link-button"
+                        >
+                            + Add Transaction
+                        </a>
+
+
+                    </div>
+
+
+
+                    <!-- =============================================
+                         TRANSACTION LIST
+                    ============================================== -->
+
+                    <section class="transactions-section">
+
+
+                        <div class="section-heading">
+
+
+                            <div>
+
+                                <h2>
+                                    All Transactions
+                                </h2>
+
+
+                                <p class="section-subtitle">
+                                    Your active transactions
+                                </p>
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                class="view-all-button"
+                            >
+                                View All
+                            </button>
+
+
+                        </div>
+
+
+                        <div id="transaction-list"></div>
+
+
+                    </section>
+
+
+
+                    <!-- =============================================
+                         RECENTLY DELETED
+                    ============================================== -->
+
+                    <section class="deleted-section">
+
+
+                        <div class="section-heading">
+
+
+                            <div>
+
+                                <h2>
+                                    Recently Deleted
+                                </h2>
+
+
+                                <p class="section-subtitle">
+                                    Restore transactions you deleted accidentally.
+                                </p>
+
+                            </div>
+
+
+                        </div>
+
+
+                        <div
+                            id="deleted-transaction-list"
+                        ></div>
+
+
+                    </section>
+
+
+
+                    <!-- =============================================
+                         TRANSACTION FORM
+                    ============================================== -->
+
+                    <form
+                        id="transaction-form"
+                        class="transaction-form"
+                    >
+
+
+                        <div class="form-header">
+
+
+                            <div>
+
+                                <h2 id="form-title">
+                                    Add Transaction
+                                </h2>
+
+
+                                <p>
+                                    Record income or spending.
+                                </p>
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <!-- DESCRIPTION -->
+
+                        <label for="description">
+                            Description
+                        </label>
+
+
+                        <input
+                            type="text"
+                            id="description"
+                            placeholder="e.g. Petrol"
+                            required
+                        >
+
+
+
+                        <!-- ACCOUNT -->
+
+                        <label for="transaction-account">
+                            Account
+                        </label>
+
+
+                        <select
+                            id="transaction-account"
+                            required
+                        ></select>
+
+
+
+                        <!-- TYPE -->
+
+                        <label for="type">
+                            Type
+                        </label>
+
+
+                        <select
+                            id="type"
+                            required
+                        >
+
+                            <option value="expense">
+                                Expense
+                            </option>
+
+                            <option value="income">
+                                Income
+                            </option>
+
+                        </select>
+
+
+
+                        <!-- CATEGORY -->
+
+                        <label for="transaction-category">
+                            Category
+                        </label>
+
+
+                        <select
+                            id="transaction-category"
+                            required
+                        ></select>
+
+
+
+                        <!-- CUSTOM CATEGORY -->
+
+                        <div
+                            id="custom-category-group"
+                            class="conditional-field"
+                        >
+
+                            <label for="custom-category-name">
+                                New Category
+                            </label>
+
+
+                            <input
+                                type="text"
+                                id="custom-category-name"
+                                placeholder="e.g. Motorcycle Service"
+                            >
+
+                        </div>
+
+
+
+                        <!-- INCOME SOURCE -->
+
+                        <div id="income-source-group">
+
+
+                            <label for="transaction-income-source">
+                                Income Source
+                            </label>
+
+
+                            <select
+                                id="transaction-income-source"
+                            ></select>
+
+
+                        </div>
+
+
+
+                        <!-- CUSTOM INCOME SOURCE -->
+
+                        <div
+                            id="custom-income-source-group"
+                            class="conditional-field"
+                        >
+
+                            <label for="custom-income-source-name">
+                                New Income Source
+                            </label>
+
+
+                            <input
+                                type="text"
+                                id="custom-income-source-name"
+                                placeholder="e.g. Part-time Work"
+                            >
+
+                        </div>
+
+
+
+                        <!-- AMOUNT -->
+
+                        <label for="amount">
+                            Amount
+                        </label>
+
+
+                        <input
+                            type="number"
+                            id="amount"
+                            placeholder="0.00"
+                            min="0.01"
+                            step="0.01"
+                            required
+                        >
+
+
+
+                        <!-- DATE -->
+
+                        <label for="date">
+                            Transaction Date
+                        </label>
+
+
+                        <input
+                            type="date"
+                            id="date"
+                            required
+                        >
+
+
+
+                        <!-- NOTES -->
+
+                        <label for="notes">
+                            Notes
+                        </label>
+
+
+                        <textarea
+                            id="notes"
+                            placeholder="Optional notes..."
+                            rows="3"
+                        ></textarea>
+
+
+
+                        <!-- SAVE -->
+
+                        <button
+                            type="submit"
+                            id="submit-button"
+                            class="primary-button"
+                        >
+                            + Add Transaction
+                        </button>
+
+
+
+                        <!-- CANCEL -->
+
+                        <button
+                            type="button"
+                            id="cancel-edit-button"
+                            class="secondary-button hidden-button"
+                        >
+                            Cancel Edit
+                        </button>
+
+
+                    </form>
+
+
+                </section>
+
+
+
+                <!-- =================================================
+                     BUDGETS PAGE
+                ================================================== -->
+
+                <section
+                    id="budgets-page"
+                    class="app-page"
+                    data-page="budgets"
                 >
-                    + Add Transaction
-                </button>
 
 
-                <button
-                    type="button"
-                    id="cancel-edit-button"
-                    class="secondary-button hidden-button"
+                    <div class="content-page-header">
+
+
+                        <div>
+
+                            <h2>
+                                Budgets
+                            </h2>
+
+
+                            <p>
+                                Plan and monitor spending by category.
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- MONTHLY BUDGET -->
+
+                    <section class="management-section budget-page-section">
+
+
+                        <div class="section-heading">
+
+
+                            <div>
+
+                                <h2>
+                                    Monthly Budget
+                                </h2>
+
+
+                                <p
+                                    id="budget-month-label"
+                                    class="section-subtitle"
+                                ></p>
+
+                            </div>
+
+
+                            <input
+                                type="month"
+                                id="budget-month"
+                                class="month-picker"
+                            >
+
+
+                        </div>
+
+
+
+                        <!-- BUDGET INSIGHT -->
+
+                        <div
+                            id="budget-insight"
+                            class="budget-insight"
+                        >
+                            Set a category budget to start tracking your spending.
+                        </div>
+
+
+
+                        <!-- BUDGET CARDS -->
+
+                        <div
+                            id="budget-list"
+                            class="budget-list"
+                        ></div>
+
+
+
+                        <!-- BUDGET FORM -->
+
+                        <form
+                            id="budget-form"
+                            class="management-form"
+                        >
+
+
+                            <h2 id="budget-form-title">
+                                Add Budget
+                            </h2>
+
+
+
+                            <label for="budget-category">
+                                Expense Category
+                            </label>
+
+
+                            <select
+                                id="budget-category"
+                                required
+                            ></select>
+
+
+
+                            <label for="budget-amount">
+                                Monthly Budget
+                            </label>
+
+
+                            <input
+                                type="number"
+                                id="budget-amount"
+                                placeholder="e.g. 500"
+                                min="0.01"
+                                step="0.01"
+                                required
+                            >
+
+
+
+                            <button
+                                type="submit"
+                                id="save-budget-button"
+                                class="primary-button"
+                            >
+                                + Add Budget
+                            </button>
+
+
+
+                            <button
+                                type="button"
+                                id="cancel-budget-edit-button"
+                                class="secondary-button hidden-button"
+                            >
+                                Cancel Edit
+                            </button>
+
+
+
+                            <p
+                                id="budget-message"
+                                class="form-message"
+                            ></p>
+
+
+                        </form>
+
+
+                    </section>
+
+
+                </section>
+
+
+
+                <!-- =================================================
+                     ACCOUNTS PAGE
+                ================================================== -->
+
+                <section
+                    id="accounts-page"
+                    class="app-page"
+                    data-page="accounts"
                 >
-                    Cancel Edit
-                </button>
 
-            </form>
 
-        </section>
+                    <div class="content-page-header">
+
+
+                        <div>
+
+                            <h2>
+                                Accounts
+                            </h2>
+
+
+                            <p>
+                                Manage your bank accounts, cash and e-wallets.
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <section class="management-section accounts-page-section">
+
+
+                        <!-- ACCOUNT LIST -->
+
+                        <div class="section-heading">
+
+
+                            <div>
+
+                                <h2>
+                                    My Accounts
+                                </h2>
+
+
+                                <p class="section-subtitle">
+                                    Current balances across your accounts
+                                </p>
+
+                            </div>
+
+
+                        </div>
+
+
+                        <div
+                            id="account-list"
+                            class="management-list"
+                        ></div>
+
+
+
+                        <!-- ACCOUNT FORM -->
+
+                        <form
+                            id="account-form"
+                            class="management-form"
+                        >
+
+
+                            <h2 id="account-form-title">
+                                Add Account
+                            </h2>
+
+
+
+                            <label for="account-name">
+                                Account Name
+                            </label>
+
+
+                            <input
+                                type="text"
+                                id="account-name"
+                                placeholder="e.g. Maybank"
+                                required
+                            >
+
+
+
+                            <label for="account-type">
+                                Account Type
+                            </label>
+
+
+                            <select
+                                id="account-type"
+                                required
+                            >
+
+                                <option value="bank">
+                                    Bank
+                                </option>
+
+                                <option value="cash">
+                                    Cash
+                                </option>
+
+                                <option value="e_wallet">
+                                    E-Wallet
+                                </option>
+
+                                <option value="savings">
+                                    Savings
+                                </option>
+
+                                <option value="other">
+                                    Other
+                                </option>
+
+                            </select>
+
+
+
+                            <label for="opening-balance">
+                                Opening Balance
+                            </label>
+
+
+                            <input
+                                type="number"
+                                id="opening-balance"
+                                value="0"
+                                step="0.01"
+                                required
+                            >
+
+
+
+                            <button
+                                type="submit"
+                                id="save-account-button"
+                                class="primary-button"
+                            >
+                                + Add Account
+                            </button>
+
+
+
+                            <button
+                                type="button"
+                                id="cancel-account-edit-button"
+                                class="secondary-button hidden-button"
+                            >
+                                Cancel Edit
+                            </button>
+
+
+
+                            <p
+                                id="account-message"
+                                class="form-message"
+                            ></p>
+
+
+                        </form>
+
+
+                    </section>
+
+
+                </section>
+
+
+
+                <!-- =================================================
+                     MANAGE PAGE
+                ================================================== -->
+
+                <section
+                    id="manage-page"
+                    class="app-page"
+                    data-page="manage"
+                >
+
+
+                    <div class="content-page-header">
+
+
+                        <div>
+
+                            <h2>
+                                Manage
+                            </h2>
+
+
+                            <p>
+                                Configure categories and income sources.
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- =============================================
+                         CATEGORIES
+                    ============================================== -->
+
+                    <section class="management-section">
+
+
+                        <div class="section-heading">
+
+
+                            <div>
+
+                                <h2>
+                                    Categories
+                                </h2>
+
+
+                                <p class="section-subtitle">
+                                    Organise your income and expenses.
+                                </p>
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <div
+                            id="category-list"
+                            class="management-list"
+                        ></div>
+
+
+
+                        <form
+                            id="category-form"
+                            class="management-form"
+                        >
+
+
+                            <h2 id="category-form-title">
+                                Add Category
+                            </h2>
+
+
+
+                            <label for="category-name">
+                                Category Name
+                            </label>
+
+
+                            <input
+                                type="text"
+                                id="category-name"
+                                placeholder="e.g. Food & Dining"
+                                required
+                            >
+
+
+
+                            <label for="category-type">
+                                Category Type
+                            </label>
+
+
+                            <select
+                                id="category-type"
+                                required
+                            >
+
+                                <option value="expense">
+                                    Expense
+                                </option>
+
+                                <option value="income">
+                                    Income
+                                </option>
+
+                                <option value="both">
+                                    Both
+                                </option>
+
+                            </select>
+
+
+
+                            <button
+                                type="submit"
+                                id="save-category-button"
+                                class="primary-button"
+                            >
+                                + Add Category
+                            </button>
+
+
+
+                            <button
+                                type="button"
+                                id="cancel-category-edit-button"
+                                class="secondary-button hidden-button"
+                            >
+                                Cancel Edit
+                            </button>
+
+
+
+                            <p
+                                id="category-message"
+                                class="form-message"
+                            ></p>
+
+
+                        </form>
+
+
+                    </section>
+
+
+
+                    <!-- =============================================
+                         INCOME SOURCES
+                    ============================================== -->
+
+                    <section class="management-section">
+
+
+                        <div class="section-heading">
+
+
+                            <div>
+
+                                <h2>
+                                    Income Sources
+                                </h2>
+
+
+                                <p class="section-subtitle">
+                                    Manage where your income comes from.
+                                </p>
+
+                            </div>
+
+
+                        </div>
+
+
+
+                        <div
+                            id="income-source-list"
+                            class="management-list"
+                        ></div>
+
+
+
+                        <form
+                            id="income-source-form"
+                            class="management-form"
+                        >
+
+
+                            <h2 id="income-source-form-title">
+                                Add Income Source
+                            </h2>
+
+
+
+                            <label for="income-source-name">
+                                Income Source Name
+                            </label>
+
+
+                            <input
+                                type="text"
+                                id="income-source-name"
+                                placeholder="e.g. Salary"
+                                required
+                            >
+
+
+
+                            <button
+                                type="submit"
+                                id="save-income-source-button"
+                                class="primary-button"
+                            >
+                                + Add Income Source
+                            </button>
+
+
+
+                            <button
+                                type="button"
+                                id="cancel-income-source-edit-button"
+                                class="secondary-button hidden-button"
+                            >
+                                Cancel Edit
+                            </button>
+
+
+
+                            <p
+                                id="income-source-message"
+                                class="form-message"
+                            ></p>
+
+
+                        </form>
+
+
+                    </section>
+
+
+                </section>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =================================================
+             MOBILE BOTTOM NAVIGATION
+             Will be styled / activated next.
+        ================================================== -->
+
+        <nav
+            class="mobile-bottom-navigation"
+            aria-label="Mobile navigation"
+        >
+
+
+            <a
+                href="#dashboard-page"
+                class="mobile-nav-item active"
+                data-page="dashboard"
+            >
+
+                <span class="mobile-nav-icon">
+                    ◉
+                </span>
+
+                <span>
+                    Home
+                </span>
+
+            </a>
+
+
+            <a
+                href="#transactions-page"
+                class="mobile-nav-item"
+                data-page="transactions"
+            >
+
+                <span class="mobile-nav-icon">
+                    ⇄
+                </span>
+
+                <span>
+                    Transactions
+                </span>
+
+            </a>
+
+
+            <a
+                href="#transaction-form"
+                class="mobile-nav-item mobile-add-action"
+            >
+
+                <span class="mobile-add-icon">
+                    +
+                </span>
+
+                <span>
+                    Add
+                </span>
+
+            </a>
+
+
+            <a
+                href="#budgets-page"
+                class="mobile-nav-item"
+                data-page="budgets"
+            >
+
+                <span class="mobile-nav-icon">
+                    ◫
+                </span>
+
+                <span>
+                    Budgets
+                </span>
+
+            </a>
+
+
+            <a
+                href="#manage-page"
+                class="mobile-nav-item"
+                data-page="manage"
+            >
+
+                <span class="mobile-nav-icon">
+                    ⚙
+                </span>
+
+                <span>
+                    More
+                </span>
+
+            </a>
+
+
+        </nav>
+
 
     </main>
 
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
 
     <script
         type="module"
         src="/script.js"
     ></script>
 
+
 </body>
+
 </html>

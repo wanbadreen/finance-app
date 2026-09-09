@@ -202,6 +202,56 @@ const formTitle =
 const dateInput =
     document.getElementById("date");
 
+// ======================================================
+// APP NAVIGATION
+// ======================================================
+
+const appPages =
+    document.querySelectorAll(
+        ".app-page"
+    );
+
+const desktopNavItems =
+    document.querySelectorAll(
+        ".nav-item[data-page]"
+    );
+
+const appTopbar =
+    document.querySelector(
+        ".app-topbar"
+    );
+
+const mobileNavItems =
+    document.querySelectorAll(
+        ".mobile-nav-item[data-page]"
+    );
+
+const allPageNavItems =
+    document.querySelectorAll(
+        ".nav-item[data-page], .mobile-nav-item[data-page]"
+    );
+
+const appPageTitle =
+    document.getElementById(
+        "app-page-title"
+    );
+
+const dashboardRecentTransactions =
+    document.getElementById(
+        "dashboard-recent-transactions"
+    );
+
+const dashboardBudgetSummary =
+    document.getElementById(
+        "dashboard-budget-summary"
+    );
+
+const quickAddTransactionLinks =
+    document.querySelectorAll(
+        'a[href="#transaction-form"]'
+    );
+
+
 
 // ======================================================
 // STATE
@@ -1646,6 +1696,8 @@ async function loadBudgets() {
     populateBudgetCategorySelect();
 
     renderBudgets();
+
+    loadDashboardBudgetSummary();
 }
 
 
@@ -2493,6 +2545,10 @@ async function loadTransactions() {
     renderAccounts();
 
     renderSpendingDashboard();
+
+    renderDashboardRecentTransactions();
+
+    loadDashboardBudgetSummary();
 
     if (
         budgetMonthInput.value &&
@@ -4961,6 +5017,942 @@ function getCurrentMonthValue() {
     return `${year}-${month}`;
 }
 
+// ======================================================
+// APP PAGE NAVIGATION
+// ======================================================
+
+const pageTitles = {
+    dashboard: "Dashboard",
+    transactions: "Transactions",
+    budgets: "Budgets",
+    accounts: "Accounts",
+    manage: "Manage"
+};
+
+
+function navigateToPage(
+    pageName,
+    options = {}
+) {
+
+    const {
+        updateHistory = true,
+        scrollToTop = true
+    } = options;
+
+
+    const targetPage =
+        document.querySelector(
+            `.app-page[data-page="${pageName}"]`
+        );
+
+
+    if (!targetPage) {
+
+        console.warn(
+            `Page not found: ${pageName}`
+        );
+
+        return;
+    }
+
+
+    // ----------------------------------------------
+    // HIDE ALL PAGES
+    // ----------------------------------------------
+
+    appPages.forEach(
+        function (page) {
+
+            page.style.display =
+                "none";
+
+            page.classList.remove(
+                "active-page"
+            );
+        }
+    );
+
+
+    // ----------------------------------------------
+    // SHOW SELECTED PAGE
+    // ----------------------------------------------
+
+    targetPage.style.display =
+        "block";
+
+    targetPage.classList.add(
+        "active-page"
+    );
+
+
+    // ----------------------------------------------
+    // UPDATE NAVIGATION ACTIVE STATE
+    // ----------------------------------------------
+
+    desktopNavItems.forEach(
+        function (item) {
+
+            item.classList.toggle(
+                "active",
+                item.dataset.page ===
+                    pageName
+            );
+        }
+    );
+
+
+    mobileNavItems.forEach(
+        function (item) {
+
+            item.classList.toggle(
+                "active",
+                item.dataset.page ===
+                    pageName
+            );
+        }
+    );
+
+
+    // ----------------------------------------------
+    // PAGE TITLE
+    // ----------------------------------------------
+
+    if (appPageTitle) {
+
+        appPageTitle.textContent =
+            pageTitles[pageName]
+            ||
+            "My Finance";
+    }
+
+    // ----------------------------------------------
+    // TOP BAR VISIBILITY
+    // ----------------------------------------------
+
+    if (appTopbar) {
+
+        appTopbar.style.display =
+            pageName === "dashboard"
+                ? "flex"
+                : "none";
+}
+
+
+    // ----------------------------------------------
+    // URL HISTORY
+    // ----------------------------------------------
+
+    if (updateHistory) {
+
+        const newHash =
+            `#${pageName}`;
+
+        if (
+            window.location.hash !==
+            newHash
+        ) {
+
+            history.pushState(
+                {
+                    page:
+                        pageName
+                },
+                "",
+                newHash
+            );
+        }
+    }
+
+
+    // ----------------------------------------------
+    // DASHBOARD DATA
+    // ----------------------------------------------
+
+    if (
+        pageName ===
+        "dashboard"
+    ) {
+
+        renderDashboardRecentTransactions();
+
+        loadDashboardBudgetSummary();
+    }
+
+
+    // ----------------------------------------------
+    // SCROLL
+    // ----------------------------------------------
+
+    if (scrollToTop) {
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+}
+
+
+// ======================================================
+// NAVIGATION CLICK HANDLERS
+// ======================================================
+
+allPageNavItems.forEach(
+    function (item) {
+
+        item.addEventListener(
+            "click",
+            function (event) {
+
+                const pageName =
+                    item.dataset.page;
+
+
+                if (!pageName) {
+                    return;
+                }
+
+
+                event.preventDefault();
+
+
+                navigateToPage(
+                    pageName
+                );
+            }
+        );
+    }
+);
+
+
+// ======================================================
+// QUICK ADD TRANSACTION
+// ======================================================
+
+quickAddTransactionLinks.forEach(
+    function (link) {
+
+        link.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+
+                // If currently editing a transaction,
+                // use the existing cancel/reset behaviour.
+
+                if (
+                    cancelEditButton &&
+                    !cancelEditButton.classList.contains(
+                        "hidden-button"
+                    )
+                ) {
+
+                    cancelEditButton.click();
+                }
+
+
+                navigateToPage(
+                    "transactions",
+                    {
+                        scrollToTop:
+                            false
+                    }
+                );
+
+
+                requestAnimationFrame(
+                    function () {
+
+                        transactionForm.scrollIntoView({
+                            behavior:
+                                "smooth",
+
+                            block:
+                                "start"
+                        });
+
+
+                        setTimeout(
+                            function () {
+
+                                document  
+                                  .getElementById("description")
+                                    ?.focus(); 
+
+                            },
+                            350
+                        );
+                    }
+                );
+            }
+        );
+    }
+);
+
+
+// ======================================================
+// BROWSER BACK / FORWARD
+// ======================================================
+
+window.addEventListener(
+    "popstate",
+    function () {
+
+        navigateToPage(
+            getPageFromHash(),
+            {
+                updateHistory:
+                    false
+            }
+        );
+    }
+);
+
+
+// ======================================================
+// PAGE FROM URL
+// ======================================================
+
+function getPageFromHash() {
+
+    const hash =
+        window.location.hash
+            .replace(
+                "#",
+                ""
+            );
+
+
+    const allowedPages = [
+        "dashboard",
+        "transactions",
+        "budgets",
+        "accounts",
+        "manage"
+    ];
+
+
+    if (
+        allowedPages.includes(
+            hash
+        )
+    ) {
+
+        return hash;
+    }
+
+
+    /*
+       Compatibility with our previous
+       #transactions-page style URLs.
+    */
+
+    const legacyMap = {
+        "dashboard-page":
+            "dashboard",
+
+        "transactions-page":
+            "transactions",
+
+        "budgets-page":
+            "budgets",
+
+        "accounts-page":
+            "accounts",
+
+        "manage-page":
+            "manage"
+    };
+
+
+    return (
+        legacyMap[hash]
+        ||
+        "dashboard"
+    );
+}
+
+
+// ======================================================
+// INITIALISE NAVIGATION
+// ======================================================
+
+function initializeAppNavigation() {
+
+    navigateToPage(
+        getPageFromHash(),
+        {
+            updateHistory:
+                false,
+
+            scrollToTop:
+                false
+        }
+    );
+}
+
+// ======================================================
+// DASHBOARD RECENT TRANSACTIONS
+// ======================================================
+
+function renderDashboardRecentTransactions() {
+
+    if (
+        !dashboardRecentTransactions
+    ) {
+        return;
+    }
+
+
+    dashboardRecentTransactions.innerHTML =
+        "";
+
+
+    const recentTransactions =
+        transactions
+            .slice(
+                0,
+                5
+            );
+
+
+    if (
+        recentTransactions.length ===
+        0
+    ) {
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+
+        empty.className =
+            "empty-state";
+
+
+        empty.textContent =
+            "No transactions yet.";
+
+
+        dashboardRecentTransactions.appendChild(
+            empty
+        );
+
+
+        return;
+    }
+
+
+    recentTransactions.forEach(
+        function (transaction) {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "transaction dashboard-transaction";
+
+
+            // ------------------------------------------
+            // LEFT
+            // ------------------------------------------
+
+            const info =
+                document.createElement(
+                    "div"
+                );
+
+
+            info.className =
+                "transaction-info";
+
+
+            const name =
+                document.createElement(
+                    "p"
+                );
+
+
+            name.className =
+                "transaction-name";
+
+
+            name.textContent =
+                transaction.description
+                ||
+                "Transaction";
+
+
+            const category =
+                document.createElement(
+                    "p"
+                );
+
+
+            category.className =
+                "transaction-category";
+
+
+            category.textContent =
+                getCategoryName(
+                    transaction.category_id
+                )
+                ||
+                (
+                    transaction.type ===
+                        "income"
+                        ?
+                        "Income"
+                        :
+                        "Uncategorised"
+                );
+
+
+            const date =
+                document.createElement(
+                    "p"
+                );
+
+
+            date.className =
+                "transaction-date";
+
+
+            date.textContent =
+                formatDashboardTransactionDate(
+                    transaction.transaction_date
+                );
+
+
+            info.appendChild(
+                name
+            );
+
+            info.appendChild(
+                category
+            );
+
+            info.appendChild(
+                date
+            );
+
+
+            // ------------------------------------------
+            // RIGHT
+            // ------------------------------------------
+
+            const amount =
+                document.createElement(
+                    "p"
+                );
+
+
+            amount.className =
+                `transaction-amount ${transaction.type}`;
+
+
+            const prefix =
+                transaction.type ===
+                    "income"
+                    ?
+                    "+"
+                    :
+                    "-";
+
+
+            amount.textContent =
+                `${prefix}${formatMoney(
+                    Number(
+                        transaction.amount
+                    )
+                )}`;
+
+
+            row.appendChild(
+                info
+            );
+
+            row.appendChild(
+                amount
+            );
+
+
+            dashboardRecentTransactions.appendChild(
+                row
+            );
+        }
+    );
+}
+
+
+// ======================================================
+// DASHBOARD TRANSACTION DATE
+// ======================================================
+
+function formatDashboardTransactionDate(
+    dateValue
+) {
+
+    if (!dateValue) {
+
+        return "";
+    }
+
+
+    const date =
+        new Date(
+            `${dateValue}T00:00:00`
+        );
+
+
+    return date.toLocaleDateString(
+        "en-MY",
+        {
+            day:
+                "numeric",
+
+            month:
+                "short",
+
+            year:
+                "numeric"
+        }
+    );
+}
+
+/* ======================================================
+   DASHBOARD BUDGET SUMMARY
+====================================================== */
+
+
+async function loadDashboardBudgetSummary() {
+
+    if (
+        !currentUser ||
+        !dashboardBudgetSummary
+    ) {
+
+        return;
+    }
+
+
+    const currentMonth =
+        getCurrentMonthValue();
+
+
+    const monthStart =
+        `${currentMonth}-01`;
+
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("budgets")
+            .select("*")
+            .eq(
+                "month_start",
+                monthStart
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: true
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "Dashboard budget summary error:",
+            error
+        );
+
+        return;
+    }
+
+
+    renderDashboardBudgetSummary(
+        data || [],
+        currentMonth
+    );
+}
+
+
+// ======================================================
+// RENDER DASHBOARD BUDGET SUMMARY
+// ======================================================
+
+function renderDashboardBudgetSummary(
+    dashboardBudgets,
+    month
+) {
+
+    if (
+        !dashboardBudgetSummary
+    ) {
+
+        return;
+    }
+
+
+    dashboardBudgetSummary.innerHTML =
+        "";
+
+
+    if (
+        dashboardBudgets.length ===
+        0
+    ) {
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+
+        empty.className =
+            "empty-state";
+
+
+        empty.textContent =
+            "No budgets set for this month yet.";
+
+
+        dashboardBudgetSummary.appendChild(
+            empty
+        );
+
+
+        return;
+    }
+
+
+    dashboardBudgets.forEach(
+        function (budget) {
+
+            const limit =
+                Number(
+                    budget.amount
+                );
+
+
+            const spent =
+                calculateCategorySpending(
+                    budget.category_id,
+                    month
+                );
+
+
+            const percentage =
+                limit > 0
+                    ?
+                    (
+                        spent /
+                        limit
+                    )
+                    *
+                    100
+                    :
+                    0;
+
+
+            const visualPercentage =
+                Math.min(
+                    percentage,
+                    100
+                );
+
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "dashboard-budget-item";
+
+
+            // ------------------------------------------
+            // HEADER
+            // ------------------------------------------
+
+            const header =
+                document.createElement(
+                    "div"
+                );
+
+
+            header.className =
+                "dashboard-budget-header";
+
+
+            const categoryName =
+                document.createElement(
+                    "span"
+                );
+
+
+            categoryName.className =
+                "dashboard-budget-name";
+
+
+            categoryName.textContent =
+                getCategoryName(
+                    budget.category_id
+                )
+                ||
+                "Unknown Category";
+
+
+            const amountText =
+                document.createElement(
+                    "span"
+                );
+
+
+            amountText.className =
+                "dashboard-budget-amount";
+
+
+            amountText.textContent =
+                `${formatMoney(
+                    spent
+                )} / ${formatMoney(
+                    limit
+                )}`;
+
+
+            header.appendChild(
+                categoryName
+            );
+
+            header.appendChild(
+                amountText
+            );
+
+
+            // ------------------------------------------
+            // PROGRESS
+            // ------------------------------------------
+
+            const progress =
+                document.createElement(
+                    "div"
+                );
+
+
+            progress.className =
+                "budget-progress";
+
+
+            const progressFill =
+                document.createElement(
+                    "div"
+                );
+
+
+            progressFill.className =
+                "budget-progress-fill";
+
+
+            if (
+                percentage >=
+                100
+            ) {
+
+                progressFill.classList.add(
+                    "budget-over"
+                );
+
+            } else if (
+                percentage >=
+                80
+            ) {
+
+                progressFill.classList.add(
+                    "budget-warning"
+                );
+            }
+
+
+            progressFill.style.width =
+                `${visualPercentage}%`;
+
+
+            progress.appendChild(
+                progressFill
+            );
+
+
+            // ------------------------------------------
+            // FOOTER
+            // ------------------------------------------
+
+            const footer =
+                document.createElement(
+                    "div"
+                );
+
+
+            footer.className =
+                "dashboard-budget-footer";
+
+
+            if (
+                spent >
+                limit
+            ) {
+
+                footer.classList.add(
+                    "budget-over-text"
+                );
+
+
+                footer.textContent =
+                    `${formatMoney(
+                        spent - limit
+                    )} over budget`;
+
+            } else {
+
+                footer.textContent =
+                    `${formatMoney(
+                        limit - spent
+                    )} remaining`;
+            }
+
+
+            card.appendChild(
+                header
+            );
+
+            card.appendChild(
+                progress
+            );
+
+            card.appendChild(
+                footer
+            );
+
+
+            dashboardBudgetSummary.appendChild(
+                card
+            );
+        }
+    );
+}
+
 
 // ======================================================
 // INITIAL LOAD
@@ -4973,4 +5965,6 @@ budgetMonthInput.value =
     getCurrentMonthValue();
 
 initializeAuth();
+
+initializeAppNavigation();
 
