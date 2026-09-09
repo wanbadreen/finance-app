@@ -5,6 +5,7 @@
 
 body {
     margin: 0;
+
     padding: 40px;
 
     font-family:
@@ -30,23 +31,186 @@ button {
 }
 
 
-.app {
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+
+
+/* ===================================
+   AUTH
+=================================== */
+
+.auth-section {
+    min-height: calc(100vh - 80px);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+}
+
+
+.auth-card {
     width: 100%;
+
+    max-width: 420px;
+
+    padding: 28px;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 20px;
+
+    background-color: white;
+}
+
+
+.auth-card h1 {
+    margin-top: 0;
+
+    margin-bottom: 8px;
+
+    font-size: 32px;
+}
+
+
+.auth-subtitle {
+    margin-top: 0;
+
+    margin-bottom: 24px;
+
+    color: #6b7280;
+}
+
+
+.auth-card label {
+    display: block;
+
+    margin-bottom: 6px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+
+.auth-card input {
+    width: 100%;
+
+    padding: 12px;
+
+    margin-bottom: 16px;
+
+    border:
+        1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    background-color: white;
+
+    font-size: 16px;
+}
+
+
+.auth-card input:focus {
+    outline:
+        2px solid #dbeafe;
+
+    border-color:
+        #2563eb;
+}
+
+
+.auth-card button {
+    width: 100%;
+
+    padding: 14px;
+
+    border-radius: 12px;
+
+    font-size: 16px;
+
+    font-weight: 600;
+}
+
+
+#login-button {
+    margin-bottom: 10px;
+
+    border: none;
+
+    background-color: #111827;
+
+    color: white;
+}
+
+
+#register-button {
+    border:
+        1px solid #d1d5db;
+
+    background-color: white;
+
+    color: #111827;
+}
+
+
+.auth-message {
+    margin-top: 16px;
+
+    margin-bottom: 0;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+    color: #6b7280;
+}
+
+
+
+/* ===================================
+   APP
+=================================== */
+
+.app {
+    display: none;
+
+    width: 100%;
+
     max-width: 500px;
 
     margin: 0 auto;
 }
 
 
-/* HEADER */
+
+/* ===================================
+   HEADER
+=================================== */
 
 .page-header {
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        flex-start;
+
+    gap: 16px;
+
     margin-bottom: 30px;
 }
 
 
 h1 {
     margin-top: 0;
+
     margin-bottom: 10px;
 
     font-size: 36px;
@@ -56,13 +220,36 @@ h1 {
 .subtitle {
     margin: 0;
 
-    font-size: 18px;
+    font-size: 15px;
 
     color: #6b7280;
+
+    overflow-wrap: anywhere;
 }
 
 
-/* BALANCE */
+#logout-button {
+    width: auto;
+
+    flex-shrink: 0;
+
+    padding: 8px 12px;
+
+    border:
+        1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    background-color: white;
+
+    color: #111827;
+}
+
+
+
+/* ===================================
+   BALANCE
+=================================== */
 
 .balance-card {
     padding: 24px;
@@ -77,6 +264,7 @@ h1 {
 
 .balance-card p {
     margin-top: 0;
+
     margin-bottom: 8px;
 
     font-size: 14px;
@@ -87,6 +275,7 @@ h1 {
 
 .balance-card h2 {
     margin-top: 0;
+
     margin-bottom: 8px;
 
     font-size: 36px;
@@ -100,7 +289,10 @@ h1 {
 }
 
 
-/* SUMMARY */
+
+/* ===================================
+   SUMMARY
+=================================== */
 
 .summary-grid {
     display: grid;
@@ -128,6 +320,7 @@ h1 {
 
 .summary-card p {
     margin-top: 0;
+
     margin-bottom: 8px;
 
     font-size: 14px;
@@ -145,7 +338,10 @@ h1 {
 }
 
 
-/* TRANSACTION SECTION */
+
+/* ===================================
+   TRANSACTIONS
+=================================== */
 
 .transactions-section {
     margin-top: 32px;
@@ -180,7 +376,10 @@ h1 {
 }
 
 
-/* TRANSACTION LIST */
+
+/* ===================================
+   TRANSACTION ROW
+=================================== */
 
 .transaction {
     display: flex;
@@ -218,7 +417,8 @@ h1 {
 }
 
 
-.transaction + .transaction {
+.transaction +
+.transaction {
     border-top: none;
 }
 
@@ -230,16 +430,20 @@ h1 {
 
 .transaction-name {
     margin-top: 0;
+
     margin-bottom: 4px;
 
     font-weight: 600;
 
     color: #111827;
+
+    overflow-wrap: anywhere;
 }
 
 
 .transaction-category {
     margin-top: 0;
+
     margin-bottom: 4px;
 
     font-size: 13px;
@@ -320,6 +524,11 @@ h1 {
 }
 
 
+
+/* ===================================
+   EMPTY STATE
+=================================== */
+
 .empty-state {
     padding: 30px;
 
@@ -336,7 +545,10 @@ h1 {
 }
 
 
-/* FORM */
+
+/* ===================================
+   TRANSACTION FORM
+=================================== */
 
 .transaction-form {
     margin-top: 32px;
@@ -354,6 +566,7 @@ h1 {
 
 .transaction-form h2 {
     margin-top: 0;
+
     margin-bottom: 20px;
 
     font-size: 18px;
@@ -392,9 +605,11 @@ h1 {
 
 .transaction-form input:focus,
 .transaction-form select:focus {
-    outline: 2px solid #dbeafe;
+    outline:
+        2px solid #dbeafe;
 
-    border-color: #2563eb;
+    border-color:
+        #2563eb;
 }
 
 
@@ -434,17 +649,33 @@ h1 {
 }
 
 
-/* MOBILE */
 
-@media (max-width: 600px) {
+/* ===================================
+   MOBILE
+=================================== */
+
+@media (
+    max-width: 600px
+) {
 
     body {
         padding: 20px;
     }
 
 
+    .auth-section {
+        min-height:
+            calc(100vh - 40px);
+    }
+
+
     h1 {
         font-size: 30px;
+    }
+
+
+    .page-header {
+        align-items: center;
     }
 
 
@@ -458,8 +689,8 @@ h1 {
     }
 
 
-    .transaction-name {
-        overflow-wrap: anywhere;
+    .transaction-actions {
+        flex-shrink: 0;
     }
 
 }

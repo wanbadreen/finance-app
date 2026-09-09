@@ -1,105 +1,56 @@
-// ------------------------------------
-// DEFAULT DATA
-// ------------------------------------
-
-const defaultTransactions = [
-    {
-        id: generateId(),
-        description: "Salary",
-        category: "Income",
-        amount: 2750,
-        type: "income",
-        date: "2026-09-01"
-    },
-    {
-        id: generateId(),
-        description: "Grab",
-        category: "Side Income",
-        amount: 1200,
-        type: "income",
-        date: "2026-09-07"
-    },
-    {
-        id: generateId(),
-        description: "Petrol",
-        category: "Transportation",
-        amount: 50,
-        type: "expense",
-        date: "2026-09-08"
-    },
-    {
-        id: generateId(),
-        description: "Nasi Kandar",
-        category: "Food & Dining",
-        amount: 18,
-        type: "expense",
-        date: "2026-09-08"
-    }
-];
+import { supabase } from "./supabase.js";
 
 
-// ------------------------------------
-// LOAD DATA
-// ------------------------------------
+// ====================================
+// AUTH ELEMENTS
+// ====================================
 
-const savedTransactions =
-    localStorage.getItem("transactions");
-
-
-let transactions;
-let editingId = null;
+const authSection =
+    document.getElementById(
+        "auth-section"
+    );
 
 
-if (savedTransactions) {
-
-    transactions =
-        JSON.parse(savedTransactions);
-
-} else {
-
-    transactions =
-        defaultTransactions;
-
-    saveTransactions();
-
-}
+const financeApp =
+    document.getElementById(
+        "finance-app"
+    );
 
 
-// ------------------------------------
-// MIGRATE OLD DATA
-// ------------------------------------
-
-let dataChanged = false;
-
-
-transactions = transactions.map(
-    function (transaction) {
-
-        if (!transaction.id) {
-
-            dataChanged = true;
-
-            return {
-                ...transaction,
-                id: generateId()
-            };
-
-        }
-
-        return transaction;
-
-    }
-);
+const authForm =
+    document.getElementById(
+        "auth-form"
+    );
 
 
-if (dataChanged) {
-    saveTransactions();
-}
+const registerButton =
+    document.getElementById(
+        "register-button"
+    );
 
 
-// ------------------------------------
-// HTML ELEMENTS
-// ------------------------------------
+const logoutButton =
+    document.getElementById(
+        "logout-button"
+    );
+
+
+const authMessage =
+    document.getElementById(
+        "auth-message"
+    );
+
+
+const userEmail =
+    document.getElementById(
+        "user-email"
+    );
+
+
+
+// ====================================
+// FINANCE ELEMENTS
+// ====================================
 
 const transactionForm =
     document.getElementById(
@@ -131,30 +82,521 @@ const dateInput =
     );
 
 
-// ------------------------------------
-// DASHBOARD
-// ------------------------------------
 
-function updateDashboard() {
+// ====================================
+// DEFAULT LOCAL DATA
+// ====================================
 
-    let totalIncome = 0;
-    let totalExpenses = 0;
+const defaultTransactions = [
+
+    {
+        id: generateId(),
+        description: "Salary",
+        category: "Income",
+        amount: 2750,
+        type: "income",
+        date: "2026-09-01"
+    },
+
+    {
+        id: generateId(),
+        description: "Grab",
+        category: "Side Income",
+        amount: 1200,
+        type: "income",
+        date: "2026-09-07"
+    },
+
+    {
+        id: generateId(),
+        description: "Petrol",
+        category: "Transportation",
+        amount: 50,
+        type: "expense",
+        date: "2026-09-08"
+    },
+
+    {
+        id: generateId(),
+        description: "Nasi Kandar",
+        category: "Food & Dining",
+        amount: 18,
+        type: "expense",
+        date: "2026-09-08"
+    }
+
+];
 
 
-    for (const transaction of transactions) {
 
-        if (transaction.type === "income") {
+// ====================================
+// LOAD LOCAL STORAGE
+// ====================================
 
-            totalIncome =
-                totalIncome + transaction.amount;
+const savedTransactions =
+    localStorage.getItem(
+        "transactions"
+    );
+
+
+let transactions;
+
+let editingId = null;
+
+
+if (savedTransactions) {
+
+    try {
+
+        transactions =
+            JSON.parse(
+                savedTransactions
+            );
+
+    } catch (error) {
+
+        console.error(
+            "Failed to load transactions:",
+            error
+        );
+
+        transactions =
+            defaultTransactions;
+
+        saveTransactions();
+
+    }
+
+} else {
+
+    transactions =
+        defaultTransactions;
+
+    saveTransactions();
+
+}
+
+
+
+// ====================================
+// MIGRATE OLD TRANSACTIONS
+// ====================================
+
+let dataChanged = false;
+
+
+transactions =
+    transactions.map(
+        function (transaction) {
+
+            if (!transaction.id) {
+
+                dataChanged = true;
+
+                return {
+
+                    ...transaction,
+
+                    id: generateId()
+
+                };
+
+            }
+
+
+            return transaction;
+
+        }
+    );
+
+
+if (dataChanged) {
+
+    saveTransactions();
+
+}
+
+
+
+// ====================================
+// AUTH UI STATES
+// ====================================
+
+function showLoggedOutState() {
+
+    authSection.style.display =
+        "flex";
+
+    financeApp.style.display =
+        "none";
+
+}
+
+
+
+function showLoggedInState(user) {
+
+    authSection.style.display =
+        "none";
+
+    financeApp.style.display =
+        "block";
+
+
+    userEmail.textContent =
+        user.email || "Signed in";
+
+
+    authMessage.textContent =
+        "";
+
+}
+
+
+
+// ====================================
+// REGISTER
+// ====================================
+
+registerButton.addEventListener(
+    "click",
+    async function () {
+
+        const email =
+            document
+                .getElementById(
+                    "auth-email"
+                )
+                .value
+                .trim();
+
+
+        const password =
+            document
+                .getElementById(
+                    "auth-password"
+                )
+                .value;
+
+
+        if (
+            !email ||
+            password.length < 6
+        ) {
+
+            authMessage.textContent =
+                "Enter a valid email and a password of at least 6 characters.";
+
+            return;
 
         }
 
 
-        if (transaction.type === "expense") {
+        registerButton.disabled =
+            true;
 
-            totalExpenses =
-                totalExpenses + transaction.amount;
+        authMessage.textContent =
+            "Creating account...";
+
+
+        const {
+            data,
+            error
+        } =
+            await supabase.auth.signUp({
+
+                email: email,
+
+                password: password,
+
+                options: {
+
+                    emailRedirectTo:
+                        "http://localhost:5173"
+
+                }
+
+            });
+
+
+        registerButton.disabled =
+            false;
+
+
+        if (error) {
+
+            authMessage.textContent =
+                error.message;
+
+            return;
+
+        }
+
+
+        if (!data.session) {
+
+            authMessage.textContent =
+                "Account created. Check your email to confirm your account before logging in.";
+
+            return;
+
+        }
+
+
+        showLoggedInState(
+            data.user
+        );
+
+    }
+);
+
+
+
+// ====================================
+// LOGIN
+// ====================================
+
+authForm.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        const email =
+            document
+                .getElementById(
+                    "auth-email"
+                )
+                .value
+                .trim();
+
+
+        const password =
+            document
+                .getElementById(
+                    "auth-password"
+                )
+                .value;
+
+
+        if (
+            !email ||
+            !password
+        ) {
+
+            authMessage.textContent =
+                "Enter your email and password.";
+
+            return;
+
+        }
+
+
+        const loginButton =
+            document.getElementById(
+                "login-button"
+            );
+
+
+        loginButton.disabled =
+            true;
+
+
+        authMessage.textContent =
+            "Signing in...";
+
+
+        const {
+            data,
+            error
+        } =
+            await supabase.auth
+                .signInWithPassword({
+
+                    email: email,
+
+                    password: password
+
+                });
+
+
+        loginButton.disabled =
+            false;
+
+
+        if (error) {
+
+            authMessage.textContent =
+                error.message;
+
+            return;
+
+        }
+
+
+        showLoggedInState(
+            data.user
+        );
+
+    }
+);
+
+
+
+// ====================================
+// LOGOUT
+// ====================================
+
+logoutButton.addEventListener(
+    "click",
+    async function () {
+
+        logoutButton.disabled =
+            true;
+
+
+        const {
+            error
+        } =
+            await supabase.auth
+                .signOut();
+
+
+        logoutButton.disabled =
+            false;
+
+
+        if (error) {
+
+            alert(
+                error.message
+            );
+
+            return;
+
+        }
+
+
+        showLoggedOutState();
+
+    }
+);
+
+
+
+// ====================================
+// INITIAL AUTH SESSION
+// ====================================
+
+async function initializeAuth() {
+
+    const {
+        data,
+        error
+    } =
+        await supabase.auth
+            .getSession();
+
+
+    if (error) {
+
+        console.error(
+            "Session error:",
+            error
+        );
+
+        showLoggedOutState();
+
+        return;
+
+    }
+
+
+    if (data.session) {
+
+        showLoggedInState(
+            data.session.user
+        );
+
+    } else {
+
+        showLoggedOutState();
+
+    }
+
+}
+
+
+
+// ====================================
+// AUTH STATE LISTENER
+// ====================================
+
+supabase.auth.onAuthStateChange(
+    function (event, session) {
+
+        console.log(
+            "Auth event:",
+            event
+        );
+
+
+        if (session) {
+
+            showLoggedInState(
+                session.user
+            );
+
+        } else {
+
+            showLoggedOutState();
+
+        }
+
+    }
+);
+
+
+
+// ====================================
+// DASHBOARD CALCULATION
+// ====================================
+
+function updateDashboard() {
+
+    let totalIncome = 0;
+
+    let totalExpenses = 0;
+
+
+    for (
+        const transaction
+        of transactions
+    ) {
+
+        if (
+            transaction.type ===
+            "income"
+        ) {
+
+            totalIncome +=
+                Number(
+                    transaction.amount
+                );
+
+        }
+
+
+        if (
+            transaction.type ===
+            "expense"
+        ) {
+
+            totalExpenses +=
+                Number(
+                    transaction.amount
+                );
 
         }
 
@@ -162,32 +604,46 @@ function updateDashboard() {
 
 
     const balance =
-        totalIncome - totalExpenses;
+        totalIncome -
+        totalExpenses;
 
 
     document
-        .getElementById("balance")
+        .getElementById(
+            "balance"
+        )
         .textContent =
-        formatMoney(balance);
+        formatMoney(
+            balance
+        );
 
 
     document
-        .getElementById("income")
+        .getElementById(
+            "income"
+        )
         .textContent =
-        formatMoney(totalIncome);
+        formatMoney(
+            totalIncome
+        );
 
 
     document
-        .getElementById("expenses")
+        .getElementById(
+            "expenses"
+        )
         .textContent =
-        formatMoney(totalExpenses);
+        formatMoney(
+            totalExpenses
+        );
 
 }
 
 
-// ------------------------------------
+
+// ====================================
 // RENDER TRANSACTIONS
-// ------------------------------------
+// ====================================
 
 function renderTransactions() {
 
@@ -197,23 +653,32 @@ function renderTransactions() {
         );
 
 
-    transactionList.innerHTML = "";
+    transactionList.innerHTML =
+        "";
 
 
-    if (transactions.length === 0) {
+    if (
+        transactions.length === 0
+    ) {
 
         const emptyState =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
+
 
         emptyState.className =
             "empty-state";
 
+
         emptyState.textContent =
             "No transactions yet.";
+
 
         transactionList.appendChild(
             emptyState
         );
+
 
         return;
 
@@ -223,8 +688,11 @@ function renderTransactions() {
     transactions.forEach(
         function (transaction) {
 
+
             const transactionElement =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
 
             transactionElement.className =
@@ -234,37 +702,52 @@ function renderTransactions() {
             // LEFT SIDE
 
             const transactionInfo =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
+
 
             transactionInfo.className =
                 "transaction-info";
 
 
             const transactionName =
-                document.createElement("p");
+                document.createElement(
+                    "p"
+                );
+
 
             transactionName.className =
                 "transaction-name";
+
 
             transactionName.textContent =
                 transaction.description;
 
 
             const transactionCategory =
-                document.createElement("p");
+                document.createElement(
+                    "p"
+                );
+
 
             transactionCategory.className =
                 "transaction-category";
+
 
             transactionCategory.textContent =
                 transaction.category;
 
 
             const transactionDate =
-                document.createElement("p");
+                document.createElement(
+                    "p"
+                );
+
 
             transactionDate.className =
                 "transaction-date";
+
 
             transactionDate.textContent =
                 formatDate(
@@ -276,33 +759,43 @@ function renderTransactions() {
                 transactionName
             );
 
+
             transactionInfo.appendChild(
                 transactionCategory
             );
+
 
             transactionInfo.appendChild(
                 transactionDate
             );
 
 
+
             // RIGHT SIDE
 
             const transactionActions =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
+
 
             transactionActions.className =
                 "transaction-actions";
 
 
             const transactionAmount =
-                document.createElement("p");
+                document.createElement(
+                    "p"
+                );
+
 
             transactionAmount.className =
                 `transaction-amount ${transaction.type}`;
 
 
             const sign =
-                transaction.type === "income"
+                transaction.type ===
+                "income"
                     ? "+"
                     : "-";
 
@@ -315,36 +808,50 @@ function renderTransactions() {
 
 
             const actionButtons =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
+
 
             actionButtons.className =
                 "action-buttons";
 
 
             const editButton =
-                document.createElement("button");
+                document.createElement(
+                    "button"
+                );
+
 
             editButton.type =
                 "button";
 
+
             editButton.className =
                 "edit-button";
+
 
             editButton.textContent =
                 "Edit";
 
 
             const deleteButton =
-                document.createElement("button");
+                document.createElement(
+                    "button"
+                );
+
 
             deleteButton.type =
                 "button";
 
+
             deleteButton.className =
                 "delete-button";
 
+
             deleteButton.textContent =
                 "Delete";
+
 
 
             editButton.addEventListener(
@@ -375,6 +882,7 @@ function renderTransactions() {
                 editButton
             );
 
+
             actionButtons.appendChild(
                 deleteButton
             );
@@ -384,6 +892,7 @@ function renderTransactions() {
                 transactionAmount
             );
 
+
             transactionActions.appendChild(
                 actionButtons
             );
@@ -392,6 +901,7 @@ function renderTransactions() {
             transactionElement.appendChild(
                 transactionInfo
             );
+
 
             transactionElement.appendChild(
                 transactionActions
@@ -408,23 +918,30 @@ function renderTransactions() {
 }
 
 
-// ------------------------------------
-// SAVE
-// ------------------------------------
+
+// ====================================
+// SAVE LOCAL STORAGE
+// ====================================
 
 function saveTransactions() {
 
     localStorage.setItem(
+
         "transactions",
-        JSON.stringify(transactions)
+
+        JSON.stringify(
+            transactions
+        )
+
     );
 
 }
 
 
-// ------------------------------------
+
+// ====================================
 // DELETE
-// ------------------------------------
+// ====================================
 
 function deleteTransaction(id) {
 
@@ -441,7 +958,9 @@ function deleteTransaction(id) {
 
 
     if (!transaction) {
+
         return;
+
     }
 
 
@@ -452,7 +971,9 @@ function deleteTransaction(id) {
 
 
     if (!confirmed) {
+
         return;
+
     }
 
 
@@ -479,9 +1000,10 @@ function deleteTransaction(id) {
 }
 
 
-// ------------------------------------
+
+// ====================================
 // EDIT
-// ------------------------------------
+// ====================================
 
 function editTransaction(id) {
 
@@ -498,36 +1020,48 @@ function editTransaction(id) {
 
 
     if (!transaction) {
+
         return;
+
     }
 
 
     document
-        .getElementById("description")
+        .getElementById(
+            "description"
+        )
         .value =
         transaction.description;
 
 
     document
-        .getElementById("category")
+        .getElementById(
+            "category"
+        )
         .value =
         transaction.category;
 
 
     document
-        .getElementById("amount")
+        .getElementById(
+            "amount"
+        )
         .value =
         transaction.amount;
 
 
     document
-        .getElementById("date")
+        .getElementById(
+            "date"
+        )
         .value =
         transaction.date || "";
 
 
     document
-        .getElementById("type")
+        .getElementById(
+            "type"
+        )
         .value =
         transaction.type;
 
@@ -548,19 +1082,21 @@ function editTransaction(id) {
         "block";
 
 
-    transactionForm.scrollIntoView(
-        {
-            behavior: "smooth",
-            block: "start"
-        }
-    );
+    transactionForm.scrollIntoView({
+
+        behavior: "smooth",
+
+        block: "start"
+
+    });
 
 }
 
 
-// ------------------------------------
-// RESET FORM
-// ------------------------------------
+
+// ====================================
+// RESET TRANSACTION FORM
+// ====================================
 
 function resetForm() {
 
@@ -588,120 +1124,10 @@ function resetForm() {
 }
 
 
-// ------------------------------------
-// FORMAT MONEY
-// ------------------------------------
 
-function formatMoney(amount) {
-
-    return new Intl.NumberFormat(
-        "en-MY",
-        {
-            style: "currency",
-            currency: "MYR"
-        }
-    ).format(amount);
-
-}
-
-
-// ------------------------------------
-// FORMAT DATE
-// ------------------------------------
-
-function formatDate(date) {
-
-    if (!date) {
-        return "No date";
-    }
-
-
-    const dateObject =
-        new Date(
-            date + "T00:00:00"
-        );
-
-
-    return dateObject.toLocaleDateString(
-        "en-MY",
-        {
-            day: "2-digit",
-            month: "short",
-            year: "numeric"
-        }
-    );
-
-}
-
-
-// ------------------------------------
-// TODAY
-// ------------------------------------
-
-function getTodayDate() {
-
-    const today =
-        new Date();
-
-
-    const year =
-        today.getFullYear();
-
-
-    const month =
-        String(
-            today.getMonth() + 1
-        ).padStart(
-            2,
-            "0"
-        );
-
-
-    const day =
-        String(
-            today.getDate()
-        ).padStart(
-            2,
-            "0"
-        );
-
-
-    return `${year}-${month}-${day}`;
-
-}
-
-
-// ------------------------------------
-// GENERATE UNIQUE ID
-// ------------------------------------
-
-function generateId() {
-
-    if (
-        window.crypto &&
-        typeof window.crypto.randomUUID ===
-            "function"
-    ) {
-
-        return window.crypto.randomUUID();
-
-    }
-
-
-    return (
-        Date.now().toString(36) +
-        "-" +
-        Math.random()
-            .toString(36)
-            .slice(2)
-    );
-
-}
-
-
-// ------------------------------------
+// ====================================
 // CANCEL EDIT
-// ------------------------------------
+// ====================================
 
 cancelEditButton.addEventListener(
     "click",
@@ -713,9 +1139,10 @@ cancelEditButton.addEventListener(
 );
 
 
-// ------------------------------------
-// ADD / SAVE
-// ------------------------------------
+
+// ====================================
+// ADD / SAVE TRANSACTION
+// ====================================
 
 transactionForm.addEventListener(
     "submit",
@@ -754,13 +1181,17 @@ transactionForm.addEventListener(
 
         const date =
             document
-                .getElementById("date")
+                .getElementById(
+                    "date"
+                )
                 .value;
 
 
         const type =
             document
-                .getElementById("type")
+                .getElementById(
+                    "type"
+                )
                 .value;
 
 
@@ -781,7 +1212,12 @@ transactionForm.addEventListener(
         }
 
 
-        if (editingId === null) {
+
+        // ADD NEW
+
+        if (
+            editingId === null
+        ) {
 
             const newTransaction = {
 
@@ -804,7 +1240,12 @@ transactionForm.addEventListener(
                 newTransaction
             );
 
-        } else {
+        }
+
+
+        // UPDATE EXISTING
+
+        else {
 
             const transactionIndex =
                 transactions.findIndex(
@@ -819,7 +1260,9 @@ transactionForm.addEventListener(
                 );
 
 
-            if (transactionIndex === -1) {
+            if (
+                transactionIndex === -1
+            ) {
 
                 alert(
                     "Transaction could not be found."
@@ -865,9 +1308,159 @@ transactionForm.addEventListener(
 );
 
 
-// ------------------------------------
+
+// ====================================
+// FORMAT MONEY
+// ====================================
+
+function formatMoney(amount) {
+
+    return new Intl.NumberFormat(
+
+        "en-MY",
+
+        {
+
+            style: "currency",
+
+            currency: "MYR"
+
+        }
+
+    ).format(
+        Number(amount)
+    );
+
+}
+
+
+
+// ====================================
+// FORMAT DATE
+// ====================================
+
+function formatDate(date) {
+
+    if (!date) {
+
+        return "No date";
+
+    }
+
+
+    const dateObject =
+        new Date(
+            date +
+            "T00:00:00"
+        );
+
+
+    return dateObject
+        .toLocaleDateString(
+
+            "en-MY",
+
+            {
+
+                day: "2-digit",
+
+                month: "short",
+
+                year: "numeric"
+
+            }
+
+        );
+
+}
+
+
+
+// ====================================
+// TODAY DATE
+// ====================================
+
+function getTodayDate() {
+
+    const today =
+        new Date();
+
+
+    const year =
+        today.getFullYear();
+
+
+    const month =
+        String(
+            today.getMonth() + 1
+        )
+        .padStart(
+            2,
+            "0"
+        );
+
+
+    const day =
+        String(
+            today.getDate()
+        )
+        .padStart(
+            2,
+            "0"
+        );
+
+
+    return (
+        `${year}-${month}-${day}`
+    );
+
+}
+
+
+
+// ====================================
+// UNIQUE ID
+// ====================================
+
+function generateId() {
+
+    if (
+        window.crypto &&
+        typeof window.crypto.randomUUID ===
+        "function"
+    ) {
+
+        return (
+            window.crypto.randomUUID()
+        );
+
+    }
+
+
+    return (
+
+        Date.now()
+            .toString(36)
+
+        +
+
+        "-"
+
+        +
+
+        Math.random()
+            .toString(36)
+            .slice(2)
+
+    );
+
+}
+
+
+
+// ====================================
 // INITIAL LOAD
-// ------------------------------------
+// ====================================
 
 updateDashboard();
 
@@ -875,3 +1468,6 @@ renderTransactions();
 
 dateInput.value =
     getTodayDate();
+
+
+initializeAuth();

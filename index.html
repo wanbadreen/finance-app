@@ -11,29 +11,139 @@
 
     <title>My Finance</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="/style.css"
+    >
 </head>
 
 <body>
 
-    <main class="app">
+
+    <!-- ===================================
+         AUTH SCREEN
+    ==================================== -->
+
+    <section
+        id="auth-section"
+        class="auth-section"
+    >
+
+        <div class="auth-card">
+
+            <h1>My Finance</h1>
+
+            <p class="auth-subtitle">
+                Sign in to manage your finances.
+            </p>
+
+
+            <form id="auth-form">
+
+                <label for="auth-email">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="auth-email"
+                    placeholder="you@example.com"
+                    autocomplete="email"
+                    required
+                >
+
+
+                <label for="auth-password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="auth-password"
+                    placeholder="Minimum 6 characters"
+                    minlength="6"
+                    autocomplete="current-password"
+                    required
+                >
+
+
+                <button
+                    type="submit"
+                    id="login-button"
+                >
+                    Login
+                </button>
+
+
+                <button
+                    type="button"
+                    id="register-button"
+                >
+                    Create Account
+                </button>
+
+            </form>
+
+
+            <p
+                id="auth-message"
+                class="auth-message"
+            ></p>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ===================================
+         FINANCE APP
+    ==================================== -->
+
+    <main
+        class="app"
+        id="finance-app"
+    >
+
+
+        <!-- HEADER -->
 
         <header class="page-header">
 
             <div>
-                <h1>My Finance</h1>
 
-                <p class="subtitle">
+                <h1>
+                    My Finance
+                </h1>
+
+                <p
+                    class="subtitle"
+                    id="user-email"
+                >
                     My personal finance management app.
                 </p>
+
             </div>
+
+
+            <button
+                type="button"
+                id="logout-button"
+            >
+                Logout
+            </button>
 
         </header>
 
 
+
+        <!-- BALANCE -->
+
         <section class="balance-card">
 
-            <p>Total Balance</p>
+            <p>
+                Total Balance
+            </p>
 
             <h2 id="balance">
                 RM 0.00
@@ -46,11 +156,16 @@
         </section>
 
 
+
+        <!-- SUMMARY -->
+
         <section class="summary-grid">
 
             <article class="summary-card">
 
-                <p>Income</p>
+                <p>
+                    Income
+                </p>
 
                 <h3 id="income">
                     RM 0.00
@@ -61,7 +176,9 @@
 
             <article class="summary-card">
 
-                <p>Expenses</p>
+                <p>
+                    Expenses
+                </p>
 
                 <h3 id="expenses">
                     RM 0.00
@@ -71,6 +188,9 @@
 
         </section>
 
+
+
+        <!-- TRANSACTIONS -->
 
         <section class="transactions-section">
 
@@ -92,6 +212,9 @@
 
             <div id="transaction-list"></div>
 
+
+
+            <!-- TRANSACTION FORM -->
 
             <form
                 id="transaction-form"
@@ -194,7 +317,10 @@
     </main>
 
 
-    <script src="script.js"></script>
+    <script
+        type="module"
+        src="/script.js"
+    ></script>
 
 </body>
 
