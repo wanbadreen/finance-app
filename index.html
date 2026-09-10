@@ -894,8 +894,21 @@
                             type="text"
                             id="description"
                             placeholder="e.g. Petrol"
+                            autocomplete="off"
                             required
                         >
+
+
+                        <div
+                            id="description-suggestions"
+                            class="description-suggestions hidden-button"
+                            aria-live="polite"
+                        ></div>
+
+
+                        <p class="description-suggestion-help">
+                            Quick Fill can reuse the account, category, income source and tags from a similar past transaction.
+                        </p>
 
 
 

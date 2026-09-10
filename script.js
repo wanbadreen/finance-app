@@ -158,6 +158,12 @@ const incomeSourceMessage =
 const transactionForm =
     document.getElementById("transaction-form");
 
+const transactionDescriptionInput =
+    document.getElementById("description");
+
+const descriptionSuggestions =
+    document.getElementById("description-suggestions");
+
 const transactionList =
     document.getElementById("transaction-list");
 
@@ -3323,6 +3329,408 @@ function updateIncomeSourceVisibility(
     transactionIncomeSourceSelect.value =
         selectedValue;
 }
+
+
+// ======================================================
+// SMART QUICK FILL
+// ======================================================
+
+function normaliseQuickFillText(value) {
+
+    return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+}
+
+
+function getQuickFillCandidates(
+    searchValue = ""
+) {
+
+    const search =
+        normaliseQuickFillText(
+            searchValue
+        );
+
+    const seenDescriptions =
+        new Set();
+
+    const candidates =
+        [];
+
+    transactions.forEach(
+        function (transaction) {
+
+            const description =
+                String(
+                    transaction.description ||
+                    ""
+                ).trim();
+
+            if (!description) {
+                return;
+            }
+
+            const normalisedDescription =
+                normaliseQuickFillText(
+                    description
+                );
+
+            if (
+                search &&
+                !normalisedDescription.includes(
+                    search
+                )
+            ) {
+                return;
+            }
+
+            if (
+                seenDescriptions.has(
+                    normalisedDescription
+                )
+            ) {
+                return;
+            }
+
+            seenDescriptions.add(
+                normalisedDescription
+            );
+
+            candidates.push(
+                transaction
+            );
+        }
+    );
+
+    return candidates.slice(
+        0,
+        5
+    );
+}
+
+
+function hideDescriptionSuggestions() {
+
+    if (!descriptionSuggestions) {
+        return;
+    }
+
+    descriptionSuggestions.style.display =
+        "none";
+
+    descriptionSuggestions.innerHTML =
+        "";
+}
+
+
+function formatQuickFillMeta(
+    transaction
+) {
+
+    const parts = [
+        getCategoryName(
+            transaction.category_id
+        ),
+        getAccountName(
+            transaction.account_id
+        )
+    ];
+
+    if (
+        transaction.type ===
+        "income"
+    ) {
+
+        const source =
+            getIncomeSourceName(
+                transaction.income_source_id
+            );
+
+        if (source) {
+            parts.push(source);
+        }
+    }
+
+    const tagNames =
+        getTransactionTagNames(
+            transaction
+        );
+
+    if (tagNames.length) {
+        parts.push(
+            tagNames.join(", ")
+        );
+    }
+
+    return parts
+        .filter(Boolean)
+        .join(" • ");
+}
+
+
+function applyQuickFillSuggestion(
+    transaction
+) {
+
+    if (!transaction) {
+        return;
+    }
+
+    transactionDescriptionInput.value =
+        transaction.description || "";
+
+    transactionTypeSelect.value =
+        transaction.type ||
+        "expense";
+
+    refreshTransactionDropdowns(
+        transaction
+    );
+
+    if (transactionTagsInput) {
+
+        transactionTagsInput.value =
+            getTransactionTagNames(
+                transaction
+            ).join(", ");
+    }
+
+    customCategoryGroup.style.display =
+        "none";
+
+    customIncomeSourceGroup.style.display =
+        "none";
+
+    hideDescriptionSuggestions();
+
+    transactionDescriptionInput.focus();
+}
+
+
+function renderDescriptionSuggestions(
+    searchValue = ""
+) {
+
+    if (
+        !descriptionSuggestions ||
+        editingTransactionId !== null
+    ) {
+
+        hideDescriptionSuggestions();
+
+        return;
+    }
+
+    const candidates =
+        getQuickFillCandidates(
+            searchValue
+        );
+
+    descriptionSuggestions.innerHTML =
+        "";
+
+    if (!candidates.length) {
+
+        hideDescriptionSuggestions();
+
+        return;
+    }
+
+    candidates.forEach(
+        function (transaction) {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+            button.type =
+                "button";
+
+            button.className =
+                "description-suggestion-item";
+
+
+            const textWrap =
+                document.createElement(
+                    "span"
+                );
+
+            textWrap.className =
+                "description-suggestion-text";
+
+
+            const title =
+                document.createElement(
+                    "strong"
+                );
+
+            title.textContent =
+                transaction.description;
+
+
+            const meta =
+                document.createElement(
+                    "span"
+                );
+
+            meta.textContent =
+                formatQuickFillMeta(
+                    transaction
+                );
+
+
+            textWrap.appendChild(
+                title
+            );
+
+            if (meta.textContent) {
+                textWrap.appendChild(
+                    meta
+                );
+            }
+
+
+            const badge =
+                document.createElement(
+                    "span"
+                );
+
+            badge.className =
+                "description-suggestion-badge";
+
+            badge.textContent =
+                "Quick Fill";
+
+
+            button.appendChild(
+                textWrap
+            );
+
+            button.appendChild(
+                badge
+            );
+
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    applyQuickFillSuggestion(
+                        transaction
+                    );
+                }
+            );
+
+
+            descriptionSuggestions.appendChild(
+                button
+            );
+        }
+    );
+
+    descriptionSuggestions.style.display =
+        "grid";
+}
+
+
+if (transactionDescriptionInput) {
+
+    transactionDescriptionInput.addEventListener(
+        "focus",
+        function () {
+
+            if (
+                editingTransactionId ===
+                null
+            ) {
+
+                renderDescriptionSuggestions(
+                    transactionDescriptionInput
+                        .value
+                );
+            }
+        }
+    );
+
+
+    transactionDescriptionInput.addEventListener(
+        "input",
+        function () {
+
+            if (
+                editingTransactionId !==
+                null
+            ) {
+
+                hideDescriptionSuggestions();
+
+                return;
+            }
+
+            const value =
+                transactionDescriptionInput
+                    .value;
+
+            if (
+                value.trim().length <
+                2
+            ) {
+
+                if (
+                    !value.trim()
+                ) {
+
+                    renderDescriptionSuggestions(
+                        ""
+                    );
+
+                } else {
+
+                    hideDescriptionSuggestions();
+                }
+
+                return;
+            }
+
+            renderDescriptionSuggestions(
+                value
+            );
+        }
+    );
+}
+
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        if (
+            !descriptionSuggestions ||
+            !transactionDescriptionInput
+        ) {
+            return;
+        }
+
+        const target =
+            event.target;
+
+        if (
+            descriptionSuggestions.contains(
+                target
+            ) ||
+            transactionDescriptionInput.contains(
+                target
+            )
+        ) {
+            return;
+        }
+
+        hideDescriptionSuggestions();
+    }
+);
 
 
 // ======================================================
@@ -7318,8 +7726,7 @@ transactionForm.addEventListener(
         }
 
         const description =
-            document
-                .getElementById("description")
+            transactionDescriptionInput
                 .value
                 .trim();
 
@@ -8787,9 +9194,7 @@ function editTransaction(id) {
         return;
     }
 
-    document
-        .getElementById("description")
-        .value =
+    transactionDescriptionInput.value =
         transaction.description;
 
     document
@@ -8821,6 +9226,8 @@ function editTransaction(id) {
 
     editingTransactionId =
         transaction.id;
+
+    hideDescriptionSuggestions();
 
     refreshTransactionDropdowns(
         transaction
@@ -8964,6 +9371,8 @@ function resetTransactionForm() {
 
     editingTransactionId =
         null;
+
+    hideDescriptionSuggestions();
 
     transactionForm.reset();
 
