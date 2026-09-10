@@ -1154,6 +1154,217 @@
                                 class="receipt-message"
                             ></p>
 
+
+                            <!-- RECEIPT OCR -->
+
+                            <div class="receipt-ocr-section">
+
+                                <div class="receipt-ocr-heading">
+
+                                    <div>
+
+                                        <p class="receipt-ocr-title">
+                                            <span class="receipt-scan-title-row">
+                                            <span>Receipt Scan</span>
+                                            <span class="receipt-scan-beta-badge">Beta</span>
+                                        </span>
+                                        </p>
+
+                                        <span>
+                                            Hybrid scan with full-receipt amount detection, fuzzy merchant matching and extended lower-receipt date OCR.
+                                        </span>
+
+                                    </div>
+
+
+                                    <button
+                                        type="button"
+                                        id="scan-receipt-button"
+                                        class="receipt-scan-button"
+                                        disabled
+                                    >
+                                        Scan Receipt
+                                    </button>
+
+                                </div>
+
+
+                                <div
+                                    id="receipt-ocr-progress"
+                                    class="receipt-ocr-progress hidden-button"
+                                >
+
+                                    <div class="receipt-ocr-progress-track">
+
+                                        <div
+                                            id="receipt-ocr-progress-fill"
+                                            class="receipt-ocr-progress-fill"
+                                        ></div>
+
+                                    </div>
+
+                                    <p id="receipt-ocr-status">
+                                        Ready to scan.
+                                    </p>
+
+                                </div>
+
+
+                                <div
+                                    id="receipt-ocr-result"
+                                    class="receipt-ocr-result hidden-button"
+                                >
+
+                                    <div class="receipt-ocr-result-header">
+
+                                        <div>
+
+                                            <p>
+                                                Scan result
+                                            </p>
+
+                                            <span id="receipt-ocr-confidence"></span>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <p class="receipt-ocr-review-hint">
+                                        Edit anything that looks wrong. If local OCR misses a field, you can fill just that field yourself.
+                                    </p>
+
+
+                                    <div class="receipt-ocr-result-grid">
+
+                                        <div class="receipt-ocr-result-item">
+
+                                            <label for="receipt-ocr-merchant">
+                                                Merchant
+                                            </label>
+
+                                            <input
+                                                type="text"
+                                                id="receipt-ocr-merchant"
+                                                placeholder="Enter merchant name"
+                                                autocomplete="off"
+                                            >
+
+                                        </div>
+
+
+                                        <div class="receipt-ocr-result-item">
+
+                                            <label for="receipt-ocr-amount">
+                                                Amount
+                                            </label>
+
+                                            <input
+                                                type="number"
+                                                id="receipt-ocr-amount"
+                                                min="0"
+                                                step="0.01"
+                                                inputmode="decimal"
+                                                placeholder="0.00"
+                                            >
+
+                                        </div>
+
+
+                                        <div class="receipt-ocr-result-item">
+
+                                            <label for="receipt-ocr-date">
+                                                Date
+                                            </label>
+
+                                            <input
+                                                type="date"
+                                                id="receipt-ocr-date"
+                                            >
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <div
+                                        id="receipt-ai-fallback"
+                                        class="receipt-ai-fallback hidden-button"
+                                    >
+
+                                        <div class="receipt-ai-fallback-copy">
+
+                                            <div class="receipt-ai-title-row">
+
+                                                <p id="receipt-ai-reason">
+                                                    AI Receipt Scan
+                                                </p>
+
+                                                <span class="receipt-ai-badge">
+                                                    Coming Soon
+                                                </span>
+
+                                            </div>
+
+                                            <span>
+                                                Advanced AI receipt recognition will be available in a future update. For now, review and edit the local scan result manually.
+                                            </span>
+
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            id="improve-receipt-ai"
+                                            class="receipt-ai-button"
+                                            disabled
+                                        >
+                                            Coming Soon
+                                        </button>
+
+                                    </div>
+
+
+                                    <p
+                                        id="receipt-ai-status"
+                                        class="receipt-ai-status"
+                                    ></p>
+
+
+                                    <div class="receipt-ocr-actions">
+
+                                        <button
+                                            type="button"
+                                            id="apply-receipt-ocr"
+                                            class="receipt-ocr-primary-button"
+                                        >
+                                            Apply to Form
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            id="dismiss-receipt-ocr"
+                                            class="receipt-ocr-secondary-button"
+                                        >
+                                            Dismiss
+                                        </button>
+
+                                    </div>
+
+
+                                    <details class="receipt-ocr-raw">
+
+                                        <summary>
+                                            Recognised text
+                                        </summary>
+
+                                        <pre id="receipt-ocr-raw-text"></pre>
+
+                                    </details>
+
+                                </div>
+
+                            </div>
+
                         </div>
 
 

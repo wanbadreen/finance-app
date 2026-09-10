@@ -1,4 +1,5 @@
 import { supabase } from "./supabase.js";
+import { createWorker } from "tesseract.js";
 
 
 // ======================================================
@@ -235,6 +236,54 @@ const removeSavedReceiptButton =
 const receiptMessage =
     document.getElementById("receipt-message");
 
+const scanReceiptButton =
+    document.getElementById("scan-receipt-button");
+
+const receiptOcrProgress =
+    document.getElementById("receipt-ocr-progress");
+
+const receiptOcrProgressFill =
+    document.getElementById("receipt-ocr-progress-fill");
+
+const receiptOcrStatus =
+    document.getElementById("receipt-ocr-status");
+
+const receiptOcrResult =
+    document.getElementById("receipt-ocr-result");
+
+const receiptOcrConfidence =
+    document.getElementById("receipt-ocr-confidence");
+
+const receiptOcrMerchant =
+    document.getElementById("receipt-ocr-merchant");
+
+const receiptOcrAmount =
+    document.getElementById("receipt-ocr-amount");
+
+const receiptOcrDate =
+    document.getElementById("receipt-ocr-date");
+
+const receiptOcrRawText =
+    document.getElementById("receipt-ocr-raw-text");
+
+const applyReceiptOcrButton =
+    document.getElementById("apply-receipt-ocr");
+
+const dismissReceiptOcrButton =
+    document.getElementById("dismiss-receipt-ocr");
+
+const receiptAiFallback =
+    document.getElementById("receipt-ai-fallback");
+
+const receiptAiReason =
+    document.getElementById("receipt-ai-reason");
+
+const improveReceiptAiButton =
+    document.getElementById("improve-receipt-ai");
+
+const receiptAiStatus =
+    document.getElementById("receipt-ai-status");
+
 const transactionSearchInput =
     document.getElementById("transaction-search");
 
@@ -367,6 +416,14 @@ const ALLOWED_RECEIPT_TYPES = new Set([
     "image/webp",
     "application/pdf"
 ]);
+
+let receiptOcrWorker = null;
+let receiptOcrResultData = null;
+let receiptOcrRunning = false;
+let receiptAiRunning = false;
+
+const RECEIPT_AI_CONFIDENCE_THRESHOLD = 65;
+const RECEIPT_AI_FEATURE_ENABLED = false;
 
 let showAllTransactions = false;
 
@@ -3067,6 +3124,3290 @@ async function createIncomeSourceFromTransaction() {
 
 
 // ======================================================
+// RECEIPT OCR V3
+// Region OCR + fuzzy merchant + MY date recovery
+// ======================================================
+
+let receiptOcrProgressOffset =
+    0;
+
+let receiptOcrProgressScale =
+    1;
+
+
+const RECEIPT_MERCHANT_LIBRARY = [
+    {
+        name:
+            "Watsons",
+        aliases: [
+            "watsons",
+            "watson"
+        ]
+    },
+    {
+        name:
+            "Guardian",
+        aliases: [
+            "guardian"
+        ]
+    },
+    {
+        name:
+            "99 Speedmart",
+        aliases: [
+            "99speedmart",
+            "speedmart"
+        ]
+    },
+    {
+        name:
+            "7-Eleven",
+        aliases: [
+            "7eleven",
+            "seveneleven"
+        ]
+    },
+    {
+        name:
+            "Mydin",
+        aliases: [
+            "mydin"
+        ]
+    },
+    {
+        name:
+            "Lotus's",
+        aliases: [
+            "lotuss",
+            "lotus"
+        ]
+    },
+    {
+        name:
+            "MR.DIY",
+        aliases: [
+            "mrdiy",
+            "mr diy"
+        ]
+    },
+    {
+        name:
+            "FamilyMart",
+        aliases: [
+            "familymart",
+            "family mart"
+        ]
+    },
+    {
+        name:
+            "KK Super Mart",
+        aliases: [
+            "kksupermart",
+            "kk super mart"
+        ]
+    },
+    {
+        name:
+            "Jaya Grocer",
+        aliases: [
+            "jayagrocer",
+            "jaya grocer"
+        ]
+    },
+    {
+        name:
+            "Village Grocer",
+        aliases: [
+            "villagegrocer",
+            "village grocer"
+        ]
+    },
+    {
+        name:
+            "AEON",
+        aliases: [
+            "aeon"
+        ]
+    }
+];
+
+
+function isReceiptImage(file) {
+
+    return Boolean(
+        file &&
+        file.type &&
+        file.type.startsWith("image/")
+    );
+}
+
+
+function resetReceiptOcr() {
+
+    receiptOcrResultData =
+        null;
+
+    if (receiptOcrResult) {
+        receiptOcrResult.style.display =
+            "none";
+    }
+
+    if (receiptOcrProgress) {
+        receiptOcrProgress.style.display =
+            "none";
+    }
+
+    if (receiptOcrProgressFill) {
+        receiptOcrProgressFill.style.width =
+            "0%";
+    }
+
+    if (receiptOcrStatus) {
+        receiptOcrStatus.textContent =
+            "Ready to scan.";
+    }
+
+    if (receiptOcrConfidence) {
+        receiptOcrConfidence.textContent =
+            "";
+    }
+
+    if (receiptOcrMerchant) {
+        receiptOcrMerchant.value =
+            "";
+    }
+
+    if (receiptOcrAmount) {
+        receiptOcrAmount.value =
+            "";
+    }
+
+    if (receiptOcrDate) {
+        receiptOcrDate.value =
+            "";
+    }
+
+    if (receiptOcrRawText) {
+        receiptOcrRawText.textContent =
+            "";
+    }
+
+    if (receiptAiFallback) {
+        receiptAiFallback.style.display =
+            "none";
+    }
+
+    if (receiptAiStatus) {
+        receiptAiStatus.textContent =
+            "";
+        receiptAiStatus.className =
+            "receipt-ai-status";
+    }
+
+    updateReceiptScanButton();
+}
+
+
+function updateReceiptScanButton() {
+
+    if (!scanReceiptButton) {
+        return;
+    }
+
+    const canScan =
+        isReceiptImage(
+            selectedReceiptFile
+        ) &&
+        !receiptOcrRunning;
+
+    scanReceiptButton.disabled =
+        !canScan;
+
+    scanReceiptButton.textContent =
+        receiptOcrRunning
+            ? "Scanning..."
+            : "Scan Receipt";
+}
+
+
+function setReceiptOcrProgress(
+    progress,
+    message
+) {
+
+    const safeProgress =
+        Math.max(
+            0,
+            Math.min(
+                1,
+                Number(progress) || 0
+            )
+        );
+
+    if (receiptOcrProgress) {
+        receiptOcrProgress.style.display =
+            "block";
+    }
+
+    if (receiptOcrProgressFill) {
+        receiptOcrProgressFill.style.width =
+            `${Math.round(
+                safeProgress * 100
+            )}%`;
+    }
+
+    if (receiptOcrStatus) {
+        receiptOcrStatus.textContent =
+            message ||
+            `Scanning ${Math.round(
+                safeProgress * 100
+            )}%`;
+    }
+}
+
+
+function normaliseReceiptText(text) {
+
+    return String(text || "")
+        .replace(/\r/g, "")
+        .replace(/[ \t]+/g, " ")
+        .trim();
+}
+
+
+function getReceiptLines(text) {
+
+    return normaliseReceiptText(text)
+        .split("\n")
+        .map(
+            line =>
+                line
+                    .replace(/\s+/g, " ")
+                    .trim()
+        )
+        .filter(Boolean);
+}
+
+
+function mergeReceiptLines(
+    ...texts
+) {
+
+    const merged =
+        [];
+
+    const seen =
+        new Set();
+
+    texts.forEach(
+        function (text) {
+
+            getReceiptLines(text)
+                .forEach(
+                    function (line) {
+
+                        const key =
+                            line
+                                .toLowerCase()
+                                .replace(
+                                    /[^a-z0-9]/g,
+                                    ""
+                                );
+
+                        if (
+                            !key ||
+                            seen.has(key)
+                        ) {
+                            return;
+                        }
+
+                        seen.add(key);
+
+                        merged.push(line);
+                    }
+                );
+        }
+    );
+
+    return merged;
+}
+
+
+function looksLikeReceiptDateLine(line) {
+
+    return (
+        /\b\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}\b/.test(line)
+        ||
+        /\b\d{4}[\/.\-]\d{1,2}[\/.\-]\d{1,2}\b/.test(line)
+        ||
+        /\b[0-3]\d[01]\d20\d{2}\b/.test(line)
+        ||
+        /\b\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s+\d{2,4}\b/i.test(line)
+        ||
+        /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s+\d{1,2},?\s+\d{2,4}\b/i.test(line)
+    );
+}
+
+
+function looksLikeReceiptAmountLine(line) {
+
+    return (
+        /\b(?:RM|MYR)\s*\d/i.test(line)
+        ||
+        /\b\d{1,6}[.,]\d{2}\b/.test(line)
+    );
+}
+
+
+function cleanMerchantName(value) {
+
+    return String(value || "")
+        .replace(
+            /^[^A-Za-z0-9]+|[^A-Za-z0-9)&.'\- ]+$/g,
+            ""
+        )
+        .replace(/\s{2,}/g, " ")
+        .trim();
+}
+
+
+function normaliseMerchantForMatch(value) {
+
+    return String(value || "")
+        .toLowerCase()
+        .replace(/0/g, "o")
+        .replace(/[1|!]/g, "i")
+        .replace(/[^a-z0-9]/g, "");
+}
+
+
+function levenshteinDistance(
+    first,
+    second
+) {
+
+    const a =
+        String(first || "");
+
+    const b =
+        String(second || "");
+
+    if (!a.length) {
+        return b.length;
+    }
+
+    if (!b.length) {
+        return a.length;
+    }
+
+    let previous =
+        Array.from(
+            {
+                length:
+                    b.length + 1
+            },
+            (
+                _,
+                index
+            ) =>
+                index
+        );
+
+    for (
+        let row = 1;
+        row <= a.length;
+        row += 1
+    ) {
+
+        const current = [
+            row
+        ];
+
+        for (
+            let column = 1;
+            column <= b.length;
+            column += 1
+        ) {
+
+            const substitutionCost =
+                a[row - 1] ===
+                b[column - 1]
+                    ? 0
+                    : 1;
+
+            current[column] =
+                Math.min(
+                    current[
+                        column - 1
+                    ] + 1,
+                    previous[
+                        column
+                    ] + 1,
+                    previous[
+                        column - 1
+                    ] +
+                    substitutionCost
+                );
+        }
+
+        previous =
+            current;
+    }
+
+    return previous[
+        b.length
+    ];
+}
+
+
+function merchantSimilarity(
+    first,
+    second
+) {
+
+    const a =
+        normaliseMerchantForMatch(
+            first
+        );
+
+    const b =
+        normaliseMerchantForMatch(
+            second
+        );
+
+    if (
+        !a ||
+        !b
+    ) {
+        return 0;
+    }
+
+    if (
+        a.includes(b) ||
+        b.includes(a)
+    ) {
+
+        const shortLength =
+            Math.min(
+                a.length,
+                b.length
+            );
+
+        if (
+            shortLength >=
+            5
+        ) {
+            return 0.96;
+        }
+    }
+
+    const distance =
+        levenshteinDistance(
+            a,
+            b
+        );
+
+    return (
+        1 -
+        distance /
+        Math.max(
+            a.length,
+            b.length
+        )
+    );
+}
+
+
+function findFuzzyKnownMerchant(lines) {
+
+    let best =
+        null;
+
+    lines
+        .slice(0, 24)
+        .forEach(
+            function (
+                line,
+                lineIndex
+            ) {
+
+                const cleaned =
+                    cleanMerchantName(
+                        line
+                    );
+
+                if (
+                    cleaned.length < 3 ||
+                    cleaned.length > 90
+                ) {
+                    return;
+                }
+
+                const chunks = [
+                    cleaned,
+                    ...cleaned
+                        .split(/\s+/)
+                        .filter(
+                            item =>
+                                item.length >=
+                                3
+                        )
+                ];
+
+                RECEIPT_MERCHANT_LIBRARY
+                    .forEach(
+                        function (
+                            merchant
+                        ) {
+
+                            merchant.aliases
+                                .forEach(
+                                    function (
+                                        alias
+                                    ) {
+
+                                        chunks.forEach(
+                                            function (
+                                                chunk
+                                            ) {
+
+                                                const similarity =
+                                                    merchantSimilarity(
+                                                        chunk,
+                                                        alias
+                                                    );
+
+                                                let score =
+                                                    similarity;
+
+                                                score +=
+                                                    Math.max(
+                                                        0,
+                                                        0.08 -
+                                                        lineIndex *
+                                                        0.004
+                                                    );
+
+                                                if (
+                                                    !best ||
+                                                    score >
+                                                    best.score
+                                                ) {
+
+                                                    best = {
+                                                        name:
+                                                            merchant.name,
+                                                        score,
+                                                        source:
+                                                            cleaned
+                                                    };
+                                                }
+                                            }
+                                        );
+                                    }
+                                );
+                        }
+                    );
+            }
+        );
+
+    if (
+        best &&
+        best.score >=
+        0.68
+    ) {
+
+        return best.name;
+    }
+
+    return null;
+}
+
+
+function canonicaliseReceiptMerchant(value) {
+
+    const cleaned =
+        cleanMerchantName(value);
+
+    if (!cleaned) {
+        return null;
+    }
+
+    const fuzzy =
+        findFuzzyKnownMerchant(
+            [cleaned]
+        );
+
+    if (fuzzy) {
+        return fuzzy;
+    }
+
+    return cleaned
+        .replace(
+            /\b(?:sdn\.?\s*bhd\.?|berhad|enterprise)\b.*$/i,
+            ""
+        )
+        .trim()
+        ||
+        cleaned;
+}
+
+
+function extractReceiptMerchant(
+    topLines,
+    fullLines
+) {
+
+    const regionLines =
+        mergeReceiptLines(
+            topLines.join("\n"),
+            fullLines
+                .slice(0, 20)
+                .join("\n")
+        );
+
+    const fuzzyMerchant =
+        findFuzzyKnownMerchant(
+            regionLines
+        );
+
+    if (fuzzyMerchant) {
+        return fuzzyMerchant;
+    }
+
+    const rejected =
+        /\b(receipt|tax invoice|invoice|official receipt|cash bill|welcome|thank you|thanks|tel|telephone|phone|fax|email|www\.|http|gst|sst|tax|date|time|cashier|counter|table|order|queue|transaction|terminal|merchant id|address|company reg|registration|loyalty|statement|opening balance|closing balance|earned points)\b/i;
+
+    const addressLike =
+        /\b(jalan|jln|lorong|persiaran|taman|lot|level|tingkat|floor|unit|no\.?|postcode|selangor|kuala lumpur|malaysia|plaza|mall|centre|center)\b/i;
+
+    let best =
+        null;
+
+    regionLines
+        .slice(0, 24)
+        .forEach(
+            function (
+                line,
+                index
+            ) {
+
+                const cleaned =
+                    cleanMerchantName(
+                        line
+                    );
+
+                if (
+                    cleaned.length < 3 ||
+                    cleaned.length > 80
+                ) {
+                    return;
+                }
+
+                if (
+                    rejected.test(cleaned) ||
+                    looksLikeReceiptDateLine(cleaned) ||
+                    looksLikeReceiptAmountLine(cleaned)
+                ) {
+                    return;
+                }
+
+                const letters =
+                    (
+                        cleaned.match(
+                            /[A-Za-z]/g
+                        )
+                        ||
+                        []
+                    ).length;
+
+                const digits =
+                    (
+                        cleaned.match(
+                            /\d/g
+                        )
+                        ||
+                        []
+                    ).length;
+
+                if (
+                    letters < 3 ||
+                    digits > letters
+                ) {
+                    return;
+                }
+
+                let score =
+                    22 -
+                    Math.min(
+                        index,
+                        18
+                    );
+
+                if (
+                    /\b(sdn\.?\s*bhd\.?|berhad|enterprise|trading|restaurant|restoran|cafe|coffee|mart|market|pharmacy|store|stores|shop|bakery|kitchen|food|hotel|personal care)\b/i
+                        .test(cleaned)
+                ) {
+                    score += 13;
+                }
+
+                const uppercaseLetters =
+                    (
+                        cleaned.match(
+                            /[A-Z]/g
+                        )
+                        ||
+                        []
+                    ).length;
+
+                if (
+                    letters >= 4 &&
+                    uppercaseLetters /
+                    letters >
+                    0.58
+                ) {
+                    score += 4;
+                }
+
+                if (
+                    addressLike.test(cleaned)
+                ) {
+                    score -= 8;
+                }
+
+                if (
+                    /reg\.?\s*no|sst|company/i
+                        .test(cleaned)
+                ) {
+                    score -= 10;
+                }
+
+                if (
+                    !best ||
+                    score >
+                    best.score
+                ) {
+
+                    best = {
+                        value:
+                            canonicaliseReceiptMerchant(
+                                cleaned
+                            ),
+                        score
+                    };
+                }
+            }
+        );
+
+    return best?.value || null;
+}
+
+
+function parseReceiptMoney(value) {
+
+    if (!value) {
+        return null;
+    }
+
+    let cleaned =
+        String(value)
+            .replace(
+                /(?:RM|MYR|\s)/gi,
+                ""
+            )
+            .replace(
+                /[^\d,.\-]/g,
+                ""
+            );
+
+    if (
+        cleaned.includes(",") &&
+        cleaned.includes(".")
+    ) {
+
+        cleaned =
+            cleaned.replace(/,/g, "");
+
+    } else if (
+        cleaned.includes(",") &&
+        !cleaned.includes(".")
+    ) {
+
+        const parts =
+            cleaned.split(",");
+
+        if (
+            parts.length === 2 &&
+            parts[1].length === 2
+        ) {
+
+            cleaned =
+                `${parts[0]}.${parts[1]}`;
+
+        } else {
+
+            cleaned =
+                cleaned.replace(/,/g, "");
+        }
+    }
+
+    const number =
+        Number.parseFloat(cleaned);
+
+    if (
+        !Number.isFinite(number) ||
+        number <= 0 ||
+        number > 1000000
+    ) {
+        return null;
+    }
+
+    return Math.round(
+        number * 100
+    ) / 100;
+}
+
+
+function getMoneyValuesFromLine(line) {
+
+    const normalised =
+        String(line || "")
+            .replace(
+                /R[MNm]\s*/g,
+                "RM"
+            );
+
+    const matches =
+        normalised.match(
+            /(?:RM|MYR)?\s*\d{1,7}(?:[,.]\d{2})/gi
+        )
+        ||
+        [];
+
+    return matches
+        .map(parseReceiptMoney)
+        .filter(
+            value =>
+                value !== null
+        );
+}
+
+
+function scoreReceiptAmountLine(line) {
+
+    let score =
+        0;
+
+    if (
+        /\bgrand\s*total\b/i.test(line)
+    ) {
+        score += 150;
+
+    } else if (
+        /\b(total\s*amount|amount\s*due|net\s*total|balance\s*due)\b/i
+            .test(line)
+    ) {
+        score += 140;
+
+    } else if (
+        /\bsub\s*total\b|\bsubtotal\b/i
+            .test(line)
+    ) {
+        score += 115;
+
+    } else if (
+        /\btotal\b/i.test(line)
+    ) {
+        score += 130;
+    }
+
+    if (
+        /\b(RM|MYR)\b/i.test(line)
+    ) {
+        score += 20;
+    }
+
+    if (
+        /\b(mastercard|visa|debit|credit|card|online|ewallet|e-wallet|wallet|duitnow|touch.?n.?go|tng)\b/i
+            .test(line)
+    ) {
+        score += 75;
+    }
+
+    if (
+        /\b(payment|paid|tender)\b/i
+            .test(line)
+    ) {
+        score += 45;
+    }
+
+    if (
+        /\b(change|cash change|balance change)\b/i
+            .test(line)
+    ) {
+        score -= 170;
+    }
+
+    if (
+        /\b(discount|saving|voucher|rebate)\b/i
+            .test(line)
+    ) {
+        score -= 80;
+    }
+
+    if (
+        /\b(sst|gst|service charge|tax)\b/i
+            .test(line)
+    ) {
+        score -= 80;
+    }
+
+    return score;
+}
+
+
+function extractReceiptAmount(
+    fullLines,
+    amountLines
+) {
+
+    const candidates =
+        [];
+
+    [
+        {
+            lines:
+                fullLines,
+            sourceBonus:
+                0
+        },
+        {
+            lines:
+                amountLines,
+            sourceBonus:
+                0
+        }
+    ].forEach(
+        function (group) {
+
+            group.lines.forEach(
+                function (
+                    line,
+                    index
+                ) {
+
+                    const values =
+                        getMoneyValuesFromLine(
+                            line
+                        );
+
+                    if (!values.length) {
+                        return;
+                    }
+
+                    const lineScore =
+                        scoreReceiptAmountLine(
+                            line
+                        );
+
+                    values.forEach(
+                        function (value) {
+
+                            candidates.push({
+                                value,
+                                score:
+                                    lineScore +
+                                    group.sourceBonus +
+                                    Math.max(
+                                        0,
+                                        8 -
+                                        Math.floor(
+                                            index / 8
+                                        )
+                                    ),
+                                line
+                            });
+                        }
+                    );
+                }
+            );
+        }
+    );
+
+    if (!candidates.length) {
+        return null;
+    }
+
+    candidates.forEach(
+        function (candidate) {
+
+            const sameValue =
+                candidates.filter(
+                    item =>
+                        Math.abs(
+                            item.value -
+                            candidate.value
+                        ) <
+                        0.005
+                );
+
+            candidate.score +=
+                Math.min(
+                    48,
+                    Math.max(
+                        0,
+                        sameValue.length - 1
+                    ) *
+                    12
+                );
+        }
+    );
+
+    candidates.sort(
+        function (a, b) {
+
+            if (
+                b.score !==
+                a.score
+            ) {
+                return (
+                    b.score -
+                    a.score
+                );
+            }
+
+            return (
+                b.value -
+                a.value
+            );
+        }
+    );
+
+    const best =
+        candidates[0];
+
+    if (
+        best.score <
+        25
+    ) {
+
+        return Math.max(
+            ...candidates.map(
+                item =>
+                    item.value
+            )
+        );
+    }
+
+    return best.value;
+}
+
+
+function padReceiptDatePart(value) {
+
+    return String(value)
+        .padStart(2, "0");
+}
+
+
+function makeReceiptIsoDate(
+    year,
+    month,
+    day
+) {
+
+    const numericYear =
+        Number(year);
+
+    const numericMonth =
+        Number(month);
+
+    const numericDay =
+        Number(day);
+
+    const fullYear =
+        numericYear < 100
+            ? 2000 +
+            numericYear
+            : numericYear;
+
+    if (
+        fullYear < 2000 ||
+        fullYear > 2100 ||
+        numericMonth < 1 ||
+        numericMonth > 12 ||
+        numericDay < 1 ||
+        numericDay > 31
+    ) {
+        return null;
+    }
+
+    const iso =
+        `${fullYear}-${padReceiptDatePart(
+            numericMonth
+        )}-${padReceiptDatePart(
+            numericDay
+        )}`;
+
+    const parsed =
+        new Date(
+            `${iso}T00:00:00`
+        );
+
+    if (
+        Number.isNaN(
+            parsed.getTime()
+        ) ||
+        parsed.getFullYear() !==
+            fullYear ||
+        parsed.getMonth() + 1 !==
+            numericMonth ||
+        parsed.getDate() !==
+            numericDay
+    ) {
+        return null;
+    }
+
+    return iso;
+}
+
+
+function receiptMonthNumber(name) {
+
+    const key =
+        String(name || "")
+            .toLowerCase()
+            .slice(0, 3);
+
+    const map = {
+        jan: 1,
+        feb: 2,
+        mar: 3,
+        apr: 4,
+        may: 5,
+        jun: 6,
+        jul: 7,
+        aug: 8,
+        sep: 9,
+        oct: 10,
+        nov: 11,
+        dec: 12
+    };
+
+    return map[key] || null;
+}
+
+
+function normaliseOcrDateToken(value) {
+
+    return String(value || "")
+        .toUpperCase()
+        .replace(/[OQD]/g, "0")
+        .replace(/[IL|!]/g, "1")
+        .replace(/Z/g, "2")
+        .replace(/S/g, "5")
+        .replace(/G/g, "6")
+        .replace(/B/g, "8")
+        .replace(
+            /[^0-9]/g,
+            ""
+        );
+}
+
+
+function pushReceiptDateCandidate(
+    candidates,
+    iso,
+    score,
+    source
+) {
+
+    if (!iso) {
+        return;
+    }
+
+    candidates.push({
+        value:
+            iso,
+        score,
+        source
+    });
+}
+
+
+function getReceiptDateCandidates(
+    lines,
+    sourceBonus = 0,
+    sourceName = "full"
+) {
+
+    const candidates =
+        [];
+
+    lines.forEach(
+        function (
+            line,
+            index
+        ) {
+
+            if (
+                /\b(exp(?:iry|iration)?\s*date|valid\s*thru|valid\s*until)\b/i
+                    .test(line)
+            ) {
+                return;
+            }
+
+            const timeBonus =
+                /\b\d{1,2}:\d{2}(?::\d{2})?\b/
+                    .test(line)
+                    ? 34
+                    : 0;
+
+            const labelBonus =
+                /\b(date|transaction date|trx date)\b/i
+                    .test(line)
+                    ? 30
+                    : 0;
+
+            const positionBonus =
+                Math.max(
+                    0,
+                    12 -
+                    Math.floor(
+                        index / 8
+                    )
+                );
+
+            const baseScore =
+                sourceBonus +
+                timeBonus +
+                labelBonus +
+                positionBonus;
+
+
+            let match =
+                line.match(
+                    /\b(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})\b/
+                );
+
+            if (match) {
+
+                pushReceiptDateCandidate(
+                    candidates,
+                    makeReceiptIsoDate(
+                        match[1],
+                        match[2],
+                        match[3]
+                    ),
+                    baseScore +
+                    45,
+                    sourceName
+                );
+            }
+
+
+            match =
+                line.match(
+                    /\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})\b/
+                );
+
+            if (match) {
+
+                pushReceiptDateCandidate(
+                    candidates,
+                    makeReceiptIsoDate(
+                        match[3],
+                        match[2],
+                        match[1]
+                    ),
+                    baseScore +
+                    45,
+                    sourceName
+                );
+            }
+
+
+            match =
+                line.match(
+                    /\b(\d{1,2})\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{2,4})\b/i
+                );
+
+            if (match) {
+
+                pushReceiptDateCandidate(
+                    candidates,
+                    makeReceiptIsoDate(
+                        match[3],
+                        receiptMonthNumber(
+                            match[2]
+                        ),
+                        match[1]
+                    ),
+                    baseScore +
+                    50,
+                    sourceName
+                );
+            }
+
+
+            // Tolerant compact-date recovery.
+            // It can recover strings such as I8O82O26 -> 18082026.
+            const tokens =
+                String(line || "")
+                    .split(
+                        /[\s,;]+/
+                    )
+                    .filter(Boolean);
+
+            tokens.forEach(
+                function (token) {
+
+                    const digits =
+                        normaliseOcrDateToken(
+                            token
+                        );
+
+                    if (
+                        digits.length <
+                        6
+                    ) {
+                        return;
+                    }
+
+                    const windows =
+                        [];
+
+                    if (
+                        digits.length ===
+                        8
+                    ) {
+
+                        windows.push({
+                            value:
+                                digits,
+                            exact:
+                                true
+                        });
+
+                    } else if (
+                        digits.length >
+                        8
+                    ) {
+
+                        for (
+                            let offset = 0;
+                            offset <=
+                                digits.length -
+                                8;
+                            offset += 1
+                        ) {
+
+                            windows.push({
+                                value:
+                                    digits.slice(
+                                        offset,
+                                        offset + 8
+                                    ),
+                                exact:
+                                    false
+                            });
+                        }
+                    }
+
+
+                    windows.forEach(
+                        function (
+                            windowValue
+                        ) {
+
+                            const value =
+                                windowValue.value;
+
+                            const day =
+                                value.slice(
+                                    0,
+                                    2
+                                );
+
+                            const month =
+                                value.slice(
+                                    2,
+                                    4
+                                );
+
+                            const year =
+                                value.slice(
+                                    4,
+                                    8
+                                );
+
+                            const iso =
+                                makeReceiptIsoDate(
+                                    year,
+                                    month,
+                                    day
+                                );
+
+                            pushReceiptDateCandidate(
+                                candidates,
+                                iso,
+                                baseScore +
+                                (
+                                    windowValue.exact
+                                        ? 72
+                                        : 42
+                                ),
+                                sourceName
+                            );
+                        }
+                    );
+
+
+                    if (
+                        digits.length ===
+                        6
+                    ) {
+
+                        pushReceiptDateCandidate(
+                            candidates,
+                            makeReceiptIsoDate(
+                                digits.slice(
+                                    4,
+                                    6
+                                ),
+                                digits.slice(
+                                    2,
+                                    4
+                                ),
+                                digits.slice(
+                                    0,
+                                    2
+                                )
+                            ),
+                            baseScore +
+                            35,
+                            sourceName
+                        );
+                    }
+                }
+            );
+        }
+    );
+
+    return candidates;
+}
+
+
+function extractReceiptDate(
+    fullLines,
+    dateLines
+) {
+
+    const candidates = [
+        ...getReceiptDateCandidates(
+            fullLines,
+            0,
+            "full"
+        ),
+        ...getReceiptDateCandidates(
+            dateLines,
+            65,
+            "bottom-region"
+        )
+    ];
+
+    if (!candidates.length) {
+        return null;
+    }
+
+    const today =
+        new Date();
+
+    candidates.forEach(
+        function (candidate) {
+
+            const parsed =
+                new Date(
+                    `${candidate.value}T00:00:00`
+                );
+
+            const futureLimit =
+                new Date(today);
+
+            futureLimit.setDate(
+                futureLimit.getDate() +
+                7
+            );
+
+            if (
+                parsed >
+                futureLimit
+            ) {
+                candidate.score -=
+                    35;
+            }
+
+            const duplicates =
+                candidates.filter(
+                    item =>
+                        item.value ===
+                        candidate.value
+                );
+
+            candidate.score +=
+                Math.min(
+                    35,
+                    Math.max(
+                        0,
+                        duplicates.length -
+                        1
+                    ) *
+                    10
+                );
+
+            if (
+                duplicates.some(
+                    item =>
+                        item.source ===
+                        "bottom-region"
+                )
+            ) {
+                candidate.score +=
+                    15;
+            }
+        }
+    );
+
+    candidates.sort(
+        (a, b) =>
+            b.score -
+            a.score
+    );
+
+    return (
+        candidates[0]?.value
+        ||
+        null
+    );
+}
+
+
+function analyseReceiptOcrRegions(
+    fullData,
+    merchantData,
+    amountData,
+    dateData
+) {
+
+    const fullText =
+        fullData?.text || "";
+
+    const merchantText =
+        merchantData?.text || "";
+
+    const amountText =
+        amountData?.text || "";
+
+    const dateText =
+        dateData?.text || "";
+
+    const fullLines =
+        getReceiptLines(
+            fullText
+        );
+
+    const topLines =
+        getReceiptLines(
+            merchantText
+        );
+
+    const amountLines =
+        getReceiptLines(
+            amountText
+        );
+
+    const dateLines =
+        getReceiptLines(
+            dateText
+        );
+
+    const confidenceValues = [
+        Number(
+            fullData?.confidence
+        ) || 0,
+        Number(
+            merchantData?.confidence
+        ) || 0,
+        Number(
+            amountData?.confidence
+        ) || 0,
+        Number(
+            dateData?.confidence
+        ) || 0
+    ];
+
+    return {
+        merchant:
+            extractReceiptMerchant(
+                topLines,
+                fullLines
+            ),
+
+        amount:
+            extractReceiptAmount(
+                fullLines,
+                amountLines
+            ),
+
+        date:
+            extractReceiptDate(
+                fullLines,
+                dateLines
+            ),
+
+        confidence:
+            Math.max(
+                ...confidenceValues
+            ),
+
+        rawText:
+            [
+                "FULL RECEIPT",
+                normaliseReceiptText(
+                    fullText
+                )
+                ||
+                "No text recognised.",
+                "",
+                "TOP REGION — MERCHANT",
+                normaliseReceiptText(
+                    merchantText
+                )
+                ||
+                "No text recognised.",
+                "",
+                "FULL HIGH-CONTRAST — AMOUNT",
+                normaliseReceiptText(
+                    amountText
+                )
+                ||
+                "No text recognised.",
+                "",
+                "LOWER REGION — DATE",
+                normaliseReceiptText(
+                    dateText
+                )
+                ||
+                "No text recognised."
+            ].join("\n")
+    };
+}
+
+
+
+function getReviewedReceiptOcrValues() {
+
+    const merchant =
+        receiptOcrMerchant
+            ? receiptOcrMerchant.value.trim()
+            : "";
+
+    const amountValue =
+        receiptOcrAmount
+            ? Number.parseFloat(
+                receiptOcrAmount.value
+            )
+            : NaN;
+
+    const date =
+        receiptOcrDate
+            ? receiptOcrDate.value
+            : "";
+
+    return {
+        merchant:
+            merchant ||
+            null,
+
+        amount:
+            Number.isFinite(
+                amountValue
+            ) &&
+            amountValue > 0
+                ? Math.round(
+                    amountValue * 100
+                ) / 100
+                : null,
+
+        date:
+            date ||
+            null
+    };
+}
+
+
+function getReceiptAiFallbackReason(result) {
+
+    if (!result) {
+        return null;
+    }
+
+    const missing = [];
+
+    if (!result.merchant) {
+        missing.push(
+            "merchant"
+        );
+    }
+
+    if (
+        result.amount ===
+        null
+    ) {
+        missing.push(
+            "amount"
+        );
+    }
+
+    if (!result.date) {
+        missing.push(
+            "date"
+        );
+    }
+
+    const confidence =
+        Number(
+            result.confidence
+        ) || 0;
+
+    if (missing.length) {
+
+        return `Local OCR could not confidently find: ${missing.join(
+            ", "
+        )}.`;
+    }
+
+    if (
+        confidence <
+        RECEIPT_AI_CONFIDENCE_THRESHOLD
+    ) {
+
+        return `Local OCR confidence is ${Math.round(
+            confidence
+        )}%, below the ${RECEIPT_AI_CONFIDENCE_THRESHOLD}% review threshold.`;
+    }
+
+    return null;
+}
+
+
+function renderReceiptAiFallback(result) {
+
+    if (!receiptAiFallback) {
+        return;
+    }
+
+    const reason =
+        getReceiptAiFallbackReason(
+            result
+        );
+
+    receiptAiFallback.style.display =
+        reason
+            ? "flex"
+            : "none";
+
+    if (
+        reason &&
+        receiptAiReason
+    ) {
+
+        receiptAiReason.textContent =
+            "AI Receipt Scan";
+    }
+
+    if (improveReceiptAiButton) {
+
+        improveReceiptAiButton.disabled =
+            true;
+
+        improveReceiptAiButton.textContent =
+            "Coming Soon";
+    }
+
+    if (
+        reason &&
+        receiptAiStatus
+    ) {
+
+        receiptAiStatus.textContent =
+            "You can still edit Merchant, Amount and Date manually before applying the result.";
+
+        receiptAiStatus.className =
+            "receipt-ai-status";
+    }
+}
+
+
+function setReceiptAiStatus(
+    message,
+    type = ""
+) {
+
+    if (!receiptAiStatus) {
+        return;
+    }
+
+    receiptAiStatus.textContent =
+        message || "";
+
+    receiptAiStatus.className =
+        "receipt-ai-status";
+
+    if (type) {
+        receiptAiStatus.classList.add(
+            type
+        );
+    }
+}
+
+
+async function resizeReceiptForAi(file) {
+
+    if (
+        !file ||
+        !file.type.startsWith(
+            "image/"
+        )
+    ) {
+
+        throw new Error(
+            "AI receipt improvement currently supports image receipts only."
+        );
+    }
+
+    const image =
+        await loadReceiptImageElement(
+            file
+        );
+
+    const maxDimension =
+        1800;
+
+    const scale =
+        Math.min(
+            1,
+            maxDimension /
+            Math.max(
+                image.width,
+                image.height
+            )
+        );
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+    canvas.width =
+        Math.max(
+            1,
+            Math.round(
+                image.width *
+                scale
+            )
+        );
+
+    canvas.height =
+        Math.max(
+            1,
+            Math.round(
+                image.height *
+                scale
+            )
+        );
+
+    const context =
+        canvas.getContext(
+            "2d"
+        );
+
+    context.drawImage(
+        image,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    const dataUrl =
+        canvas.toDataURL(
+            "image/jpeg",
+            0.84
+        );
+
+    canvas.width =
+        1;
+
+    canvas.height =
+        1;
+
+    return dataUrl;
+}
+
+
+function normaliseAiReceiptResult(data) {
+
+    if (
+        !data ||
+        typeof data !==
+        "object"
+    ) {
+
+        throw new Error(
+            "AI returned an invalid receipt result."
+        );
+    }
+
+    const merchant =
+        typeof data.merchant ===
+        "string"
+            ? data.merchant.trim()
+            : "";
+
+    const amountNumber =
+        typeof data.amount ===
+        "number"
+            ? data.amount
+            : Number.parseFloat(
+                data.amount
+            );
+
+    const date =
+        typeof data.date ===
+        "string"
+            ? data.date.trim()
+            : "";
+
+    const confidenceNumber =
+        Number(
+            data.confidence
+        );
+
+    return {
+        merchant:
+            merchant ||
+            null,
+
+        amount:
+            Number.isFinite(
+                amountNumber
+            ) &&
+            amountNumber > 0
+                ? Math.round(
+                    amountNumber * 100
+                ) / 100
+                : null,
+
+        date:
+            /^\d{4}-\d{2}-\d{2}$/
+                .test(date)
+                ? date
+                : null,
+
+        confidence:
+            Number.isFinite(
+                confidenceNumber
+            )
+                ? Math.max(
+                    0,
+                    Math.min(
+                        100,
+                        confidenceNumber
+                    )
+                )
+                : 0
+    };
+}
+
+
+async function improveReceiptWithAi() {
+
+    if (!RECEIPT_AI_FEATURE_ENABLED) {
+
+        setReceiptAiStatus(
+            "AI Receipt Scan will be available in a future update."
+        );
+
+        return;
+    }
+
+    if (
+        receiptAiRunning ||
+        !selectedReceiptFile
+    ) {
+        return;
+    }
+
+    receiptAiRunning =
+        true;
+
+    if (improveReceiptAiButton) {
+        improveReceiptAiButton.disabled =
+            true;
+
+        improveReceiptAiButton.textContent =
+            "Improving...";
+    }
+
+    setReceiptAiStatus(
+        "Preparing a smaller secure copy for AI review...",
+        "working"
+    );
+
+    try {
+
+        const imageDataUrl =
+            await resizeReceiptForAi(
+                selectedReceiptFile
+            );
+
+        const localResult =
+            getReviewedReceiptOcrValues();
+
+        setReceiptAiStatus(
+            "AI is reviewing merchant, amount and transaction date...",
+            "working"
+        );
+
+        const {
+            data,
+            error
+        } =
+            await supabase.functions
+                .invoke(
+                    "receipt-ai-scan",
+                    {
+                        body: {
+                            image_data_url:
+                                imageDataUrl,
+
+                            local_result: {
+                                ...localResult,
+
+                                confidence:
+                                    Number(
+                                        receiptOcrResultData
+                                            ?.confidence
+                                    ) || 0
+                            }
+                        }
+                    }
+                );
+
+        if (error) {
+            throw error;
+        }
+
+        if (
+            !data ||
+            data.error
+        ) {
+
+            throw new Error(
+                data?.error ||
+                "AI receipt review failed."
+            );
+        }
+
+        const improved =
+            normaliseAiReceiptResult(
+                data.result
+            );
+
+        receiptOcrResultData = {
+            ...receiptOcrResultData,
+            ...improved,
+            source:
+                "ai"
+        };
+
+        renderReceiptOcrResult(
+            receiptOcrResultData
+        );
+
+        if (receiptOcrConfidence) {
+            receiptOcrConfidence.textContent =
+                `AI review confidence: ${Math.round(
+                    improved.confidence
+                )}%`;
+        }
+
+        if (receiptAiFallback) {
+            receiptAiFallback.style.display =
+                "none";
+        }
+
+        setReceiptAiStatus(
+            "AI review complete. Edit any value if needed, then Apply to Form.",
+            "success"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Receipt AI fallback error:",
+            error
+        );
+
+        const message =
+            error?.message ||
+            "Unable to improve this receipt with AI.";
+
+        setReceiptAiStatus(
+            message,
+            "error"
+        );
+
+        alert(message);
+
+    } finally {
+
+        receiptAiRunning =
+            false;
+
+        if (improveReceiptAiButton) {
+            improveReceiptAiButton.disabled =
+                true;
+
+            improveReceiptAiButton.textContent =
+                "Coming Soon";
+        }
+    }
+}
+
+
+if (improveReceiptAiButton) {
+
+    improveReceiptAiButton.addEventListener(
+        "click",
+        improveReceiptWithAi
+    );
+}
+
+
+function formatReceiptOcrDate(value) {
+
+    if (!value) {
+        return "Not found";
+    }
+
+    return formatDate(value);
+}
+
+
+function renderReceiptOcrResult(result) {
+
+    if (!result) {
+        return;
+    }
+
+    receiptOcrResultData =
+        result;
+
+    if (receiptOcrMerchant) {
+        receiptOcrMerchant.value =
+            result.merchant ||
+            "";
+    }
+
+    if (receiptOcrAmount) {
+        receiptOcrAmount.value =
+            result.amount !== null
+                ? Number(
+                    result.amount
+                ).toFixed(2)
+                : "";
+    }
+
+    if (receiptOcrDate) {
+        receiptOcrDate.value =
+            result.date ||
+            "";
+    }
+
+    if (receiptOcrConfidence) {
+
+        const rounded =
+            Math.round(
+                result.confidence
+            );
+
+        receiptOcrConfidence.textContent =
+            Number.isFinite(rounded)
+                ? `Best OCR confidence: ${rounded}%`
+                : "";
+    }
+
+    if (receiptOcrRawText) {
+        receiptOcrRawText.textContent =
+            result.rawText ||
+            "No text recognised.";
+    }
+
+    if (receiptOcrResult) {
+        receiptOcrResult.style.display =
+            "block";
+    }
+
+    renderReceiptAiFallback(
+        result
+    );
+}
+
+
+async function loadReceiptImageElement(
+    file
+) {
+
+    const objectUrl =
+        URL.createObjectURL(
+            file
+        );
+
+    try {
+
+        const image =
+            new Image();
+
+        image.decoding =
+            "async";
+
+        await new Promise(
+            function (
+                resolve,
+                reject
+            ) {
+
+                image.onload =
+                    resolve;
+
+                image.onerror =
+                    function () {
+
+                        reject(
+                            new Error(
+                                "Unable to read the receipt image."
+                            )
+                        );
+                    };
+
+                image.src =
+                    objectUrl;
+            }
+        );
+
+        return image;
+
+    } finally {
+
+        URL.revokeObjectURL(
+            objectUrl
+        );
+    }
+}
+
+
+function getReceiptCanvasSize(
+    image
+) {
+
+    const maxWidth =
+        1650;
+
+    const maxHeight =
+        3000;
+
+    const minWidth =
+        1250;
+
+    let scale =
+        1;
+
+    if (
+        image.width <
+        minWidth
+    ) {
+
+        scale =
+            minWidth /
+            image.width;
+    }
+
+    if (
+        image.width *
+        scale >
+        maxWidth
+    ) {
+
+        scale =
+            maxWidth /
+            image.width;
+    }
+
+    if (
+        image.height *
+        scale >
+        maxHeight
+    ) {
+
+        scale =
+            Math.min(
+                scale,
+                maxHeight /
+                image.height
+            );
+    }
+
+    return {
+        width:
+            Math.max(
+                1,
+                Math.round(
+                    image.width *
+                    scale
+                )
+            ),
+
+        height:
+            Math.max(
+                1,
+                Math.round(
+                    image.height *
+                    scale
+                )
+            )
+    };
+}
+
+
+function createReceiptBaseCanvas(
+    image
+) {
+
+    const size =
+        getReceiptCanvasSize(
+            image
+        );
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+    canvas.width =
+        size.width;
+
+    canvas.height =
+        size.height;
+
+    const context =
+        canvas.getContext(
+            "2d",
+            {
+                willReadFrequently:
+                    true
+            }
+        );
+
+    context.imageSmoothingEnabled =
+        true;
+
+    context.imageSmoothingQuality =
+        "high";
+
+    context.drawImage(
+        image,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    return canvas;
+}
+
+
+function cropReceiptRegion(
+    sourceCanvas,
+    startRatio,
+    endRatio
+) {
+
+    const safeStart =
+        Math.max(
+            0,
+            Math.min(
+                0.95,
+                startRatio
+            )
+        );
+
+    const safeEnd =
+        Math.max(
+            safeStart +
+            0.05,
+            Math.min(
+                1,
+                endRatio
+            )
+        );
+
+    const sourceY =
+        Math.round(
+            sourceCanvas.height *
+            safeStart
+        );
+
+    const sourceHeight =
+        Math.max(
+            1,
+            Math.round(
+                sourceCanvas.height *
+                (
+                    safeEnd -
+                    safeStart
+                )
+            )
+        );
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+    canvas.width =
+        sourceCanvas.width;
+
+    canvas.height =
+        sourceHeight;
+
+    const context =
+        canvas.getContext(
+            "2d",
+            {
+                willReadFrequently:
+                    true
+            }
+        );
+
+    context.drawImage(
+        sourceCanvas,
+        0,
+        sourceY,
+        sourceCanvas.width,
+        sourceHeight,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    return canvas;
+}
+
+
+function calculateOtsuThreshold(
+    grayscaleValues
+) {
+
+    const histogram =
+        new Array(256)
+            .fill(0);
+
+    grayscaleValues.forEach(
+        value => {
+
+            histogram[value] +=
+                1;
+        }
+    );
+
+    const total =
+        grayscaleValues.length;
+
+    let sum =
+        0;
+
+    for (
+        let index = 0;
+        index < 256;
+        index += 1
+    ) {
+
+        sum +=
+            index *
+            histogram[index];
+    }
+
+    let sumBackground =
+        0;
+
+    let weightBackground =
+        0;
+
+    let bestVariance =
+        -1;
+
+    let threshold =
+        160;
+
+    for (
+        let index = 0;
+        index < 256;
+        index += 1
+    ) {
+
+        weightBackground +=
+            histogram[index];
+
+        if (
+            weightBackground ===
+            0
+        ) {
+            continue;
+        }
+
+        const weightForeground =
+            total -
+            weightBackground;
+
+        if (
+            weightForeground ===
+            0
+        ) {
+            break;
+        }
+
+        sumBackground +=
+            index *
+            histogram[index];
+
+        const meanBackground =
+            sumBackground /
+            weightBackground;
+
+        const meanForeground =
+            (
+                sum -
+                sumBackground
+            ) /
+            weightForeground;
+
+        const variance =
+            weightBackground *
+            weightForeground *
+            (
+                meanBackground -
+                meanForeground
+            ) ** 2;
+
+        if (
+            variance >
+            bestVariance
+        ) {
+
+            bestVariance =
+                variance;
+
+            threshold =
+                index;
+        }
+    }
+
+    return threshold;
+}
+
+
+function preprocessReceiptCanvas(
+    sourceCanvas,
+    mode
+) {
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+    canvas.width =
+        sourceCanvas.width;
+
+    canvas.height =
+        sourceCanvas.height;
+
+    const context =
+        canvas.getContext(
+            "2d",
+            {
+                willReadFrequently:
+                    true
+            }
+        );
+
+    context.drawImage(
+        sourceCanvas,
+        0,
+        0
+    );
+
+    const imageData =
+        context.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+    const pixels =
+        imageData.data;
+
+    const grayscale =
+        new Uint8Array(
+            pixels.length / 4
+        );
+
+    let grayIndex =
+        0;
+
+    for (
+        let index = 0;
+        index < pixels.length;
+        index += 4
+    ) {
+
+        const value =
+            Math.round(
+                pixels[index] *
+                    0.299
+                +
+                pixels[index + 1] *
+                    0.587
+                +
+                pixels[index + 2] *
+                    0.114
+            );
+
+        grayscale[grayIndex] =
+            value;
+
+        grayIndex +=
+            1;
+    }
+
+
+    if (
+        mode ===
+        "binary"
+    ) {
+
+        const otsu =
+            calculateOtsuThreshold(
+                grayscale
+            );
+
+        const threshold =
+            Math.min(
+                225,
+                otsu + 10
+            );
+
+        grayIndex =
+            0;
+
+        for (
+            let index = 0;
+            index < pixels.length;
+            index += 4
+        ) {
+
+            const value =
+                grayscale[
+                    grayIndex
+                ] <
+                threshold
+                    ? 0
+                    : 255;
+
+            pixels[index] =
+                value;
+
+            pixels[index + 1] =
+                value;
+
+            pixels[index + 2] =
+                value;
+
+            pixels[index + 3] =
+                255;
+
+            grayIndex +=
+                1;
+        }
+
+    } else {
+
+        const contrast =
+            mode ===
+            "merchant"
+                ? 1.75
+                : 1.55;
+
+        const brightness =
+            mode ===
+            "merchant"
+                ? 12
+                : 8;
+
+        grayIndex =
+            0;
+
+        for (
+            let index = 0;
+            index < pixels.length;
+            index += 4
+        ) {
+
+            let value =
+                grayscale[
+                    grayIndex
+                ];
+
+            value =
+                (
+                    value -
+                    128
+                ) *
+                contrast
+                +
+                128
+                +
+                brightness;
+
+            value =
+                Math.max(
+                    0,
+                    Math.min(
+                        255,
+                        Math.round(
+                            value
+                        )
+                    )
+                );
+
+            pixels[index] =
+                value;
+
+            pixels[index + 1] =
+                value;
+
+            pixels[index + 2] =
+                value;
+
+            pixels[index + 3] =
+                255;
+
+            grayIndex +=
+                1;
+        }
+    }
+
+    context.putImageData(
+        imageData,
+        0,
+        0
+    );
+
+    return canvas;
+}
+
+
+function releaseReceiptCanvas(canvas) {
+
+    if (!canvas) {
+        return;
+    }
+
+    canvas.width =
+        1;
+
+    canvas.height =
+        1;
+}
+
+
+async function getReceiptOcrWorker() {
+
+    if (receiptOcrWorker) {
+        return receiptOcrWorker;
+    }
+
+    setReceiptOcrProgress(
+        0.02,
+        "Preparing OCR engine..."
+    );
+
+    receiptOcrWorker =
+        await createWorker(
+            "eng",
+            1,
+            {
+                logger:
+                    function (message) {
+
+                        if (
+                            typeof message.progress ===
+                            "number"
+                        ) {
+
+                            const mappedProgress =
+                                receiptOcrProgressOffset
+                                +
+                                message.progress *
+                                receiptOcrProgressScale;
+
+                            const label =
+                                message.status
+                                    ? message.status
+                                        .replace(/_/g, " ")
+                                    : "Scanning receipt";
+
+                            setReceiptOcrProgress(
+                                mappedProgress,
+                                label
+                            );
+                        }
+                    }
+            }
+        );
+
+    return receiptOcrWorker;
+}
+
+
+async function recogniseReceiptCanvas(
+    worker,
+    canvas,
+    {
+        offset,
+        scale,
+        message,
+        pageSegMode,
+        whitelist = ""
+    }
+) {
+
+    receiptOcrProgressOffset =
+        offset;
+
+    receiptOcrProgressScale =
+        scale;
+
+    setReceiptOcrProgress(
+        offset,
+        message
+    );
+
+    const parameters = {
+        tessedit_pageseg_mode:
+            pageSegMode,
+        preserve_interword_spaces:
+            "1"
+    };
+
+    if (whitelist) {
+        parameters.tessedit_char_whitelist =
+            whitelist;
+    } else {
+        parameters.tessedit_char_whitelist =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,:/-()&' ";
+    }
+
+    await worker.setParameters(
+        parameters
+    );
+
+    return worker.recognize(
+        canvas
+    );
+}
+
+
+async function scanSelectedReceipt() {
+
+    if (
+        receiptOcrRunning ||
+        !isReceiptImage(
+            selectedReceiptFile
+        )
+    ) {
+        return;
+    }
+
+    receiptOcrRunning =
+        true;
+
+    receiptOcrResultData =
+        null;
+
+    updateReceiptScanButton();
+
+    if (receiptOcrResult) {
+        receiptOcrResult.style.display =
+            "none";
+    }
+
+    let baseCanvas =
+        null;
+
+    setReceiptOcrProgress(
+        0,
+        "Preparing receipt image..."
+    );
+
+    try {
+
+        const worker =
+            await getReceiptOcrWorker();
+
+        const image =
+            await loadReceiptImageElement(
+                selectedReceiptFile
+            );
+
+        baseCanvas =
+            createReceiptBaseCanvas(
+                image
+            );
+
+
+        // 1. Full receipt baseline.
+        let fullProcessed =
+            preprocessReceiptCanvas(
+                baseCanvas,
+                "grayscale"
+            );
+
+        const fullResult =
+            await recogniseReceiptCanvas(
+                worker,
+                fullProcessed,
+                {
+                    offset:
+                        0.08,
+                    scale:
+                        0.20,
+                    message:
+                        "1 of 4: reading full receipt...",
+                    pageSegMode:
+                        "6"
+                }
+            );
+
+        releaseReceiptCanvas(
+            fullProcessed
+        );
+
+        fullProcessed =
+            null;
+
+
+        // 2. Top region: merchant / logo / company name.
+        let topCrop =
+            cropReceiptRegion(
+                baseCanvas,
+                0,
+                0.38
+            );
+
+        let topProcessed =
+            preprocessReceiptCanvas(
+                topCrop,
+                "merchant"
+            );
+
+        releaseReceiptCanvas(
+            topCrop
+        );
+
+        topCrop =
+            null;
+
+        const merchantResult =
+            await recogniseReceiptCanvas(
+                worker,
+                topProcessed,
+                {
+                    offset:
+                        0.30,
+                    scale:
+                        0.19,
+                    message:
+                        "2 of 4: checking merchant region...",
+                    pageSegMode:
+                        "11"
+                }
+            );
+
+        releaseReceiptCanvas(
+            topProcessed
+        );
+
+        topProcessed =
+            null;
+
+
+        // 3. Full-receipt high-contrast pass for amount.
+        // This restores the v2 strategy that was much more stable
+        // for TOTAL / SUBTOTAL / card-payment lines.
+        let amountProcessed =
+            preprocessReceiptCanvas(
+                baseCanvas,
+                "binary"
+            );
+
+        const amountResult =
+            await recogniseReceiptCanvas(
+                worker,
+                amountProcessed,
+                {
+                    offset:
+                        0.51,
+                    scale:
+                        0.19,
+                    message:
+                        "3 of 4: checking totals across full receipt...",
+                    pageSegMode:
+                        "11"
+                }
+            );
+
+        releaseReceiptCanvas(
+            amountProcessed
+        );
+
+        amountProcessed =
+            null;
+
+
+        // 4. Lower region: date-specific digit OCR.
+        // v3.2 extends the overlapping lower scan all the way
+        // to the bottom edge so dates printed very low are included.
+        // Full-receipt date candidates are still kept separately.
+        let dateCrop =
+            cropReceiptRegion(
+                baseCanvas,
+                0.50,
+                1.00
+            );
+
+        let dateProcessed =
+            preprocessReceiptCanvas(
+                dateCrop,
+                "binary"
+            );
+
+        releaseReceiptCanvas(
+            dateCrop
+        );
+
+        dateCrop =
+            null;
+
+        const dateResult =
+            await recogniseReceiptCanvas(
+                worker,
+                dateProcessed,
+                {
+                    offset:
+                        0.72,
+                    scale:
+                        0.20,
+                    message:
+                        "4 of 4: searching lower receipt for date...",
+                    pageSegMode:
+                        "11",
+                    whitelist:
+                        "0123456789/.-: OQDBSILZG"
+                }
+            );
+
+        releaseReceiptCanvas(
+            dateProcessed
+        );
+
+        dateProcessed =
+            null;
+
+
+        setReceiptOcrProgress(
+            0.94,
+            "Combining region results..."
+        );
+
+        const result =
+            analyseReceiptOcrRegions(
+                fullResult?.data,
+                merchantResult?.data,
+                amountResult?.data,
+                dateResult?.data
+            );
+
+        renderReceiptOcrResult(
+            result
+        );
+
+        setReceiptOcrProgress(
+            1,
+            "Scan complete. Review merchant, amount and date before applying."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Receipt OCR v3 error:",
+            error
+        );
+
+        setReceiptOcrProgress(
+            0,
+            "Receipt scan failed."
+        );
+
+        alert(
+            error?.message
+            ||
+            "Unable to scan this receipt image."
+        );
+
+    } finally {
+
+        receiptOcrRunning =
+            false;
+
+        receiptOcrProgressOffset =
+            0;
+
+        receiptOcrProgressScale =
+            1;
+
+        releaseReceiptCanvas(
+            baseCanvas
+        );
+
+        updateReceiptScanButton();
+    }
+}
+
+
+if (scanReceiptButton) {
+
+    scanReceiptButton.addEventListener(
+        "click",
+        scanSelectedReceipt
+    );
+}
+
+
+if (applyReceiptOcrButton) {
+
+    applyReceiptOcrButton.addEventListener(
+        "click",
+        function () {
+
+            if (!receiptOcrResultData) {
+                return;
+            }
+
+            const descriptionInput =
+                document.getElementById(
+                    "description"
+                );
+
+            const amountInput =
+                document.getElementById(
+                    "amount"
+                );
+
+            const reviewed =
+                getReviewedReceiptOcrValues();
+
+            if (
+                reviewed.merchant &&
+                descriptionInput
+            ) {
+
+                descriptionInput.value =
+                    reviewed.merchant;
+            }
+
+            if (
+                reviewed.amount !==
+                    null &&
+                amountInput
+            ) {
+
+                amountInput.value =
+                    reviewed.amount.toFixed(
+                        2
+                    );
+            }
+
+            if (
+                reviewed.date &&
+                dateInput
+            ) {
+
+                dateInput.value =
+                    reviewed.date;
+            }
+
+            receiptOcrResultData = {
+                ...receiptOcrResultData,
+                ...reviewed
+            };
+
+            if (receiptOcrStatus) {
+                receiptOcrStatus.textContent =
+                    "Your reviewed values were applied to the transaction form. Check once more before saving.";
+            }
+
+            transactionForm.scrollIntoView({
+                behavior:
+                    "smooth",
+                block:
+                    "start"
+            });
+        }
+    );
+}
+
+
+if (dismissReceiptOcrButton) {
+
+    dismissReceiptOcrButton.addEventListener(
+        "click",
+        function () {
+
+            if (receiptOcrResult) {
+                receiptOcrResult.style.display =
+                    "none";
+            }
+        }
+    );
+}
+
+
+// ======================================================
 // RECEIPT STORAGE / PREVIEW
 // ======================================================
 
@@ -3109,6 +6450,8 @@ function clearSelectedReceipt() {
 
     selectedReceiptFile =
         null;
+
+    resetReceiptOcr();
 
     clearReceiptObjectUrl();
 
@@ -3212,12 +6555,29 @@ function renderSelectedReceiptPreview(file) {
         }
     }
 
+    updateReceiptScanButton();
+
+    setReceiptAiStatus(
+        ""
+    );
+
     if (receiptMessage) {
 
-        receiptMessage.textContent =
-            editingReceiptPath
-                ? "This new receipt will replace the saved receipt when you save changes."
-                : "Receipt ready to upload when you save the transaction.";
+        if (
+            file.type ===
+            "application/pdf"
+        ) {
+
+            receiptMessage.textContent =
+                "PDF is ready to upload. Receipt Scan currently works with JPG, PNG and WebP images only.";
+
+        } else {
+
+            receiptMessage.textContent =
+                editingReceiptPath
+                    ? "This new receipt will replace the saved receipt when you save changes. You can scan it before saving."
+                    : "Receipt ready to upload. You can scan it before saving the transaction.";
+        }
     }
 }
 

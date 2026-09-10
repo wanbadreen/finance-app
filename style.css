@@ -2593,7 +2593,6 @@ a {
 }
 
 .saved-receipt-panel {
-    display: flex;
     justify-content: space-between;
 }
 
@@ -2653,4 +2652,455 @@ a {
     .saved-receipt-panel {
         flex-direction: column;
     }
+}
+
+
+/* ======================================================
+   RECEIPT OCR
+====================================================== */
+
+.receipt-ocr-section {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.receipt-ocr-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.receipt-ocr-title {
+    margin: 0 0 3px;
+    color: #111827;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.receipt-ocr-heading span {
+    color: #6b7280;
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+.receipt-scan-button {
+    min-height: 36px;
+    padding: 0 12px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 9px;
+    background-color: #2563eb;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.receipt-scan-button:disabled {
+    background-color: #d1d5db;
+    color: #6b7280;
+}
+
+.receipt-ocr-progress {
+    margin-top: 13px;
+    padding: 12px;
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    background-color: #eff6ff;
+}
+
+.receipt-ocr-progress-track {
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: #dbeafe;
+}
+
+.receipt-ocr-progress-fill {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background-color: #2563eb;
+    transition: width 0.2s ease;
+}
+
+#receipt-ocr-status {
+    margin: 7px 0 0;
+    color: #1e3a8a;
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+.receipt-ocr-result {
+    margin-top: 12px;
+    padding: 13px;
+    border: 1px solid #bfdbfe;
+    border-radius: 11px;
+    background-color: white;
+}
+
+.receipt-ocr-result-header {
+    margin-bottom: 11px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.receipt-ocr-result-header p {
+    margin: 0 0 2px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.receipt-ocr-result-header span {
+    color: #6b7280;
+    font-size: 10px;
+}
+
+.receipt-ocr-result-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.receipt-ocr-result-item {
+    min-width: 0;
+    padding: 10px;
+    border-radius: 9px;
+    background-color: #f9fafb;
+}
+
+.receipt-ocr-result-item span {
+    display: block;
+    margin-bottom: 4px;
+    color: #6b7280;
+    font-size: 9px;
+}
+
+.receipt-ocr-result-item strong {
+    display: block;
+    color: #111827;
+    font-size: 11px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.receipt-ocr-actions {
+    margin-top: 11px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.receipt-ocr-primary-button,
+.receipt-ocr-secondary-button {
+    min-height: 35px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.receipt-ocr-primary-button {
+    border: none;
+    background-color: #111827;
+    color: white;
+}
+
+.receipt-ocr-secondary-button {
+    border: 1px solid #d1d5db;
+    background-color: white;
+    color: #374151;
+}
+
+.receipt-ocr-raw {
+    margin-top: 11px;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.receipt-ocr-raw summary {
+    color: #6b7280;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#receipt-ocr-raw-text {
+    max-height: 190px;
+    margin: 9px 0 0;
+    padding: 10px;
+    overflow: auto;
+    white-space: pre-wrap;
+    border-radius: 8px;
+    background-color: #f3f4f6;
+    color: #4b5563;
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Consolas,
+        monospace;
+    font-size: 9px;
+    line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+
+    .receipt-ocr-heading {
+        align-items: flex-start;
+    }
+
+    .receipt-ocr-result-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .receipt-ocr-actions {
+        flex-direction: column;
+    }
+
+    .receipt-ocr-primary-button,
+    .receipt-ocr-secondary-button {
+        width: 100%;
+    }
+}
+
+
+/* ======================================================
+   RECEIPT OCR V3.3 — EDITABLE REVIEW
+====================================================== */
+
+.receipt-ocr-review-hint {
+    margin: 0 0 11px;
+    color: #6b7280;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.receipt-ocr-result-item label {
+    display: block;
+    margin-bottom: 6px;
+    color: #6b7280;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.receipt-ocr-result-item input {
+    width: 100%;
+    min-height: 39px;
+    margin: 0;
+    padding: 9px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: white;
+    color: #111827;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.receipt-ocr-result-item input:focus {
+    outline: 3px solid #dbeafe;
+    border-color: #2563eb;
+}
+
+.receipt-ocr-result-item input::placeholder {
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+@media (max-width: 760px) {
+    .receipt-ocr-result-item input {
+        min-height: 44px;
+        font-size: 14px;
+    }
+}
+
+
+/* ======================================================
+   RECEIPT OCR V3.4 — EDITABLE REVIEW + AI FALLBACK
+====================================================== */
+
+.receipt-ocr-review-hint {
+    margin: 0 0 11px;
+    color: #6b7280;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.receipt-ocr-result-item label {
+    display: block;
+    margin-bottom: 6px;
+    color: #6b7280;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.receipt-ocr-result-item input {
+    width: 100%;
+    min-height: 39px;
+    margin: 0;
+    padding: 9px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: white;
+    color: #111827;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.receipt-ocr-result-item input:focus {
+    outline: 3px solid #dbeafe;
+    border-color: #2563eb;
+}
+
+.receipt-ocr-result-item input::placeholder {
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+.receipt-ai-fallback {
+    margin-top: 12px;
+    padding: 12px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid #fed7aa;
+    border-radius: 10px;
+    background-color: #fff7ed;
+}
+
+.receipt-ai-fallback-copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.receipt-ai-fallback-copy p {
+    margin: 0 0 3px;
+    color: #9a3412;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.receipt-ai-fallback-copy span {
+    color: #9a3412;
+    font-size: 9px;
+    line-height: 1.45;
+}
+
+.receipt-ai-button {
+    min-height: 36px;
+    padding: 0 11px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 8px;
+    background-color: #7c3aed;
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.receipt-ai-button:disabled {
+    opacity: 0.55;
+}
+
+.receipt-ai-status {
+    min-height: 0;
+    margin: 8px 0 0;
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+.receipt-ai-status.working {
+    color: #6d28d9;
+}
+
+.receipt-ai-status.success {
+    color: #15803d;
+}
+
+.receipt-ai-status.error {
+    color: #b42318;
+}
+
+@media (max-width: 760px) {
+
+    .receipt-ocr-result-item input {
+        min-height: 44px;
+        font-size: 14px;
+    }
+
+    .receipt-ai-fallback {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .receipt-ai-button {
+        width: 100%;
+        min-height: 42px;
+    }
+}
+
+
+/* ======================================================
+   RECEIPT AI — COMING SOON
+====================================================== */
+
+.receipt-ai-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.receipt-ai-title-row p {
+    margin: 0;
+}
+
+.receipt-ai-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background-color: #ede9fe;
+    color: #6d28d9 !important;
+    font-size: 8px !important;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.receipt-ai-button:disabled {
+    cursor: not-allowed;
+    background-color: #c4b5fd;
+    color: #ffffff;
+    opacity: 1;
+}
+
+
+/* ======================================================
+   RECEIPT SCAN — BETA LABEL
+====================================================== */
+
+.receipt-scan-title-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.receipt-scan-beta-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background-color: #dbeafe;
+    color: #1d4ed8;
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
 }
