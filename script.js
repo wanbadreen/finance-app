@@ -217,6 +217,12 @@ const transactionFilterCategory =
 const transactionFilterMonth =
     document.getElementById("transaction-filter-month");
 
+const transactionFilterFromDate =
+    document.getElementById("transaction-filter-from-date");
+
+const transactionFilterToDate =
+    document.getElementById("transaction-filter-to-date");
+
 const transactionSortSelect =
     document.getElementById("transaction-sort");
 
@@ -3346,11 +3352,39 @@ function getFilteredTransactions() {
         ||
         "";
 
+    const selectedFromDate =
+        transactionFilterFromDate
+            ?.value
+        ||
+        "";
+
+    const selectedToDate =
+        transactionFilterToDate
+            ?.value
+        ||
+        "";
+
+    const hasCustomDateRange =
+        Boolean(
+            selectedFromDate ||
+            selectedToDate
+        );
+
     const sortMode =
         transactionSortSelect
             ?.value
         ||
         "newest";
+
+
+    if (
+        selectedFromDate &&
+        selectedToDate &&
+        selectedFromDate >
+            selectedToDate
+    ) {
+        return [];
+    }
 
 
     const filtered =
@@ -3384,14 +3418,37 @@ function getFilteredTransactions() {
                 }
 
 
-                if (
-                    selectedMonth &&
-                    !String(
+                const transactionDate =
+                    String(
                         transaction.transaction_date ||
                         ""
-                    ).startsWith(
+                    );
+
+
+                if (
+                    !hasCustomDateRange &&
+                    selectedMonth &&
+                    !transactionDate.startsWith(
                         selectedMonth
                     )
+                ) {
+                    return false;
+                }
+
+
+                if (
+                    selectedFromDate &&
+                    transactionDate <
+                        selectedFromDate
+                ) {
+                    return false;
+                }
+
+
+                if (
+                    selectedToDate &&
+                    transactionDate >
+                        selectedToDate
                 ) {
                     return false;
                 }
@@ -3507,6 +3564,42 @@ function updateTransactionFilterSummary(
 ) {
 
     if (!transactionFilterSummary) {
+        return;
+    }
+
+
+    transactionFilterSummary.classList.remove(
+        "error"
+    );
+
+
+    const selectedFromDate =
+        transactionFilterFromDate
+            ?.value
+        ||
+        "";
+
+    const selectedToDate =
+        transactionFilterToDate
+            ?.value
+        ||
+        "";
+
+
+    if (
+        selectedFromDate &&
+        selectedToDate &&
+        selectedFromDate >
+            selectedToDate
+    ) {
+
+        transactionFilterSummary.textContent =
+            "From date cannot be after To date.";
+
+        transactionFilterSummary.classList.add(
+            "error"
+        );
+
         return;
     }
 
@@ -3891,6 +3984,16 @@ function resetTransactionFilters() {
             "";
     }
 
+    if (transactionFilterFromDate) {
+        transactionFilterFromDate.value =
+            "";
+    }
+
+    if (transactionFilterToDate) {
+        transactionFilterToDate.value =
+            "";
+    }
+
     if (transactionSortSelect) {
         transactionSortSelect.value =
             "newest";
@@ -3908,7 +4011,6 @@ function resetTransactionFilters() {
     transactionFilterType,
     transactionFilterAccount,
     transactionFilterCategory,
-    transactionFilterMonth,
     transactionSortSelect
 ]
     .filter(Boolean)
@@ -3924,6 +4026,64 @@ function resetTransactionFilters() {
             control.addEventListener(
                 eventName,
                 function () {
+
+                    showAllTransactions =
+                        false;
+
+                    renderTransactions();
+                }
+            );
+        }
+    );
+
+
+transactionFilterMonth
+    ?.addEventListener(
+        "change",
+        function () {
+
+            if (
+                transactionFilterMonth.value
+            ) {
+
+                if (transactionFilterFromDate) {
+                    transactionFilterFromDate.value =
+                        "";
+                }
+
+                if (transactionFilterToDate) {
+                    transactionFilterToDate.value =
+                        "";
+                }
+            }
+
+            showAllTransactions =
+                false;
+
+            renderTransactions();
+        }
+    );
+
+
+[
+    transactionFilterFromDate,
+    transactionFilterToDate
+]
+    .filter(Boolean)
+    .forEach(
+        function (control) {
+
+            control.addEventListener(
+                "change",
+                function () {
+
+                    if (
+                        control.value &&
+                        transactionFilterMonth
+                    ) {
+                        transactionFilterMonth.value =
+                            "";
+                    }
 
                     showAllTransactions =
                         false;

@@ -1726,7 +1726,7 @@ a {
 .transaction-filter-grid {
     margin-top: 12px;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
 }
 
@@ -1746,6 +1746,11 @@ a {
     margin: 12px 0 0;
     color: #6b7280;
     font-size: 11px;
+}
+
+.transaction-filter-summary.error {
+    color: #b42318;
+    font-weight: 600;
 }
 
 /* ======================================================
