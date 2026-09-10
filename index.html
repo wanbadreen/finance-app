@@ -719,7 +719,7 @@
                                     type="search"
                                     id="transaction-search"
                                     class="transaction-search-input"
-                                    placeholder="Search description, notes, account or category..."
+                                    placeholder="Search description, notes, account, category or tag..."
                                     autocomplete="off"
                                 >
 
@@ -755,6 +755,13 @@
                                     <span>Category</span>
                                     <select id="transaction-filter-category">
                                         <option value="all">All Categories</option>
+                                    </select>
+                                </label>
+
+                                <label class="transaction-filter-field">
+                                    <span>Tag</span>
+                                    <select id="transaction-filter-tag">
+                                        <option value="all">All Tags</option>
                                     </select>
                                 </label>
 
@@ -1002,6 +1009,30 @@
                                 id="custom-income-source-name"
                                 placeholder="e.g. Part-time Work"
                             >
+
+                        </div>
+
+
+
+                        <!-- TAGS -->
+
+                        <div class="transaction-tags-field">
+
+                            <label for="transaction-tags">
+                                Tags
+                                <span class="optional-label">Optional</span>
+                            </label>
+
+                            <input
+                                type="text"
+                                id="transaction-tags"
+                                placeholder="e.g. Grab, Work, Health"
+                                autocomplete="off"
+                            >
+
+                            <p class="transaction-tags-help">
+                                Separate multiple tags with commas. Existing tags are reused automatically.
+                            </p>
 
                         </div>
 

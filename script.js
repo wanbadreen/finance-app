@@ -191,6 +191,9 @@ const customIncomeSourceGroup =
 const customIncomeSourceInput =
     document.getElementById("custom-income-source-name");
 
+const transactionTagsInput =
+    document.getElementById("transaction-tags");
+
 const cancelEditButton =
     document.getElementById("cancel-edit-button");
 
@@ -296,6 +299,9 @@ const transactionFilterAccount =
 const transactionFilterCategory =
     document.getElementById("transaction-filter-category");
 
+const transactionFilterTag =
+    document.getElementById("transaction-filter-tag");
+
 const transactionFilterMonth =
     document.getElementById("transaction-filter-month");
 
@@ -390,6 +396,8 @@ let currentUser = null;
 let accounts = [];
 let categories = [];
 let incomeSources = [];
+let tags = [];
+let transactionTagLinks = [];
 
 let transactions = [];
 let deletedTransactions = [];
@@ -495,6 +503,8 @@ function showLoggedOutState() {
     accounts = [];
     categories = [];
     incomeSources = [];
+    tags = [];
+    transactionTagLinks = [];
 
     transactions = [];
     deletedTransactions = [];
@@ -525,6 +535,8 @@ async function showLoggedInState(user) {
     await loadIncomeSources();
 
     await seedStarterData();
+
+    await loadTags();
 
     await loadTransactions();
 
@@ -2642,6 +2654,362 @@ function updateBudgetInsight(stats) {
 
 
 // ======================================================
+// TRANSACTION TAGS
+// ======================================================
+
+async function loadTags() {
+
+    if (!currentUser) {
+        return;
+    }
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("tags")
+            .select("*")
+            .order(
+                "name",
+                {
+                    ascending: true
+                }
+            );
+
+    if (error) {
+
+        console.error(
+            "Load tags error:",
+            error
+        );
+
+        return;
+    }
+
+    tags =
+        data || [];
+}
+
+
+function getTagName(tagId) {
+
+    const tag =
+        tags.find(
+            item =>
+                item.id === tagId
+        );
+
+    return tag?.name || "";
+}
+
+
+function getTransactionTagIds(
+    transaction
+) {
+
+    return Array.isArray(
+        transaction?.tag_ids
+    )
+        ? transaction.tag_ids
+        : [];
+}
+
+
+function getTransactionTagNames(
+    transaction
+) {
+
+    return getTransactionTagIds(
+        transaction
+    )
+        .map(getTagName)
+        .filter(Boolean);
+}
+
+
+function parseTransactionTagNames(
+    value
+) {
+
+    const seen =
+        new Set();
+
+    return String(value || "")
+        .split(",")
+        .map(
+            item =>
+                item
+                    .trim()
+                    .replace(
+                        /\s+/g,
+                        " "
+                    )
+        )
+        .filter(Boolean)
+        .filter(
+            function (name) {
+
+                const key =
+                    name.toLowerCase();
+
+                if (seen.has(key)) {
+                    return false;
+                }
+
+                seen.add(key);
+
+                return true;
+            }
+        );
+}
+
+
+async function ensureTagsForNames(
+    names
+) {
+
+    if (!names.length) {
+        return [];
+    }
+
+    if (names.length > 10) {
+
+        throw new Error(
+            "Use up to 10 tags per transaction."
+        );
+    }
+
+    const invalid =
+        names.find(
+            name =>
+                name.length > 30
+        );
+
+    if (invalid) {
+
+        throw new Error(
+            `Tag "${invalid}" is too long. Keep each tag within 30 characters.`
+        );
+    }
+
+    const tagIds =
+        [];
+
+    for (const name of names) {
+
+        const existing =
+            tags.find(
+                item =>
+                    item.name
+                        .trim()
+                        .toLowerCase() ===
+                    name.toLowerCase()
+            );
+
+        if (existing) {
+
+            tagIds.push(
+                existing.id
+            );
+
+            continue;
+        }
+
+        const {
+            data,
+            error
+        } =
+            await supabase
+                .from("tags")
+                .insert({
+                    user_id:
+                        currentUser.id,
+                    name
+                })
+                .select("*")
+                .single();
+
+        if (error) {
+
+            // A case-insensitive unique race is unlikely,
+            // but reload once before treating it as a failure.
+            await loadTags();
+
+            const afterReload =
+                tags.find(
+                    item =>
+                        item.name
+                            .trim()
+                            .toLowerCase() ===
+                        name.toLowerCase()
+                );
+
+            if (afterReload) {
+
+                tagIds.push(
+                    afterReload.id
+                );
+
+                continue;
+            }
+
+            throw error;
+        }
+
+        tags.push(data);
+
+        tags.sort(
+            (a, b) =>
+                a.name.localeCompare(
+                    b.name
+                )
+        );
+
+        tagIds.push(
+            data.id
+        );
+    }
+
+    return tagIds;
+}
+
+
+async function syncTransactionTags(
+    transactionId,
+    desiredTagIds
+) {
+
+    const existingTagIds =
+        transactionTagLinks
+            .filter(
+                link =>
+                    link.transaction_id ===
+                    transactionId
+            )
+            .map(
+                link =>
+                    link.tag_id
+            );
+
+    const toInsert =
+        desiredTagIds.filter(
+            tagId =>
+                !existingTagIds.includes(
+                    tagId
+                )
+        );
+
+    const toDelete =
+        existingTagIds.filter(
+            tagId =>
+                !desiredTagIds.includes(
+                    tagId
+                )
+        );
+
+
+    if (toInsert.length) {
+
+        const {
+            error
+        } =
+            await supabase
+                .from(
+                    "transaction_tags"
+                )
+                .insert(
+                    toInsert.map(
+                        tagId => ({
+                            transaction_id:
+                                transactionId,
+                            tag_id:
+                                tagId,
+                            user_id:
+                                currentUser.id
+                        })
+                    )
+                );
+
+        if (error) {
+            throw error;
+        }
+    }
+
+
+    if (toDelete.length) {
+
+        const {
+            error
+        } =
+            await supabase
+                .from(
+                    "transaction_tags"
+                )
+                .delete()
+                .eq(
+                    "transaction_id",
+                    transactionId
+                )
+                .in(
+                    "tag_id",
+                    toDelete
+                );
+
+        if (error) {
+            throw error;
+        }
+    }
+}
+
+
+function attachTagIdsToTransactions(
+    transactionRows
+) {
+
+    const tagIdsByTransaction =
+        new Map();
+
+    transactionTagLinks.forEach(
+        function (link) {
+
+            if (
+                !tagIdsByTransaction.has(
+                    link.transaction_id
+                )
+            ) {
+
+                tagIdsByTransaction.set(
+                    link.transaction_id,
+                    []
+                );
+            }
+
+            tagIdsByTransaction
+                .get(
+                    link.transaction_id
+                )
+                .push(
+                    link.tag_id
+                );
+        }
+    );
+
+    return transactionRows.map(
+        transaction => ({
+            ...transaction,
+            tag_ids:
+                tagIdsByTransaction.get(
+                    transaction.id
+                )
+                ||
+                []
+        })
+    );
+}
+
+
+// ======================================================
 // LOAD ACTIVE TRANSACTIONS
 // ======================================================
 
@@ -2690,8 +3058,38 @@ async function loadTransactions() {
         return;
     }
 
+    const {
+        data: tagLinkData,
+        error: tagLinkError
+    } =
+        await supabase
+            .from(
+                "transaction_tags"
+            )
+            .select(
+                "transaction_id, tag_id"
+            );
+
+    if (tagLinkError) {
+
+        console.error(
+            "Load transaction tags error:",
+            tagLinkError
+        );
+
+        transactionTagLinks =
+            [];
+
+    } else {
+
+        transactionTagLinks =
+            tagLinkData || [];
+    }
+
     transactions =
-        data || [];
+        attachTagIdsToTransactions(
+            data || []
+        );
 
     updateDashboard();
 
@@ -6955,6 +7353,12 @@ transactionForm.addEventListener(
                 .value
                 .trim();
 
+        const tagNames =
+            parseTransactionTagNames(
+                transactionTagsInput
+                    ?.value
+            );
+
         if (
             !description ||
             !accountId ||
@@ -7027,6 +7431,27 @@ transactionForm.addEventListener(
                     source.id;
             }
         }
+
+        let desiredTagIds;
+
+        try {
+
+            desiredTagIds =
+                await ensureTagsForNames(
+                    tagNames
+                );
+
+        } catch (error) {
+
+            alert(
+                error?.message
+                ||
+                "Unable to prepare transaction tags."
+            );
+
+            return;
+        }
+
 
         submitButton.disabled =
             true;
@@ -7118,7 +7543,9 @@ transactionForm.addEventListener(
                         .from("transactions")
                         .insert(
                             transactionData
-                        );
+                        )
+                        .select("id")
+                        .single();
 
             } else {
 
@@ -7131,7 +7558,9 @@ transactionForm.addEventListener(
                         .eq(
                             "id",
                             editingTransactionId
-                        );
+                        )
+                        .select("id")
+                        .single();
             }
 
 
@@ -7144,6 +7573,32 @@ transactionForm.addEventListener(
                 }
 
                 throw result.error;
+            }
+
+
+            const savedTransactionId =
+                result.data?.id ||
+                editingTransactionId;
+
+            let tagSyncWarning =
+                null;
+
+            try {
+
+                await syncTransactionTags(
+                    savedTransactionId,
+                    desiredTagIds
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Transaction tag sync error:",
+                    error
+                );
+
+                tagSyncWarning =
+                    "Transaction saved, but its tags could not be fully updated.";
             }
 
 
@@ -7165,6 +7620,12 @@ transactionForm.addEventListener(
             resetTransactionForm();
 
             await loadTransactions();
+
+            if (tagSyncWarning) {
+                alert(
+                    tagSyncWarning
+                );
+            }
 
         } catch (error) {
 
@@ -7199,7 +7660,8 @@ function populateTransactionFilterOptions() {
 
     if (
         !transactionFilterAccount ||
-        !transactionFilterCategory
+        !transactionFilterCategory ||
+        !transactionFilterTag
     ) {
         return;
     }
@@ -7210,6 +7672,10 @@ function populateTransactionFilterOptions() {
 
     const selectedCategory =
         transactionFilterCategory.value ||
+        "all";
+
+    const selectedTag =
+        transactionFilterTag.value ||
         "all";
 
 
@@ -7253,6 +7719,21 @@ function populateTransactionFilterOptions() {
     );
 
 
+    transactionFilterTag.innerHTML =
+        '<option value="all">All Tags</option>';
+
+    tags.forEach(
+        function (tag) {
+
+            addSelectOption(
+                transactionFilterTag,
+                tag.id,
+                tag.name
+            );
+        }
+    );
+
+
     transactionFilterAccount.value =
         Array.from(
             transactionFilterAccount.options
@@ -7274,6 +7755,17 @@ function populateTransactionFilterOptions() {
                     selectedCategory
         )
             ? selectedCategory
+            : "all";
+
+    transactionFilterTag.value =
+        Array.from(
+            transactionFilterTag.options
+        ).some(
+            option =>
+                option.value ===
+                    selectedTag
+        )
+            ? selectedTag
             : "all";
 }
 
@@ -7302,6 +7794,12 @@ function getFilteredTransactions() {
 
     const selectedCategory =
         transactionFilterCategory
+            ?.value
+        ||
+        "all";
+
+    const selectedTag =
+        transactionFilterTag
             ?.value
         ||
         "all";
@@ -7378,6 +7876,18 @@ function getFilteredTransactions() {
                 }
 
 
+                if (
+                    selectedTag !== "all" &&
+                    !getTransactionTagIds(
+                        transaction
+                    ).includes(
+                        selectedTag
+                    )
+                ) {
+                    return false;
+                }
+
+
                 const transactionDate =
                     String(
                         transaction.transaction_date ||
@@ -7428,6 +7938,9 @@ function getFilteredTransactions() {
                         ),
                         getIncomeSourceName(
                             transaction.income_source_id
+                        ),
+                        ...getTransactionTagNames(
+                            transaction
                         ),
                         transaction.type
                     ]
@@ -7763,6 +8276,49 @@ function renderTransactions() {
             left.appendChild(date);
 
 
+            const transactionTagNames =
+                getTransactionTagNames(
+                    transaction
+                );
+
+            if (
+                transactionTagNames.length
+            ) {
+
+                const tagList =
+                    document.createElement(
+                        "div"
+                    );
+
+                tagList.className =
+                    "transaction-tag-list";
+
+                transactionTagNames.forEach(
+                    function (tagName) {
+
+                        const tag =
+                            document.createElement(
+                                "span"
+                            );
+
+                        tag.className =
+                            "transaction-tag-chip";
+
+                        tag.textContent =
+                            tagName;
+
+                        tagList.appendChild(
+                            tag
+                        );
+                    }
+                );
+
+                left.appendChild(
+                    tagList
+                );
+            }
+
+
             if (
                 transaction.type ===
                 "income"
@@ -7971,6 +8527,11 @@ function resetTransactionFilters() {
             "all";
     }
 
+    if (transactionFilterTag) {
+        transactionFilterTag.value =
+            "all";
+    }
+
     if (transactionFilterMonth) {
         transactionFilterMonth.value =
             "";
@@ -8003,6 +8564,7 @@ function resetTransactionFilters() {
     transactionFilterType,
     transactionFilterAccount,
     transactionFilterCategory,
+    transactionFilterTag,
     transactionSortSelect
 ]
     .filter(Boolean)
@@ -8245,6 +8807,15 @@ function editTransaction(id) {
         .value =
         transaction.notes || "";
 
+    if (transactionTagsInput) {
+
+        transactionTagsInput.value =
+            getTransactionTagNames(
+                transaction
+            )
+                .join(", ");
+    }
+
     transactionTypeSelect.value =
         transaction.type;
 
@@ -8419,6 +8990,11 @@ function resetTransactionForm() {
 
     customIncomeSourceGroup.style.display =
         "none";
+
+    if (transactionTagsInput) {
+        transactionTagsInput.value =
+            "";
+    }
 
     clearSelectedReceipt();
 
