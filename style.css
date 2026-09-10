@@ -1672,6 +1672,83 @@ a {
 
 
 /* ======================================================
+   TRANSACTION SEARCH / FILTERS
+====================================================== */
+
+.transaction-tools {
+    margin-bottom: 14px;
+    padding: 16px;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+}
+
+.transaction-search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.transaction-search-input,
+.transaction-filter-field input,
+.transaction-filter-field select {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background-color: white;
+    color: #111827;
+}
+
+.transaction-search-input:focus,
+.transaction-filter-field input:focus,
+.transaction-filter-field select:focus {
+    outline: 3px solid #dbeafe;
+    border-color: #2563eb;
+}
+
+.transaction-reset-button {
+    min-height: 42px;
+    padding: 0 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background-color: white;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.transaction-reset-button:hover {
+    background-color: #f9fafb;
+}
+
+.transaction-filter-grid {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.transaction-filter-field {
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.transaction-filter-field span {
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.transaction-filter-summary {
+    margin: 12px 0 0;
+    color: #6b7280;
+    font-size: 11px;
+}
+
+/* ======================================================
    RECENTLY DELETED
 ====================================================== */
 
@@ -1984,6 +2061,23 @@ a {
     }
 
 
+    .transaction-tools {
+        padding: 13px;
+    }
+
+    .transaction-search-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .transaction-filter-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .transaction-filter-field:last-child {
+        grid-column: 1 / -1;
+    }
+
     /* ==============================================
        MOBILE BOTTOM NAV
     ============================================== */
@@ -2154,6 +2248,26 @@ a {
     .budget-card-top,
     .budget-card-footer {
         gap: 8px;
+    }
+
+
+    .transaction-search-row {
+        grid-template-columns: 1fr;
+    }
+
+
+    .transaction-reset-button {
+        width: 100%;
+    }
+
+
+    .transaction-filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+
+    .transaction-filter-field:last-child {
+        grid-column: auto;
     }
 
 }

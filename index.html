@@ -605,7 +605,9 @@
 
                             <a
                                 href="#transactions-page"
+                                id="dashboard-view-all-transactions"
                                 class="section-link"
+                                data-page="transactions"
                             >
                                 View All
                             </a>
@@ -691,7 +693,7 @@
 
 
                                 <p class="section-subtitle">
-                                    Your active transactions
+                                    Search, filter and sort your active transactions
                                 </p>
 
                             </div>
@@ -699,11 +701,87 @@
 
                             <button
                                 type="button"
+                                id="transaction-view-all-button"
                                 class="view-all-button"
                             >
                                 View All
                             </button>
 
+
+                        </div>
+
+
+                        <div class="transaction-tools">
+
+                            <div class="transaction-search-row">
+
+                                <input
+                                    type="search"
+                                    id="transaction-search"
+                                    class="transaction-search-input"
+                                    placeholder="Search description, notes, account or category..."
+                                    autocomplete="off"
+                                >
+
+                                <button
+                                    type="button"
+                                    id="reset-transaction-filters"
+                                    class="transaction-reset-button"
+                                >
+                                    Reset
+                                </button>
+
+                            </div>
+
+                            <div class="transaction-filter-grid">
+
+                                <label class="transaction-filter-field">
+                                    <span>Type</span>
+                                    <select id="transaction-filter-type">
+                                        <option value="all">All Types</option>
+                                        <option value="expense">Expense</option>
+                                        <option value="income">Income</option>
+                                    </select>
+                                </label>
+
+                                <label class="transaction-filter-field">
+                                    <span>Account</span>
+                                    <select id="transaction-filter-account">
+                                        <option value="all">All Accounts</option>
+                                    </select>
+                                </label>
+
+                                <label class="transaction-filter-field">
+                                    <span>Category</span>
+                                    <select id="transaction-filter-category">
+                                        <option value="all">All Categories</option>
+                                    </select>
+                                </label>
+
+                                <label class="transaction-filter-field">
+                                    <span>Month</span>
+                                    <input
+                                        type="month"
+                                        id="transaction-filter-month"
+                                    >
+                                </label>
+
+                                <label class="transaction-filter-field">
+                                    <span>Sort</span>
+                                    <select id="transaction-sort">
+                                        <option value="newest">Newest First</option>
+                                        <option value="oldest">Oldest First</option>
+                                        <option value="highest">Highest Amount</option>
+                                        <option value="lowest">Lowest Amount</option>
+                                    </select>
+                                </label>
+
+                            </div>
+
+                            <p
+                                id="transaction-filter-summary"
+                                class="transaction-filter-summary"
+                            ></p>
 
                         </div>
 
