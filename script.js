@@ -371,6 +371,93 @@ const moreHubManageLinks =
         ".more-hub-link[data-manage-target]"
     );
 
+const recurringList =
+    document.getElementById("recurring-list");
+
+const recurringForm =
+    document.getElementById("recurring-form");
+
+const recurringFormTitle =
+    document.getElementById("recurring-form-title");
+
+const recurringNameInput =
+    document.getElementById("recurring-name");
+
+const recurringKindSelect =
+    document.getElementById("recurring-kind");
+
+const recurringTypeSelect =
+    document.getElementById("recurring-type");
+
+const recurringAccountSelect =
+    document.getElementById("recurring-account");
+
+const recurringCategorySelect =
+    document.getElementById("recurring-category");
+
+const recurringIncomeSourceGroup =
+    document.getElementById("recurring-income-source-group");
+
+const recurringIncomeSourceSelect =
+    document.getElementById("recurring-income-source");
+
+const recurringAmountInput =
+    document.getElementById("recurring-amount");
+
+const recurringFrequencySelect =
+    document.getElementById("recurring-frequency");
+
+const recurringNextDueDateInput =
+    document.getElementById("recurring-next-due-date");
+
+const recurringNotesInput =
+    document.getElementById("recurring-notes");
+
+const saveRecurringButton =
+    document.getElementById("save-recurring-button");
+
+const cancelRecurringEditButton =
+    document.getElementById("cancel-recurring-edit-button");
+
+const recurringMessage =
+    document.getElementById("recurring-message");
+
+const recurringActiveCount =
+    document.getElementById("recurring-active-count");
+
+const recurringDueSoonCount =
+    document.getElementById("recurring-due-soon-count");
+
+const recurringMonthlyEstimate =
+    document.getElementById("recurring-monthly-estimate");
+
+const recurringReminderCount =
+    document.getElementById("recurring-reminder-count");
+
+const recurringReminderList =
+    document.getElementById("recurring-reminder-list");
+
+const recurringReminderEnabled =
+    document.getElementById("recurring-reminder-enabled");
+
+const recurringReminderDays =
+    document.getElementById("recurring-reminder-days");
+
+const recurringReminderDaysGroup =
+    document.getElementById("recurring-reminder-days-group");
+
+const recurringCalendarMonth =
+    document.getElementById("recurring-calendar-month");
+
+const recurringCalendarSummary =
+    document.getElementById("recurring-calendar-summary");
+
+const recurringCalendarList =
+    document.getElementById("recurring-calendar-list");
+
+const dashboardUpcomingCommitments =
+    document.getElementById("dashboard-upcoming-commitments");
+
 const appPageTitle =
     document.getElementById(
         "app-page-title"
@@ -409,12 +496,16 @@ let transactions = [];
 let deletedTransactions = [];
 
 let budgets = [];
+let recurringTransactions = [];
+let recurringOccurrenceStatuses = [];
 
 let editingAccountId = null;
 let editingCategoryId = null;
 let editingIncomeSourceId = null;
 let editingTransactionId = null;
 let editingBudgetId = null;
+let editingRecurringId = null;
+let pendingRecurringId = null;
 
 let selectedReceiptFile = null;
 let selectedReceiptObjectUrl = null;
@@ -516,6 +607,8 @@ function showLoggedOutState() {
     deletedTransactions = [];
 
     budgets = [];
+    recurringTransactions = [];
+    recurringOccurrenceStatuses = [];
 
     authSection.style.display = "flex";
     financeApp.style.display = "none";
@@ -552,7 +645,11 @@ async function showLoggedInState(user) {
 
     await loadBudgets();
 
+    await loadRecurringTransactions();
+
     refreshTransactionDropdowns();
+
+    refreshRecurringFormOptions();
 }
 
 
@@ -3328,6 +3425,2823 @@ function updateIncomeSourceVisibility(
 
     transactionIncomeSourceSelect.value =
         selectedValue;
+}
+
+
+// ======================================================
+// RECURRING & SUBSCRIPTIONS
+// ======================================================
+
+async function loadRecurringTransactions() {
+
+    if (!currentUser) {
+        return;
+    }
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("recurring_transactions")
+            .select("*")
+            .order(
+                "next_due_date",
+                {
+                    ascending: true
+                }
+            );
+
+    if (error) {
+
+        console.error(
+            "Load recurring transactions error:",
+            error
+        );
+
+        return;
+    }
+
+    recurringTransactions =
+        data || [];
+
+    await loadRecurringOccurrenceStatuses();
+
+    renderRecurringTransactions();
+    renderRecurringSummary();
+    renderRecurringReminderCenter();
+    renderFinancialCalendar();
+    renderDashboardUpcomingCommitments();
+}
+
+
+
+async function loadRecurringOccurrenceStatuses() {
+
+    if (!currentUser) {
+
+        recurringOccurrenceStatuses =
+            [];
+
+        return;
+    }
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from(
+                "recurring_occurrence_statuses"
+            )
+            .select(
+                "id, recurring_id, due_date, status"
+            )
+            .order(
+                "due_date",
+                {
+                    ascending: true
+                }
+            );
+
+    if (error) {
+
+        console.error(
+            "Load recurring payment statuses error:",
+            error
+        );
+
+        recurringOccurrenceStatuses =
+            [];
+
+        return;
+    }
+
+    recurringOccurrenceStatuses =
+        data || [];
+}
+
+
+function getRecurringOccurrenceStatus(
+    recurringId,
+    dueDate
+) {
+
+    const row =
+        recurringOccurrenceStatuses.find(
+            item =>
+                item.recurring_id ===
+                    recurringId
+                &&
+                item.due_date ===
+                    dueDate
+        );
+
+    return row?.status ||
+        "pending";
+}
+
+
+function getRecurringStatusLabel(
+    status
+) {
+
+    return {
+        pending:
+            "Pending",
+        paid:
+            "Paid",
+        skipped:
+            "Skipped"
+    }[status] || "Pending";
+}
+
+
+async function setRecurringOccurrenceStatus(
+    recurring,
+    status
+) {
+
+    if (
+        !currentUser ||
+        !recurring?.id ||
+        !recurring?.next_due_date
+    ) {
+        return;
+    }
+
+    if (
+        ![
+            "pending",
+            "paid",
+            "skipped"
+        ].includes(status)
+    ) {
+        return;
+    }
+
+    const {
+        error
+    } =
+        await supabase
+            .from(
+                "recurring_occurrence_statuses"
+            )
+            .upsert(
+                {
+                    user_id:
+                        currentUser.id,
+                    recurring_id:
+                        recurring.id,
+                    due_date:
+                        recurring.next_due_date,
+                    status
+                },
+                {
+                    onConflict:
+                        "user_id,recurring_id,due_date"
+                }
+            );
+
+    if (error) {
+
+        console.error(
+            "Update recurring payment status error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Unable to update the recurring payment status."
+        );
+
+        return;
+    }
+
+    await loadRecurringOccurrenceStatuses();
+
+    renderRecurringSummary();
+    renderRecurringReminderCenter();
+    renderFinancialCalendar();
+    renderDashboardUpcomingCommitments();
+}
+
+
+async function markRecurringOccurrencePaid(
+    recurringId,
+    dueDate
+) {
+
+    if (
+        !currentUser ||
+        !recurringId ||
+        !dueDate
+    ) {
+        return;
+    }
+
+    const {
+        error
+    } =
+        await supabase
+            .from(
+                "recurring_occurrence_statuses"
+            )
+            .upsert(
+                {
+                    user_id:
+                        currentUser.id,
+                    recurring_id:
+                        recurringId,
+                    due_date:
+                        dueDate,
+                    status:
+                        "paid"
+                },
+                {
+                    onConflict:
+                        "user_id,recurring_id,due_date"
+                }
+            );
+
+    if (error) {
+        throw error;
+    }
+}
+
+
+
+function getRecurringReminderDays(
+    item
+) {
+
+    const days =
+        Number.parseInt(
+            item?.reminder_days_before,
+            10
+        );
+
+    if (
+        Number.isInteger(days) &&
+        days >= 0 &&
+        days <= 30
+    ) {
+        return days;
+    }
+
+    return 3;
+}
+
+
+function isRecurringReminderDue(
+    item
+) {
+
+    if (
+        !item ||
+        !item.is_active ||
+        item.reminder_enabled === false ||
+        !item.next_due_date
+    ) {
+        return false;
+    }
+
+    if (
+        getRecurringOccurrenceStatus(
+            item.id,
+            item.next_due_date
+        ) !==
+        "pending"
+    ) {
+        return false;
+    }
+
+    const today =
+        parseRecurringLocalDate(
+            getTodayDate()
+        );
+
+    const due =
+        parseRecurringLocalDate(
+            item.next_due_date
+        );
+
+    const reminderStart =
+        new Date(due);
+
+    reminderStart.setDate(
+        reminderStart.getDate() -
+        getRecurringReminderDays(
+            item
+        )
+    );
+
+    return today >=
+        reminderStart;
+}
+
+
+function getRecurringReminderLabel(
+    item
+) {
+
+    const today =
+        parseRecurringLocalDate(
+            getTodayDate()
+        );
+
+    const due =
+        parseRecurringLocalDate(
+            item.next_due_date
+        );
+
+    const days =
+        Math.round(
+            (
+                due -
+                today
+            ) /
+            86400000
+        );
+
+    if (days < 0) {
+
+        return `${Math.abs(
+            days
+        )} day${
+            Math.abs(days) ===
+            1
+                ? ""
+                : "s"
+        } overdue`;
+    }
+
+    if (days === 0) {
+        return "Due today";
+    }
+
+    return `Due in ${days} day${
+        days === 1
+            ? ""
+            : "s"
+    }`;
+}
+
+
+function getRecurringReminderItems() {
+
+    return recurringTransactions
+        .filter(
+            isRecurringReminderDue
+        )
+        .sort(
+            (
+                first,
+                second
+            ) =>
+                first.next_due_date
+                    .localeCompare(
+                        second.next_due_date
+                    )
+        );
+}
+
+
+function updateRecurringReminderControls() {
+
+    if (
+        !recurringReminderEnabled ||
+        !recurringReminderDays ||
+        !recurringReminderDaysGroup
+    ) {
+        return;
+    }
+
+    const enabled =
+        recurringReminderEnabled.checked;
+
+    recurringReminderDays.disabled =
+        !enabled;
+
+    recurringReminderDaysGroup.classList.toggle(
+        "disabled",
+        !enabled
+    );
+}
+
+
+function renderRecurringReminderCenter() {
+
+    if (!recurringReminderList) {
+        return;
+    }
+
+    recurringReminderList.innerHTML =
+        "";
+
+    const items =
+        getRecurringReminderItems();
+
+    if (!items.length) {
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+        empty.className =
+            "recurring-reminder-empty";
+
+        empty.textContent =
+            "No reminders due right now.";
+
+        recurringReminderList.appendChild(
+            empty
+        );
+
+        return;
+    }
+
+    items.forEach(
+        function (item) {
+
+            const card =
+                document.createElement(
+                    "article"
+                );
+
+            card.className =
+                "recurring-reminder-item";
+
+
+            const icon =
+                document.createElement(
+                    "div"
+                );
+
+            icon.className =
+                "recurring-reminder-icon";
+
+            icon.textContent =
+                "!";
+
+
+            const copy =
+                document.createElement(
+                    "div"
+                );
+
+            copy.className =
+                "recurring-reminder-copy";
+
+
+            const titleRow =
+                document.createElement(
+                    "div"
+                );
+
+            titleRow.className =
+                "recurring-reminder-title-row";
+
+
+            const name =
+                document.createElement(
+                    "strong"
+                );
+
+            name.textContent =
+                item.name;
+
+
+            const due =
+                document.createElement(
+                    "span"
+                );
+
+            due.className =
+                "recurring-reminder-due";
+
+            due.textContent =
+                getRecurringReminderLabel(
+                    item
+                );
+
+
+            titleRow.append(
+                name,
+                due
+            );
+
+
+            const meta =
+                document.createElement(
+                    "span"
+                );
+
+            meta.textContent =
+                [
+                    item.kind ===
+                        "subscription"
+                        ? "Subscription"
+                        : formatRecurringFrequency(
+                            item.frequency
+                        ),
+                    getAccountName(
+                        item.account_id
+                    ),
+                    getCategoryName(
+                        item.category_id
+                    ),
+                    `Remind ${getRecurringReminderDays(
+                        item
+                    )} day${
+                        getRecurringReminderDays(
+                            item
+                        ) === 1
+                            ? ""
+                            : "s"
+                    } before`
+                ]
+                    .filter(Boolean)
+                    .join(" • ");
+
+
+            copy.append(
+                titleRow,
+                meta
+            );
+
+
+            const amount =
+                document.createElement(
+                    "strong"
+                );
+
+            amount.className =
+                `recurring-reminder-amount ${item.type}`;
+
+            amount.textContent =
+                `${
+                    item.type ===
+                    "income"
+                        ? "+"
+                        : "-"
+                }${formatMoney(
+                    item.amount
+                )}`;
+
+
+            const actions =
+                document.createElement(
+                    "div"
+                );
+
+            actions.className =
+                "recurring-reminder-actions";
+
+
+            const log =
+                document.createElement(
+                    "button"
+                );
+
+            log.type =
+                "button";
+
+            log.className =
+                "recurring-reminder-log-button";
+
+            log.textContent =
+                item.type ===
+                "income"
+                    ? "Log Income"
+                    : item.kind ===
+                        "subscription"
+                        ? "Log Payment"
+                        : "Log Expense";
+
+            log.addEventListener(
+                "click",
+                function () {
+
+                    useRecurringItem(
+                        item
+                    );
+                }
+            );
+
+
+            const paid =
+                document.createElement(
+                    "button"
+                );
+
+            paid.type =
+                "button";
+
+            paid.textContent =
+                "Paid";
+
+            paid.addEventListener(
+                "click",
+                async function () {
+
+                    paid.disabled =
+                        true;
+
+                    await setRecurringOccurrenceStatus(
+                        item,
+                        "paid"
+                    );
+                }
+            );
+
+
+            const skipped =
+                document.createElement(
+                    "button"
+                );
+
+            skipped.type =
+                "button";
+
+            skipped.textContent =
+                "Skip";
+
+            skipped.addEventListener(
+                "click",
+                async function () {
+
+                    skipped.disabled =
+                        true;
+
+                    await setRecurringOccurrenceStatus(
+                        item,
+                        "skipped"
+                    );
+                }
+            );
+
+
+            actions.append(
+                log,
+                paid,
+                skipped
+            );
+
+
+            card.append(
+                icon,
+                copy,
+                amount,
+                actions
+            );
+
+            recurringReminderList.appendChild(
+                card
+            );
+        }
+    );
+}
+
+
+function refreshRecurringFormOptions(
+    recurring = null
+) {
+
+    if (
+        !recurringAccountSelect ||
+        !recurringCategorySelect ||
+        !recurringIncomeSourceSelect ||
+        !recurringTypeSelect
+    ) {
+        return;
+    }
+
+    const selectedAccount =
+        recurring?.account_id || "";
+
+    const selectedCategory =
+        recurring?.category_id || "";
+
+    const selectedIncomeSource =
+        recurring?.income_source_id || "";
+
+
+    recurringAccountSelect.innerHTML =
+        '<option value="">Select account</option>';
+
+    accounts
+        .filter(
+            account =>
+                account.is_active ||
+                account.id ===
+                    selectedAccount
+        )
+        .forEach(
+            function (account) {
+
+                addSelectOption(
+                    recurringAccountSelect,
+                    account.id,
+                    account.name
+                );
+            }
+        );
+
+    recurringAccountSelect.value =
+        selectedAccount;
+
+
+    recurringCategorySelect.innerHTML =
+        '<option value="">Select category</option>';
+
+    categories
+        .filter(
+            category =>
+                (
+                    category.is_active ||
+                    category.id ===
+                        selectedCategory
+                )
+                &&
+                (
+                    category.type ===
+                        recurringTypeSelect.value
+                    ||
+                    category.type ===
+                        "both"
+                )
+        )
+        .forEach(
+            function (category) {
+
+                addSelectOption(
+                    recurringCategorySelect,
+                    category.id,
+                    category.name
+                );
+            }
+        );
+
+    recurringCategorySelect.value =
+        selectedCategory;
+
+
+    const isIncome =
+        recurringTypeSelect.value ===
+        "income";
+
+    recurringIncomeSourceGroup.style.display =
+        isIncome
+            ? "block"
+            : "none";
+
+    recurringIncomeSourceSelect.innerHTML =
+        '<option value="">Select income source</option>';
+
+    if (isIncome) {
+
+        incomeSources
+            .filter(
+                source =>
+                    source.is_active ||
+                    source.id ===
+                        selectedIncomeSource
+            )
+            .forEach(
+                function (source) {
+
+                    addSelectOption(
+                        recurringIncomeSourceSelect,
+                        source.id,
+                        source.name
+                    );
+                }
+            );
+
+        recurringIncomeSourceSelect.value =
+            selectedIncomeSource;
+    }
+}
+
+
+function resetRecurringForm() {
+
+    editingRecurringId =
+        null;
+
+    recurringForm?.reset();
+
+    if (recurringKindSelect) {
+        recurringKindSelect.value =
+            "recurring";
+    }
+
+    if (recurringTypeSelect) {
+        recurringTypeSelect.value =
+            "expense";
+    }
+
+    if (recurringFrequencySelect) {
+        recurringFrequencySelect.value =
+            "monthly";
+    }
+
+    if (recurringNextDueDateInput) {
+        recurringNextDueDateInput.value =
+            getTodayDate();
+    }
+
+    if (recurringReminderEnabled) {
+        recurringReminderEnabled.checked =
+            true;
+    }
+
+    if (recurringReminderDays) {
+        recurringReminderDays.value =
+            "3";
+    }
+
+    updateRecurringReminderControls();
+
+    recurringFormTitle.textContent =
+        "Add Recurring Item";
+
+    saveRecurringButton.textContent =
+        "Save Recurring Item";
+
+    saveRecurringButton.disabled =
+        false;
+
+    cancelRecurringEditButton.style.display =
+        "none";
+
+    recurringMessage.textContent =
+        "";
+
+    refreshRecurringFormOptions();
+}
+
+
+function formatRecurringFrequency(
+    frequency
+) {
+
+    return {
+        weekly: "Weekly",
+        monthly: "Monthly",
+        yearly: "Yearly"
+    }[frequency] || frequency;
+}
+
+
+function recurringMonthlyEquivalent(
+    item
+) {
+
+    const amount =
+        Number(item.amount);
+
+    if (
+        !Number.isFinite(amount) ||
+        amount <= 0
+    ) {
+        return 0;
+    }
+
+    if (
+        item.frequency ===
+        "weekly"
+    ) {
+        return amount * 52 / 12;
+    }
+
+    if (
+        item.frequency ===
+        "yearly"
+    ) {
+        return amount / 12;
+    }
+
+    return amount;
+}
+
+
+function renderRecurringSummary() {
+
+    if (
+        !recurringActiveCount ||
+        !recurringDueSoonCount ||
+        !recurringMonthlyEstimate
+    ) {
+        return;
+    }
+
+    const active =
+        recurringTransactions.filter(
+            item =>
+                item.is_active
+        );
+
+    recurringActiveCount.textContent =
+        String(active.length);
+
+    const today =
+        new Date(
+            `${getTodayDate()}T12:00:00`
+        );
+
+    const sevenDays =
+        new Date(today);
+
+    sevenDays.setDate(
+        sevenDays.getDate() +
+        7
+    );
+
+    recurringDueSoonCount.textContent =
+        String(
+            active.filter(
+                item =>
+                    new Date(
+                        `${item.next_due_date}T12:00:00`
+                    ) <=
+                    sevenDays
+                    &&
+                    getRecurringOccurrenceStatus(
+                        item.id,
+                        item.next_due_date
+                    ) ===
+                        "pending"
+            ).length
+        );
+
+    const estimate =
+        active
+            .filter(
+                item =>
+                    item.type ===
+                    "expense"
+            )
+            .reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    recurringMonthlyEquivalent(
+                        item
+                    ),
+                0
+            );
+
+    recurringMonthlyEstimate.textContent =
+        formatMoney(estimate);
+
+    if (recurringReminderCount) {
+
+        recurringReminderCount.textContent =
+            String(
+                getRecurringReminderItems()
+                    .length
+            );
+    }
+}
+
+
+function recurringDueLabel(
+    dateValue
+) {
+
+    const today =
+        new Date(
+            `${getTodayDate()}T12:00:00`
+        );
+
+    const due =
+        new Date(
+            `${dateValue}T12:00:00`
+        );
+
+    const days =
+        Math.round(
+            (due - today) /
+            86400000
+        );
+
+    if (days < 0) {
+
+        return {
+            text:
+                `${Math.abs(days)} day${
+                    Math.abs(days) === 1
+                        ? ""
+                        : "s"
+                } overdue`,
+            className:
+                "overdue"
+        };
+    }
+
+    if (days === 0) {
+        return {
+            text:
+                "Due today",
+            className:
+                "today"
+        };
+    }
+
+    if (days <= 7) {
+        return {
+            text:
+                `Due in ${days} day${
+                    days === 1
+                        ? ""
+                        : "s"
+                }`,
+            className:
+                "soon"
+        };
+    }
+
+    return {
+        text:
+            formatDate(dateValue),
+        className:
+            "future"
+    };
+}
+
+
+
+function parseRecurringLocalDate(
+    dateValue
+) {
+    return new Date(
+        `${dateValue}T12:00:00`
+    );
+}
+
+
+function getRecurringMonthRange(
+    monthValue
+) {
+
+    const safeMonth =
+        /^\d{4}-\d{2}$/
+            .test(
+                monthValue || ""
+            )
+            ? monthValue
+            : getCurrentMonthValue();
+
+    const [
+        year,
+        month
+    ] =
+        safeMonth
+            .split("-")
+            .map(Number);
+
+    return {
+        start:
+            new Date(
+                year,
+                month - 1,
+                1,
+                12
+            ),
+
+        end:
+            new Date(
+                year,
+                month,
+                0,
+                12
+            )
+    };
+}
+
+
+function generateRecurringOccurrences(
+    item,
+    rangeStart,
+    rangeEnd
+) {
+
+    if (
+        !item ||
+        !item.is_active ||
+        !item.next_due_date
+    ) {
+        return [];
+    }
+
+    const occurrences =
+        [];
+
+    let dateValue =
+        item.next_due_date;
+
+    let date =
+        parseRecurringLocalDate(
+            dateValue
+        );
+
+    let guard =
+        0;
+
+    while (
+        date <
+            rangeStart &&
+        guard <
+            80
+    ) {
+
+        dateValue =
+            addRecurringInterval(
+                dateValue,
+                item.frequency
+            );
+
+        date =
+            parseRecurringLocalDate(
+                dateValue
+            );
+
+        guard +=
+            1;
+    }
+
+    while (
+        date <=
+            rangeEnd &&
+        guard <
+            80
+    ) {
+
+        occurrences.push({
+            recurring_id:
+                item.id,
+            name:
+                item.name,
+            kind:
+                item.kind,
+            type:
+                item.type,
+            amount:
+                Number(
+                    item.amount
+                ),
+            frequency:
+                item.frequency,
+            date:
+                dateValue,
+            account_id:
+                item.account_id,
+            category_id:
+                item.category_id
+        });
+
+        dateValue =
+            addRecurringInterval(
+                dateValue,
+                item.frequency
+            );
+
+        date =
+            parseRecurringLocalDate(
+                dateValue
+            );
+
+        guard +=
+            1;
+    }
+
+    return occurrences;
+}
+
+
+function getFinancialCalendarOccurrences(
+    monthValue
+) {
+
+    const range =
+        getRecurringMonthRange(
+            monthValue
+        );
+
+    return recurringTransactions
+        .flatMap(
+            item =>
+                generateRecurringOccurrences(
+                    item,
+                    range.start,
+                    range.end
+                )
+        )
+        .sort(
+            (
+                first,
+                second
+            ) =>
+                first.date.localeCompare(
+                    second.date
+                )
+                ||
+                first.name.localeCompare(
+                    second.name
+                )
+        );
+}
+
+
+function renderFinancialCalendar() {
+
+    if (
+        !recurringCalendarMonth ||
+        !recurringCalendarSummary ||
+        !recurringCalendarList
+    ) {
+        return;
+    }
+
+    if (
+        !recurringCalendarMonth.value
+    ) {
+        recurringCalendarMonth.value =
+            getCurrentMonthValue();
+    }
+
+    const occurrences =
+        getFinancialCalendarOccurrences(
+            recurringCalendarMonth.value
+        );
+
+    const income =
+        occurrences
+            .filter(
+                item =>
+                    item.type ===
+                    "income"
+            )
+            .reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    item.amount,
+                0
+            );
+
+    const expenses =
+        occurrences
+            .filter(
+                item =>
+                    item.type ===
+                    "expense"
+            )
+            .reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    item.amount,
+                0
+            );
+
+    recurringCalendarSummary.innerHTML =
+        "";
+
+    [
+        [
+            "Expected Income",
+            formatMoney(
+                income
+            ),
+            "income"
+        ],
+        [
+            "Expected Expenses",
+            formatMoney(
+                expenses
+            ),
+            "expense"
+        ],
+        [
+            "Net Recurring",
+            formatMoney(
+                income -
+                expenses
+            ),
+            income -
+            expenses >=
+            0
+                ? "income"
+                : "expense"
+        ],
+        [
+            "Occurrences",
+            String(
+                occurrences.length
+            ),
+            ""
+        ]
+    ].forEach(
+        function (summary) {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "financial-calendar-summary-card";
+
+            const label =
+                document.createElement(
+                    "span"
+                );
+
+            label.textContent =
+                summary[0];
+
+            const value =
+                document.createElement(
+                    "strong"
+                );
+
+            value.textContent =
+                summary[1];
+
+            if (summary[2]) {
+                value.classList.add(
+                    summary[2]
+                );
+            }
+
+            card.append(
+                label,
+                value
+            );
+
+            recurringCalendarSummary
+                .appendChild(
+                    card
+                );
+        }
+    );
+
+    recurringCalendarList.innerHTML =
+        "";
+
+    if (!occurrences.length) {
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+        empty.className =
+            "empty-state";
+
+        empty.textContent =
+            "No recurring commitments in this month.";
+
+        recurringCalendarList
+            .appendChild(
+                empty
+            );
+
+        return;
+    }
+
+    const groups =
+        new Map();
+
+    occurrences.forEach(
+        function (item) {
+
+            if (
+                !groups.has(
+                    item.date
+                )
+            ) {
+                groups.set(
+                    item.date,
+                    []
+                );
+            }
+
+            groups
+                .get(
+                    item.date
+                )
+                .push(
+                    item
+                );
+        }
+    );
+
+    groups.forEach(
+        function (
+            items,
+            dateValue
+        ) {
+
+            const day =
+                document.createElement(
+                    "article"
+                );
+
+            day.className =
+                "financial-calendar-day";
+
+            const dateWrap =
+                document.createElement(
+                    "div"
+                );
+
+            dateWrap.className =
+                "financial-calendar-date";
+
+            const parsed =
+                parseRecurringLocalDate(
+                    dateValue
+                );
+
+            const weekday =
+                document.createElement(
+                    "span"
+                );
+
+            weekday.textContent =
+                parsed.toLocaleDateString(
+                    "en-MY",
+                    {
+                        weekday:
+                            "short"
+                    }
+                );
+
+            const number =
+                document.createElement(
+                    "strong"
+                );
+
+            number.textContent =
+                String(
+                    parsed.getDate()
+                );
+
+            const month =
+                document.createElement(
+                    "span"
+                );
+
+            month.textContent =
+                parsed.toLocaleDateString(
+                    "en-MY",
+                    {
+                        month:
+                            "short"
+                    }
+                );
+
+            dateWrap.append(
+                weekday,
+                number,
+                month
+            );
+
+            const itemsWrap =
+                document.createElement(
+                    "div"
+                );
+
+            itemsWrap.className =
+                "financial-calendar-day-items";
+
+            items.forEach(
+                function (item) {
+
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+                    row.className =
+                        "financial-calendar-entry";
+
+                    const copy =
+                        document.createElement(
+                            "div"
+                        );
+
+                    copy.className =
+                        "financial-calendar-entry-copy";
+
+                    const name =
+                        document.createElement(
+                            "strong"
+                        );
+
+                    name.textContent =
+                        item.name;
+
+                    const meta =
+                        document.createElement(
+                            "span"
+                        );
+
+                    meta.textContent =
+                        [
+                            item.kind ===
+                                "subscription"
+                                ? "Subscription"
+                                : formatRecurringFrequency(
+                                    item.frequency
+                                ),
+                            getAccountName(
+                                item.account_id
+                            ),
+                            getCategoryName(
+                                item.category_id
+                            )
+                        ]
+                            .filter(Boolean)
+                            .join(" • ");
+
+                    copy.append(
+                        name,
+                        meta
+                    );
+
+                    const calendarStatus =
+                        getRecurringOccurrenceStatus(
+                            item.recurring_id,
+                            item.date
+                        );
+
+                    const statusBadge =
+                        document.createElement(
+                            "span"
+                        );
+
+                    statusBadge.className =
+                        `financial-calendar-status ${calendarStatus}`;
+
+                    statusBadge.textContent =
+                        getRecurringStatusLabel(
+                            calendarStatus
+                        );
+
+                    copy.appendChild(
+                        statusBadge
+                    );
+
+                    const amount =
+                        document.createElement(
+                            "strong"
+                        );
+
+                    amount.className =
+                        `financial-calendar-entry-amount ${item.type}`;
+
+                    amount.textContent =
+                        `${
+                            item.type ===
+                            "income"
+                                ? "+"
+                                : "-"
+                        }${formatMoney(
+                            item.amount
+                        )}`;
+
+                    row.append(
+                        copy,
+                        amount
+                    );
+
+                    itemsWrap.appendChild(
+                        row
+                    );
+                }
+            );
+
+            day.append(
+                dateWrap,
+                itemsWrap
+            );
+
+            recurringCalendarList
+                .appendChild(
+                    day
+                );
+        }
+    );
+}
+
+
+function renderDashboardUpcomingCommitments() {
+
+    if (
+        !dashboardUpcomingCommitments
+    ) {
+        return;
+    }
+
+    dashboardUpcomingCommitments.innerHTML =
+        "";
+
+    const today =
+        parseRecurringLocalDate(
+            getTodayDate()
+        );
+
+    const horizon =
+        new Date(today);
+
+    horizon.setDate(
+        horizon.getDate() +
+        30
+    );
+
+    const items =
+        recurringTransactions
+            .filter(
+                item =>
+                    item.is_active
+            )
+            .map(
+                function (item) {
+
+                    return {
+                        ...item,
+                        due:
+                            parseRecurringLocalDate(
+                                item.next_due_date
+                            )
+                    };
+                }
+            )
+            .filter(
+                item =>
+                    item.due <=
+                    horizon
+            )
+            .sort(
+                (
+                    first,
+                    second
+                ) =>
+                    first.due -
+                    second.due
+            )
+            .slice(
+                0,
+                5
+            );
+
+    if (!items.length) {
+
+        const empty =
+            document.createElement(
+                "p"
+            );
+
+        empty.className =
+            "dashboard-upcoming-empty";
+
+        empty.textContent =
+            "Nothing is due in the next 30 days.";
+
+        dashboardUpcomingCommitments
+            .appendChild(
+                empty
+            );
+
+        return;
+    }
+
+    items.forEach(
+        function (item) {
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+            row.className =
+                "dashboard-upcoming-item";
+
+            const date =
+                document.createElement(
+                    "div"
+                );
+
+            date.className =
+                "dashboard-upcoming-date";
+
+            const day =
+                document.createElement(
+                    "strong"
+                );
+
+            day.textContent =
+                String(
+                    item.due.getDate()
+                );
+
+            const month =
+                document.createElement(
+                    "span"
+                );
+
+            month.textContent =
+                item.due.toLocaleDateString(
+                    "en-MY",
+                    {
+                        month:
+                            "short"
+                    }
+                );
+
+            date.append(
+                day,
+                month
+            );
+
+            const copy =
+                document.createElement(
+                    "div"
+                );
+
+            copy.className =
+                "dashboard-upcoming-copy";
+
+            const name =
+                document.createElement(
+                    "strong"
+                );
+
+            name.textContent =
+                item.name;
+
+            const due =
+                recurringDueLabel(
+                    item.next_due_date
+                );
+
+            const meta =
+                document.createElement(
+                    "span"
+                );
+
+            const reminderText =
+                isRecurringReminderDue(
+                    item
+                )
+                    ? " • Reminder"
+                    : "";
+
+            meta.textContent =
+                `${
+                    item.kind ===
+                    "subscription"
+                        ? "Subscription"
+                        : formatRecurringFrequency(
+                            item.frequency
+                        )
+                } • ${due.text}${reminderText}`;
+
+            copy.append(
+                name,
+                meta
+            );
+
+            const amount =
+                document.createElement(
+                    "strong"
+                );
+
+            amount.className =
+                `dashboard-upcoming-amount ${item.type}`;
+
+            amount.textContent =
+                `${
+                    item.type ===
+                    "income"
+                        ? "+"
+                        : "-"
+                }${formatMoney(
+                    item.amount
+                )}`;
+
+            row.append(
+                date,
+                copy,
+                amount
+            );
+
+            const currentStatus =
+                getRecurringOccurrenceStatus(
+                    item.id,
+                    item.next_due_date
+                );
+
+            const statusRow =
+                document.createElement(
+                    "div"
+                );
+
+            statusRow.className =
+                "dashboard-upcoming-status-row";
+
+            const statusLabel =
+                document.createElement(
+                    "div"
+                );
+
+            statusLabel.className =
+                `dashboard-upcoming-current-status ${currentStatus}`;
+
+            statusLabel.textContent =
+                `Status: ${getRecurringStatusLabel(
+                    currentStatus
+                )}`;
+
+            const controls =
+                document.createElement(
+                    "div"
+                );
+
+            controls.className =
+                "dashboard-upcoming-status-controls";
+
+            [
+                ["pending", "Pending"],
+                ["paid", "Paid"],
+                ["skipped", "Skipped"]
+            ].forEach(
+                function (
+                    [
+                        status,
+                        label
+                    ]
+                ) {
+
+                    const button =
+                        document.createElement(
+                            "button"
+                        );
+
+                    button.type =
+                        "button";
+
+                    button.className =
+                        "dashboard-upcoming-status-button";
+
+                    if (
+                        currentStatus ===
+                        status
+                    ) {
+
+                        button.classList.add(
+                            "active",
+                            status
+                        );
+                    }
+
+                    button.textContent =
+                        label;
+
+                    button.addEventListener(
+                        "click",
+                        async function () {
+
+                            if (
+                                currentStatus ===
+                                status
+                            ) {
+                                return;
+                            }
+
+                            button.disabled =
+                                true;
+
+                            await setRecurringOccurrenceStatus(
+                                item,
+                                status
+                            );
+                        }
+                    );
+
+                    controls.appendChild(
+                        button
+                    );
+                }
+            );
+
+            statusRow.append(
+                statusLabel,
+                controls
+            );
+
+            row.appendChild(
+                statusRow
+            );
+
+            dashboardUpcomingCommitments
+                .appendChild(
+                    row
+                );
+        }
+    );
+}
+
+
+if (recurringCalendarMonth) {
+    recurringCalendarMonth.addEventListener(
+        "change",
+        renderFinancialCalendar
+    );
+}
+
+
+function renderRecurringTransactions() {
+
+    if (!recurringList) {
+        return;
+    }
+
+    recurringList.innerHTML =
+        "";
+
+    if (!recurringTransactions.length) {
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+        empty.className =
+            "empty-state";
+
+        empty.textContent =
+            "No recurring items yet.";
+
+        recurringList.appendChild(
+            empty
+        );
+
+        return;
+    }
+
+    recurringTransactions.forEach(
+        function (item) {
+
+            const card =
+                document.createElement(
+                    "article"
+                );
+
+            card.className =
+                "recurring-card";
+
+            if (!item.is_active) {
+                card.classList.add(
+                    "inactive"
+                );
+            }
+
+
+            const main =
+                document.createElement(
+                    "div"
+                );
+
+            main.className =
+                "recurring-card-main";
+
+
+            const top =
+                document.createElement(
+                    "div"
+                );
+
+            top.className =
+                "recurring-card-heading";
+
+
+            const titleWrap =
+                document.createElement(
+                    "div"
+                );
+
+            const title =
+                document.createElement(
+                    "h3"
+                );
+
+            title.textContent =
+                item.name;
+
+            const kind =
+                document.createElement(
+                    "span"
+                );
+
+            kind.className =
+                item.kind ===
+                "subscription"
+                    ? "recurring-kind-badge subscription"
+                    : "recurring-kind-badge";
+
+            kind.textContent =
+                item.kind ===
+                "subscription"
+                    ? "Subscription"
+                    : "Recurring";
+
+            titleWrap.append(
+                title,
+                kind
+            );
+
+
+            const amount =
+                document.createElement(
+                    "strong"
+                );
+
+            amount.className =
+                `recurring-amount ${item.type}`;
+
+            amount.textContent =
+                `${
+                    item.type ===
+                    "income"
+                        ? "+"
+                        : "-"
+                }${formatMoney(
+                    item.amount
+                )}`;
+
+
+            top.append(
+                titleWrap,
+                amount
+            );
+
+
+            const meta =
+                document.createElement(
+                    "p"
+                );
+
+            meta.className =
+                "recurring-meta";
+
+            meta.textContent =
+                [
+                    formatRecurringFrequency(
+                        item.frequency
+                    ),
+                    getAccountName(
+                        item.account_id
+                    ),
+                    getCategoryName(
+                        item.category_id
+                    )
+                ]
+                    .filter(Boolean)
+                    .join(" • ");
+
+
+            const due =
+                document.createElement(
+                    "span"
+                );
+
+            const dueInfo =
+                recurringDueLabel(
+                    item.next_due_date
+                );
+
+            due.className =
+                `recurring-due-badge ${
+                    item.is_active
+                        ? dueInfo.className
+                        : "future"
+                }`;
+
+            due.textContent =
+                item.is_active
+                    ? dueInfo.text
+                    : "Inactive";
+
+
+            main.append(
+                top,
+                meta,
+                due
+            );
+
+
+            if (item.notes) {
+
+                const notes =
+                    document.createElement(
+                        "p"
+                    );
+
+                notes.className =
+                    "recurring-notes";
+
+                notes.textContent =
+                    item.notes;
+
+                main.appendChild(
+                    notes
+                );
+            }
+
+
+            const actions =
+                document.createElement(
+                    "div"
+                );
+
+            actions.className =
+                "recurring-actions";
+
+
+            if (item.is_active) {
+
+                const log =
+                    document.createElement(
+                        "button"
+                    );
+
+                log.type =
+                    "button";
+
+                log.className =
+                    "recurring-primary-action";
+
+                log.textContent =
+                    item.type ===
+                    "income"
+                        ? "Log Income"
+                        : item.kind ===
+                            "subscription"
+                            ? "Log Payment"
+                            : "Log Expense";
+
+                log.addEventListener(
+                    "click",
+                    () =>
+                        useRecurringItem(
+                            item
+                        )
+                );
+
+                actions.appendChild(log);
+            }
+
+
+            const edit =
+                document.createElement(
+                    "button"
+                );
+
+            edit.type =
+                "button";
+
+            edit.textContent =
+                "Edit";
+
+            edit.addEventListener(
+                "click",
+                () =>
+                    editRecurringItem(
+                        item
+                    )
+            );
+
+            actions.appendChild(edit);
+
+
+            const toggle =
+                document.createElement(
+                    "button"
+                );
+
+            toggle.type =
+                "button";
+
+            toggle.textContent =
+                item.is_active
+                    ? "Deactivate"
+                    : "Reactivate";
+
+            if (item.is_active) {
+                toggle.className =
+                    "danger-text-button";
+            }
+
+            toggle.addEventListener(
+                "click",
+                () =>
+                    toggleRecurringItem(
+                        item
+                    )
+            );
+
+            actions.appendChild(toggle);
+
+
+            card.append(
+                main,
+                actions
+            );
+
+            recurringList.appendChild(
+                card
+            );
+        }
+    );
+}
+
+
+function editRecurringItem(item) {
+
+    editingRecurringId =
+        item.id;
+
+    recurringNameInput.value =
+        item.name;
+
+    recurringKindSelect.value =
+        item.kind;
+
+    recurringTypeSelect.value =
+        item.type;
+
+    recurringAmountInput.value =
+        Number(
+            item.amount
+        ).toFixed(2);
+
+    recurringFrequencySelect.value =
+        item.frequency;
+
+    recurringNextDueDateInput.value =
+        item.next_due_date;
+
+    if (recurringReminderEnabled) {
+
+        recurringReminderEnabled.checked =
+            item.reminder_enabled !==
+            false;
+    }
+
+    if (recurringReminderDays) {
+
+        recurringReminderDays.value =
+            String(
+                getRecurringReminderDays(
+                    item
+                )
+            );
+    }
+
+    updateRecurringReminderControls();
+
+    recurringNotesInput.value =
+        item.notes || "";
+
+    refreshRecurringFormOptions(
+        item
+    );
+
+    recurringFormTitle.textContent =
+        "Edit Recurring Item";
+
+    saveRecurringButton.textContent =
+        "Save Changes";
+
+    cancelRecurringEditButton.style.display =
+        "inline-flex";
+
+    recurringForm.scrollIntoView({
+        behavior:
+            "smooth",
+        block:
+            "start"
+    });
+}
+
+
+async function toggleRecurringItem(item) {
+
+    const {
+        error
+    } =
+        await supabase
+            .from(
+                "recurring_transactions"
+            )
+            .update({
+                is_active:
+                    !item.is_active
+            })
+            .eq(
+                "id",
+                item.id
+            );
+
+    if (error) {
+        alert(
+            error.message ||
+            "Unable to update recurring item."
+        );
+        return;
+    }
+
+    await loadRecurringTransactions();
+}
+
+
+function addRecurringInterval(
+    dateValue,
+    frequency
+) {
+
+    const date =
+        new Date(
+            `${dateValue}T12:00:00`
+        );
+
+    if (
+        frequency ===
+        "weekly"
+    ) {
+
+        date.setDate(
+            date.getDate() +
+            7
+        );
+
+    } else if (
+        frequency ===
+        "yearly"
+    ) {
+
+        const originalMonth =
+            date.getMonth();
+
+        date.setFullYear(
+            date.getFullYear() +
+            1
+        );
+
+        if (
+            date.getMonth() !==
+            originalMonth
+        ) {
+            date.setDate(0);
+        }
+
+    } else {
+
+        const originalDay =
+            date.getDate();
+
+        date.setDate(1);
+
+        date.setMonth(
+            date.getMonth() +
+            1
+        );
+
+        const lastDay =
+            new Date(
+                date.getFullYear(),
+                date.getMonth() + 1,
+                0
+            ).getDate();
+
+        date.setDate(
+            Math.min(
+                originalDay,
+                lastDay
+            )
+        );
+    }
+
+    const year =
+        date.getFullYear();
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+    return `${year}-${month}-${day}`;
+}
+
+
+function nextRecurringDateAfter(
+    item,
+    afterDate
+) {
+
+    let next =
+        item.next_due_date;
+
+    let guard =
+        0;
+
+    while (
+        next <= afterDate &&
+        guard < 60
+    ) {
+
+        next =
+            addRecurringInterval(
+                next,
+                item.frequency
+            );
+
+        guard += 1;
+    }
+
+    return next;
+}
+
+
+async function advanceRecurringSchedule(
+    recurringId,
+    transactionDate
+) {
+
+    const item =
+        recurringTransactions.find(
+            recurring =>
+                recurring.id ===
+                recurringId
+        );
+
+    if (!item) {
+        return;
+    }
+
+    await markRecurringOccurrencePaid(
+        recurringId,
+        item.next_due_date
+    );
+
+    const {
+        error
+    } =
+        await supabase
+            .from(
+                "recurring_transactions"
+            )
+            .update({
+                next_due_date:
+                    nextRecurringDateAfter(
+                        item,
+                        transactionDate
+                    )
+            })
+            .eq(
+                "id",
+                recurringId
+            );
+
+    if (error) {
+        throw error;
+    }
+
+    await loadRecurringTransactions();
+}
+
+
+function useRecurringItem(item) {
+
+    resetTransactionForm();
+
+    pendingRecurringId =
+        item.id;
+
+    transactionDescriptionInput.value =
+        item.name;
+
+    transactionTypeSelect.value =
+        item.type;
+
+    refreshTransactionDropdowns({
+        account_id:
+            item.account_id,
+        category_id:
+            item.category_id,
+        income_source_id:
+            item.income_source_id
+    });
+
+    document
+        .getElementById("amount")
+        .value =
+        Number(
+            item.amount
+        ).toFixed(2);
+
+    dateInput.value =
+        getTodayDate();
+
+    document
+        .getElementById("notes")
+        .value =
+        item.notes || "";
+
+    formTitle.textContent =
+        item.kind ===
+        "subscription"
+            ? "Log Subscription Payment"
+            : item.type ===
+                "income"
+                ? "Log Recurring Income"
+                : "Log Recurring Expense";
+
+    cancelEditButton.textContent =
+        "Cancel Log";
+
+    cancelEditButton.style.display =
+        "inline-flex";
+
+    navigateToPage(
+        "transactions",
+        {
+            scrollToTop:
+                false
+        }
+    );
+
+    requestAnimationFrame(
+        () =>
+            transactionForm
+                .scrollIntoView({
+                    behavior:
+                        "smooth",
+                    block:
+                        "start"
+                })
+    );
+}
+
+
+if (recurringReminderEnabled) {
+
+    recurringReminderEnabled
+        .addEventListener(
+            "change",
+            updateRecurringReminderControls
+        );
+}
+
+
+if (recurringTypeSelect) {
+
+    recurringTypeSelect
+        .addEventListener(
+            "change",
+            () =>
+                refreshRecurringFormOptions()
+        );
+}
+
+
+if (cancelRecurringEditButton) {
+
+    cancelRecurringEditButton
+        .addEventListener(
+            "click",
+            resetRecurringForm
+        );
+}
+
+
+if (recurringForm) {
+
+    recurringForm.addEventListener(
+        "submit",
+        async function (event) {
+
+            event.preventDefault();
+
+            if (!currentUser) {
+                return;
+            }
+
+            const name =
+                recurringNameInput
+                    .value
+                    .trim();
+
+            const kind =
+                recurringKindSelect.value;
+
+            const type =
+                recurringTypeSelect.value;
+
+            const accountId =
+                recurringAccountSelect.value;
+
+            const categoryId =
+                recurringCategorySelect.value;
+
+            const amount =
+                Number.parseFloat(
+                    recurringAmountInput
+                        .value
+                );
+
+            const frequency =
+                recurringFrequencySelect
+                    .value;
+
+            const nextDueDate =
+                recurringNextDueDateInput
+                    .value;
+
+            const reminderEnabled =
+                recurringReminderEnabled
+                    ? recurringReminderEnabled
+                        .checked
+                    : true;
+
+            const reminderDaysBefore =
+                Number.parseInt(
+                    recurringReminderDays
+                        ?.value ||
+                    "3",
+                    10
+                );
+
+            const notes =
+                recurringNotesInput
+                    .value
+                    .trim();
+
+            let incomeSourceId =
+                null;
+
+            if (
+                type ===
+                "income"
+            ) {
+
+                incomeSourceId =
+                    recurringIncomeSourceSelect
+                        .value;
+
+                if (!incomeSourceId) {
+
+                    alert(
+                        "Please select an income source."
+                    );
+
+                    return;
+                }
+            }
+
+            if (
+                !name ||
+                !accountId ||
+                !categoryId ||
+                !nextDueDate ||
+                !Number.isFinite(
+                    amount
+                ) ||
+                amount <= 0
+            ) {
+
+                alert(
+                    "Please complete all required recurring fields."
+                );
+
+                return;
+            }
+
+            if (
+                reminderEnabled &&
+                (
+                    !Number.isInteger(
+                        reminderDaysBefore
+                    )
+                    ||
+                    reminderDaysBefore < 0
+                    ||
+                    reminderDaysBefore > 30
+                )
+            ) {
+
+                alert(
+                    "Reminder days must be between 0 and 30."
+                );
+
+                return;
+            }
+
+            const payload = {
+                user_id:
+                    currentUser.id,
+                name,
+                kind,
+                type,
+                account_id:
+                    accountId,
+                category_id:
+                    categoryId,
+                income_source_id:
+                    incomeSourceId,
+                amount,
+                frequency,
+                next_due_date:
+                    nextDueDate,
+                reminder_enabled:
+                    reminderEnabled,
+                reminder_days_before:
+                    reminderEnabled
+                        ? reminderDaysBefore
+                        : 3,
+                notes:
+                    notes || null
+            };
+
+            saveRecurringButton.disabled =
+                true;
+
+            saveRecurringButton.textContent =
+                "Saving...";
+
+            const result =
+                editingRecurringId ===
+                null
+                    ? await supabase
+                        .from(
+                            "recurring_transactions"
+                        )
+                        .insert(payload)
+                    : await supabase
+                        .from(
+                            "recurring_transactions"
+                        )
+                        .update(payload)
+                        .eq(
+                            "id",
+                            editingRecurringId
+                        );
+
+            saveRecurringButton.disabled =
+                false;
+
+            if (result.error) {
+
+                saveRecurringButton.textContent =
+                    editingRecurringId
+                        ? "Save Changes"
+                        : "Save Recurring Item";
+
+                recurringMessage.textContent =
+                    result.error.message;
+
+                return;
+            }
+
+            resetRecurringForm();
+
+            await loadRecurringTransactions();
+        }
+    );
 }
 
 
@@ -7754,6 +10668,11 @@ transactionForm.addEventListener(
                 .getElementById("date")
                 .value;
 
+        const recurringIdToAdvance =
+            editingTransactionId === null
+                ? pendingRecurringId
+                : null;
+
         const notes =
             document
                 .getElementById("notes")
@@ -8021,6 +10940,26 @@ transactionForm.addEventListener(
             }
 
 
+            let recurringAdvanceWarning =
+                null;
+
+            if (recurringIdToAdvance) {
+
+                try {
+
+                    await advanceRecurringSchedule(
+                        recurringIdToAdvance,
+                        transactionDate
+                    );
+
+                } catch (error) {
+
+                    recurringAdvanceWarning =
+                        "Transaction saved, but the recurring schedule could not be advanced.";
+                }
+            }
+
+
             submitButton.disabled =
                 false;
 
@@ -8031,6 +10970,12 @@ transactionForm.addEventListener(
             if (tagSyncWarning) {
                 alert(
                     tagSyncWarning
+                );
+            }
+
+            if (recurringAdvanceWarning) {
+                alert(
+                    recurringAdvanceWarning
                 );
             }
 
@@ -9257,8 +12202,11 @@ function editTransaction(id) {
     submitButton.textContent =
         "Save Changes";
 
+    cancelEditButton.textContent =
+        "Cancel Edit";
+
     cancelEditButton.style.display =
-        "block";
+        "inline-flex";
 
     transactionForm.scrollIntoView({
 
@@ -9372,6 +12320,9 @@ function resetTransactionForm() {
     editingTransactionId =
         null;
 
+    pendingRecurringId =
+        null;
+
     hideDescriptionSuggestions();
 
     transactionForm.reset();
@@ -9390,6 +12341,9 @@ function resetTransactionForm() {
 
     submitButton.disabled =
         false;
+
+    cancelEditButton.textContent =
+        "Cancel Edit";
 
     cancelEditButton.style.display =
         "none";
@@ -10728,6 +13682,7 @@ const pageTitles = {
     dashboard: "Dashboard",
     transactions: "Transactions",
     budgets: "Budgets",
+    recurring: "Recurring & Subscriptions",
     accounts: "Accounts",
     manage: "Manage",
     more: "More"
@@ -10814,7 +13769,8 @@ function navigateToPage(
                 && [
                     "more",
                     "accounts",
-                    "manage"
+                    "manage",
+                    "recurring"
                 ].includes(
                     pageName
                 );
@@ -10893,6 +13849,24 @@ function navigateToPage(
         renderDashboardRecentTransactions();
 
         loadDashboardBudgetSummary();
+
+        renderDashboardUpcomingCommitments();
+    }
+
+    if (
+        pageName ===
+        "recurring"
+    ) {
+
+        renderRecurringTransactions();
+
+        renderRecurringSummary();
+
+        renderRecurringReminderCenter();
+
+        renderFinancialCalendar();
+
+        refreshRecurringFormOptions();
     }
 
 
@@ -11051,6 +14025,9 @@ quickAddTransactionLinks.forEach(
                 event.preventDefault();
 
 
+                pendingRecurringId =
+                    null;
+
                 // If currently editing a transaction,
                 // use the existing cancel/reset behaviour.
 
@@ -11141,6 +14118,7 @@ function getPageFromHash() {
         "dashboard",
         "transactions",
         "budgets",
+        "recurring",
         "accounts",
         "manage",
         "more"
@@ -11171,6 +14149,9 @@ function getPageFromHash() {
 
         "budgets-page":
             "budgets",
+
+        "recurring-page":
+            "recurring",
 
         "accounts-page":
             "accounts",
@@ -11778,6 +14759,28 @@ dateInput.value =
 
 budgetMonthInput.value =
     getCurrentMonthValue();
+
+if (recurringNextDueDateInput) {
+    recurringNextDueDateInput.value =
+        getTodayDate();
+}
+
+if (recurringCalendarMonth) {
+    recurringCalendarMonth.value =
+        getCurrentMonthValue();
+}
+
+if (recurringReminderEnabled) {
+    recurringReminderEnabled.checked =
+        true;
+}
+
+if (recurringReminderDays) {
+    recurringReminderDays.value =
+        "3";
+}
+
+updateRecurringReminderControls();
 
 initializeAuth();
 

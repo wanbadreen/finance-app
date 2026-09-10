@@ -3266,3 +3266,1191 @@ a {
         font-size: 9px;
     }
 }
+
+
+/* ======================================================
+   RECURRING & SUBSCRIPTIONS
+====================================================== */
+
+.recurring-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.recurring-summary-card {
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: white;
+}
+
+.recurring-summary-card > span {
+    display: block;
+    margin-bottom: 8px;
+    color: #6b7280;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.recurring-summary-card strong {
+    display: block;
+    color: #111827;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.recurring-summary-card p {
+    margin: 6px 0 0;
+    color: #6b7280;
+    font-size: 9px;
+}
+
+.recurring-page-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.recurring-list {
+    display: grid;
+    gap: 10px;
+}
+
+.recurring-card {
+    padding: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: white;
+}
+
+.recurring-card.inactive {
+    opacity: 0.6;
+}
+
+.recurring-card-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.recurring-card-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.recurring-card-heading h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.recurring-kind-badge {
+    display: inline-flex;
+    margin-top: 5px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.recurring-kind-badge.subscription {
+    background: #f5f3ff;
+    color: #6d28d9;
+}
+
+.recurring-amount {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.recurring-amount.income {
+    color: #15803d;
+}
+
+.recurring-amount.expense {
+    color: #b42318;
+}
+
+.recurring-meta {
+    margin: 7px 0 8px;
+    color: #6b7280;
+    font-size: 9px;
+}
+
+.recurring-due-badge {
+    display: inline-flex;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.recurring-due-badge.overdue {
+    background: #fef2f2;
+    color: #b42318;
+}
+
+.recurring-due-badge.today {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.recurring-due-badge.soon {
+    background: #fffbeb;
+    color: #a16207;
+}
+
+.recurring-due-badge.future {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.recurring-notes {
+    margin: 9px 0 0;
+    color: #6b7280;
+    font-size: 9px;
+}
+
+.recurring-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.recurring-actions button {
+    min-height: 31px;
+    padding: 0 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    background: white;
+    color: #374151;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.recurring-actions .recurring-primary-action {
+    border-color: #111827;
+    background: #111827;
+    color: white;
+}
+
+.recurring-actions .danger-text-button {
+    border-color: #fecaca;
+    color: #b42318;
+}
+
+.recurring-form {
+    position: sticky;
+    top: 20px;
+}
+
+#recurring-income-source-group {
+    display: none;
+}
+
+@media (max-width: 900px) {
+
+    .recurring-summary-grid,
+    .recurring-page-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .recurring-form {
+        position: static;
+    }
+}
+
+@media (max-width: 760px) {
+
+    .recurring-card {
+        flex-direction: column;
+    }
+
+    .recurring-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .recurring-actions button {
+        min-height: 40px;
+        padding: 7px 8px;
+        font-size: 10px;
+    }
+
+    .recurring-card-heading h3 {
+        font-size: 14px;
+    }
+
+    .recurring-amount {
+        font-size: 13px;
+    }
+}
+
+
+/* RECURRING FORM POLISH */
+.recurring-form .form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.recurring-form .form-actions button {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+#save-recurring-button {
+    border: 1px solid #0f172a;
+    background-color: #0f172a;
+    color: #ffffff;
+}
+
+#cancel-recurring-edit-button {
+    width: 100%;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background-color: #ffffff;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+#cancel-recurring-edit-button.hidden-button {
+    display: none;
+}
+
+.recurring-form textarea {
+    width: 100%;
+    min-height: 90px;
+    padding: 11px 12px;
+    resize: vertical;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background-color: #ffffff;
+    color: #111827;
+    font: inherit;
+}
+
+
+/* FINANCIAL CALENDAR */
+.financial-calendar-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background-color: #ffffff;
+}
+
+.financial-calendar-heading {
+    align-items: flex-end;
+    margin-bottom: 14px;
+}
+
+.financial-calendar-month-control {
+    min-width: 150px;
+    display: grid;
+    gap: 5px;
+}
+
+.financial-calendar-month-control span {
+    color: #6b7280;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.financial-calendar-month-control input {
+    min-height: 38px;
+    padding: 0 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+
+.financial-calendar-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.financial-calendar-summary-card {
+    padding: 11px;
+    border: 1px solid #eef2f7;
+    border-radius: 10px;
+    background-color: #f8fafc;
+}
+
+.financial-calendar-summary-card span {
+    display: block;
+    margin-bottom: 5px;
+    color: #6b7280;
+    font-size: 8px;
+    font-weight: 700;
+}
+
+.financial-calendar-summary-card strong {
+    color: #111827;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.financial-calendar-summary-card strong.income {
+    color: #15803d;
+}
+
+.financial-calendar-summary-card strong.expense {
+    color: #b42318;
+}
+
+.financial-calendar-list {
+    display: grid;
+    gap: 8px;
+}
+
+.financial-calendar-day {
+    display: grid;
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid #eef2f7;
+}
+
+.financial-calendar-day:first-child {
+    border-top: none;
+}
+
+.financial-calendar-date {
+    display: grid;
+    align-content: start;
+    justify-items: center;
+    padding: 7px 5px;
+    border-radius: 9px;
+    background-color: #f8fafc;
+}
+
+.financial-calendar-date span {
+    color: #6b7280;
+    font-size: 8px;
+    font-weight: 700;
+}
+
+.financial-calendar-date strong {
+    margin: 2px 0;
+    color: #111827;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.financial-calendar-day-items {
+    display: grid;
+    gap: 6px;
+}
+
+.financial-calendar-entry {
+    padding: 9px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid #eef2f7;
+    border-radius: 9px;
+    background-color: #ffffff;
+}
+
+.financial-calendar-entry-copy {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+}
+
+.financial-calendar-entry-copy strong {
+    overflow: hidden;
+    color: #111827;
+    font-size: 10px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.financial-calendar-entry-copy span {
+    overflow: hidden;
+    color: #6b7280;
+    font-size: 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.financial-calendar-entry-amount,
+.dashboard-upcoming-amount {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.financial-calendar-entry-amount.income,
+.dashboard-upcoming-amount.income {
+    color: #15803d;
+}
+
+.financial-calendar-entry-amount.expense,
+.dashboard-upcoming-amount.expense {
+    color: #b42318;
+}
+
+
+/* DASHBOARD UPCOMING COMMITMENTS */
+#dashboard-upcoming-commitments {
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+}
+
+.dashboard-upcoming-item {
+    padding: 10px 0;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid #eef2f7;
+}
+
+.dashboard-upcoming-item:first-child {
+    border-top: none;
+}
+
+.dashboard-upcoming-date {
+    min-height: 42px;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    border-radius: 9px;
+    background-color: #f8fafc;
+}
+
+.dashboard-upcoming-date strong {
+    color: #111827;
+    font-size: 14px;
+}
+
+.dashboard-upcoming-date span {
+    margin-top: 3px;
+    color: #6b7280;
+    font-size: 8px;
+    font-weight: 700;
+}
+
+.dashboard-upcoming-copy {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+}
+
+.dashboard-upcoming-copy strong {
+    overflow: hidden;
+    color: #111827;
+    font-size: 10px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-upcoming-copy span {
+    overflow: hidden;
+    color: #6b7280;
+    font-size: 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-upcoming-empty {
+    margin: 0;
+    padding: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background-color: #ffffff;
+    color: #6b7280;
+    font-size: 9px;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .financial-calendar-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .financial-calendar-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .financial-calendar-month-control {
+        width: 100%;
+    }
+
+    .financial-calendar-month-control input {
+        min-height: 44px;
+    }
+
+    .financial-calendar-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .financial-calendar-day {
+        grid-template-columns: 52px minmax(0, 1fr);
+        gap: 8px;
+    }
+
+    .financial-calendar-entry-copy strong,
+    .dashboard-upcoming-copy strong {
+        font-size: 11px;
+    }
+
+    .financial-calendar-entry-copy span,
+    .dashboard-upcoming-copy span {
+        font-size: 9px;
+    }
+}
+
+
+/* ======================================================
+   DASHBOARD UPCOMING COMMITMENTS — CARD ALIGNMENT
+====================================================== */
+
+#dashboard-upcoming-commitments {
+    padding: 0;
+    display: grid;
+    gap: 10px;
+    border: none;
+    background: transparent;
+    text-align: left;
+}
+
+.dashboard-upcoming-item {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background-color: #ffffff;
+}
+
+.dashboard-upcoming-item:first-child {
+    border-top: 1px solid #e5e7eb;
+}
+
+.dashboard-upcoming-date {
+    min-height: 46px;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    border-radius: 10px;
+    background-color: #f8fafc;
+}
+
+.dashboard-upcoming-date strong {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.dashboard-upcoming-date span {
+    margin-top: 4px;
+    color: #6b7280;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.dashboard-upcoming-copy {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.dashboard-upcoming-copy strong {
+    overflow: hidden;
+    color: #111827;
+    font-size: 12px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-upcoming-copy span {
+    overflow: hidden;
+    color: #6b7280;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-upcoming-amount {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+
+/* ======================================================
+   TRANSACTION FORM — CANCEL EDIT / CANCEL LOG
+====================================================== */
+
+#cancel-edit-button {
+    width: 100%;
+    min-height: 45px;
+    margin-top: 10px;
+    padding: 0 14px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+
+    background-color: #ffffff;
+    color: #334155;
+
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+#cancel-edit-button:hover {
+    background-color: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+#cancel-edit-button:active {
+    background-color: #f1f5f9;
+}
+
+#cancel-edit-button.hidden-button {
+    display: none;
+}
+
+@media (max-width: 760px) {
+
+    .dashboard-upcoming-item {
+        grid-template-columns: 48px minmax(0, 1fr) auto;
+        padding: 15px;
+        gap: 12px;
+    }
+
+    .dashboard-upcoming-copy strong {
+        font-size: 13px;
+    }
+
+    .dashboard-upcoming-copy span {
+        font-size: 11px;
+    }
+
+    .dashboard-upcoming-amount {
+        font-size: 12px;
+    }
+
+    #cancel-edit-button {
+        min-height: 48px;
+        font-size: 14px;
+    }
+}
+
+
+/* ======================================================
+   RECURRING PAYMENT STATUS
+====================================================== */
+
+.upcoming-status-note {
+    margin: 4px 0 0;
+    color: #94a3b8;
+    font-size: 8px;
+    line-height: 1.45;
+}
+
+.dashboard-upcoming-item {
+    overflow: hidden;
+}
+
+.dashboard-upcoming-status-row {
+    grid-column: 1 / -1;
+    padding-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-top: 1px solid #eef2f7;
+}
+
+.dashboard-upcoming-current-status {
+    min-height: 26px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background-color: #fffbeb;
+    color: #a16207;
+    font-size: 9px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.dashboard-upcoming-current-status.paid {
+    background-color: #ecfdf5;
+    color: #047857;
+}
+
+.dashboard-upcoming-current-status.skipped {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.dashboard-upcoming-status-controls {
+    display: grid;
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.dashboard-upcoming-status-button {
+    min-height: 30px;
+    padding: 0 10px;
+    border: 1px solid #dbe3ef;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #64748b;
+    font-size: 9px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.dashboard-upcoming-status-button:hover {
+    background-color: #f8fafc;
+}
+
+.dashboard-upcoming-status-button.active.pending {
+    border-color: #fde68a;
+    background-color: #fffbeb;
+    color: #a16207;
+}
+
+.dashboard-upcoming-status-button.active.paid {
+    border-color: #a7f3d0;
+    background-color: #ecfdf5;
+    color: #047857;
+}
+
+.dashboard-upcoming-status-button.active.skipped {
+    border-color: #cbd5e1;
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.dashboard-upcoming-status-button:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
+.financial-calendar-status {
+    width: fit-content;
+    margin-top: 2px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background-color: #fffbeb;
+    color: #a16207;
+    font-size: 8px !important;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.financial-calendar-status.paid {
+    background-color: #ecfdf5;
+    color: #047857;
+}
+
+.financial-calendar-status.skipped {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+@media (max-width: 760px) {
+
+    .upcoming-status-note {
+        font-size: 10px;
+    }
+
+    .dashboard-upcoming-status-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .dashboard-upcoming-current-status {
+        width: fit-content;
+        min-height: 28px;
+        font-size: 10px;
+    }
+
+    .dashboard-upcoming-status-controls {
+        width: 100%;
+    }
+
+    .dashboard-upcoming-status-button {
+        min-height: 40px;
+        padding: 0 8px;
+        font-size: 10px;
+    }
+
+    .financial-calendar-status {
+        min-height: 22px;
+        font-size: 9px !important;
+    }
+}
+
+
+/* ======================================================
+   RECURRING REMINDERS
+====================================================== */
+
+.recurring-summary-grid {
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+}
+
+.recurring-reminder-summary-card strong {
+    color: #c2410c;
+}
+
+.recurring-reminder-center {
+    margin-bottom: 20px;
+    padding: 16px;
+    border: 1px solid #fed7aa;
+    border-radius: 14px;
+    background-color: #fffaf5;
+}
+
+.recurring-reminder-list {
+    display: grid;
+    gap: 9px;
+}
+
+.recurring-reminder-empty {
+    padding: 15px;
+    border: 1px dashed #fdba74;
+    border-radius: 10px;
+    background-color: #ffffff;
+    color: #9a3412;
+    font-size: 9px;
+    text-align: center;
+}
+
+.recurring-reminder-item {
+    padding: 12px;
+    display: grid;
+    grid-template-columns:
+        34px minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #fed7aa;
+    border-radius: 11px;
+    background-color: #ffffff;
+}
+
+.recurring-reminder-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background-color: #fff7ed;
+    color: #c2410c;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.recurring-reminder-copy {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.recurring-reminder-title-row {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recurring-reminder-title-row strong {
+    overflow: hidden;
+    color: #111827;
+    font-size: 11px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recurring-reminder-due {
+    flex-shrink: 0;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background-color: #fff7ed;
+    color: #c2410c;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.recurring-reminder-copy > span {
+    overflow: hidden;
+    color: #6b7280;
+    font-size: 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recurring-reminder-amount {
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.recurring-reminder-amount.income {
+    color: #15803d;
+}
+
+.recurring-reminder-amount.expense {
+    color: #b42318;
+}
+
+.recurring-reminder-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.recurring-reminder-actions button {
+    min-height: 30px;
+    padding: 0 8px;
+    border: 1px solid #dbe3ef;
+    border-radius: 7px;
+    background-color: #ffffff;
+    color: #475569;
+    font-size: 8px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.recurring-reminder-actions button:hover {
+    background-color: #f8fafc;
+}
+
+.recurring-reminder-actions .recurring-reminder-log-button {
+    border-color: #0f172a;
+    background-color: #0f172a;
+    color: #ffffff;
+}
+
+.recurring-reminder-actions button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
+
+/* Recurring Form Reminder Settings */
+
+.recurring-reminder-settings {
+    margin: 2px 0 4px;
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background-color: #f8fafc;
+}
+
+.recurring-reminder-toggle {
+    margin: 0 !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #111827;
+    font-size: 10px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.recurring-reminder-toggle input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #2563eb;
+}
+
+.recurring-reminder-days-group {
+    display: grid;
+    gap: 6px;
+    transition: opacity 0.2s ease;
+}
+
+.recurring-reminder-days-group.disabled {
+    opacity: 0.45;
+}
+
+.recurring-reminder-days-group > label {
+    margin: 0;
+    color: #374151;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.recurring-reminder-days-input {
+    display: grid;
+    grid-template-columns: 82px auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.recurring-reminder-days-input input {
+    width: 100%;
+    min-height: 38px;
+    padding: 0 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+
+.recurring-reminder-days-input span {
+    color: #475569;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.recurring-reminder-days-group p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 8px;
+    line-height: 1.45;
+}
+
+@media (max-width: 1000px) {
+
+    .recurring-summary-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .recurring-reminder-item {
+        grid-template-columns:
+            34px minmax(0, 1fr) auto;
+    }
+
+    .recurring-reminder-actions {
+        grid-column:
+            2 / -1;
+    }
+}
+
+@media (max-width: 760px) {
+
+    .recurring-summary-grid {
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+    .recurring-reminder-center {
+        padding: 14px;
+    }
+
+    .recurring-reminder-item {
+        grid-template-columns:
+            38px minmax(0, 1fr) auto;
+        padding: 12px;
+    }
+
+    .recurring-reminder-icon {
+        width: 38px;
+        height: 38px;
+    }
+
+    .recurring-reminder-title-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .recurring-reminder-title-row strong {
+        font-size: 12px;
+    }
+
+    .recurring-reminder-copy > span {
+        font-size: 9px;
+        white-space: normal;
+    }
+
+    .recurring-reminder-amount {
+        font-size: 12px;
+    }
+
+    .recurring-reminder-actions {
+        grid-column:
+            1 / -1;
+        display: grid;
+        grid-template-columns:
+            2fr 1fr 1fr;
+    }
+
+    .recurring-reminder-actions button {
+        min-height: 40px;
+        font-size: 10px;
+    }
+
+    .recurring-reminder-toggle {
+        font-size: 11px;
+    }
+
+    .recurring-reminder-days-group > label,
+    .recurring-reminder-days-input span {
+        font-size: 10px;
+    }
+
+    .recurring-reminder-days-group p {
+        font-size: 9px;
+    }
+}

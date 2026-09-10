@@ -213,6 +213,23 @@
 
 
                     <a
+                        href="#recurring-page"
+                        class="nav-item"
+                        data-page="recurring"
+                    >
+
+                        <span class="nav-icon">
+                            ↻
+                        </span>
+
+                        <span>
+                            Recurring
+                        </span>
+
+                    </a>
+
+
+                    <a
                         href="#accounts-page"
                         class="nav-item"
                         data-page="accounts"
@@ -575,6 +592,50 @@
 
                         </div>
 
+
+                    </section>
+
+
+                    <!-- =============================================
+                         DASHBOARD UPCOMING COMMITMENTS
+                    ============================================== -->
+
+                    <section class="dashboard-section">
+
+                        <div class="section-heading">
+
+                            <div>
+
+                                <h2>
+                                    Upcoming Commitments
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    Recurring payments and income due soon
+                                </p>
+
+                                <p class="upcoming-status-note">
+                                    Status tracks the commitment only. Use Log Payment to add it to Transactions.
+                                </p>
+
+                            </div>
+
+                            <a
+                                href="#recurring-page"
+                                class="section-link"
+                                data-page="recurring"
+                            >
+                                View Schedule
+                            </a>
+
+                        </div>
+
+                        <div
+                            id="dashboard-upcoming-commitments"
+                            class="dashboard-placeholder"
+                        >
+                            No upcoming recurring items yet.
+                        </div>
 
                     </section>
 
@@ -1784,6 +1845,361 @@
 
 
                 <!-- =================================================
+                     RECURRING & SUBSCRIPTIONS PAGE
+                ================================================== -->
+
+                <section
+                    id="recurring-page"
+                    class="app-page"
+                    data-page="recurring"
+                >
+
+                    <div class="content-page-header">
+
+                        <div>
+
+                            <h2>
+                                Recurring & Subscriptions
+                            </h2>
+
+                            <p>
+                                Track repeating income, bills and subscriptions, then log them when they happen.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <section class="recurring-summary-grid">
+
+                        <div class="recurring-summary-card">
+                            <span>Active Plans</span>
+                            <strong id="recurring-active-count">0</strong>
+                            <p>Active recurring items.</p>
+                        </div>
+
+                        <div class="recurring-summary-card">
+                            <span>Due in 7 Days</span>
+                            <strong id="recurring-due-soon-count">0</strong>
+                            <p>Upcoming or overdue items.</p>
+                        </div>
+
+                        <div class="recurring-summary-card">
+                            <span>Monthly Expense Estimate</span>
+                            <strong id="recurring-monthly-estimate">RM 0.00</strong>
+                            <p>Estimated active recurring expenses.</p>
+                        </div>
+
+                        <div class="recurring-summary-card recurring-reminder-summary-card">
+                            <span>Reminders Due</span>
+                            <strong id="recurring-reminder-count">0</strong>
+                            <p>Pending items currently inside their reminder window.</p>
+                        </div>
+
+                    </section>
+
+
+                    <section class="recurring-reminder-center">
+
+                        <div class="section-heading">
+
+                            <div>
+
+                                <h2>
+                                    Reminder Center
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    Pending recurring items appear here when they enter their reminder window.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="recurring-reminder-list"
+                            class="recurring-reminder-list"
+                        >
+                            No reminders due right now.
+                        </div>
+
+                    </section>
+
+
+                    <section class="financial-calendar-section">
+
+                        <div class="section-heading financial-calendar-heading">
+
+                            <div>
+
+                                <h2>
+                                    Financial Calendar
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    Preview recurring income, bills and subscriptions for the selected month.
+                                </p>
+
+                            </div>
+
+                            <label class="financial-calendar-month-control">
+
+                                <span>
+                                    Month
+                                </span>
+
+                                <input
+                                    type="month"
+                                    id="recurring-calendar-month"
+                                >
+
+                            </label>
+
+                        </div>
+
+                        <div
+                            id="recurring-calendar-summary"
+                            class="financial-calendar-summary"
+                        ></div>
+
+                        <div
+                            id="recurring-calendar-list"
+                            class="financial-calendar-list"
+                        ></div>
+
+                    </section>
+
+
+                    <div class="recurring-page-layout">
+
+                        <section>
+
+                            <div class="section-heading">
+
+                                <div>
+                                    <h2>Schedule</h2>
+                                    <p class="section-subtitle">
+                                        Log an item into Transactions or edit its future schedule.
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            <div
+                                id="recurring-list"
+                                class="recurring-list"
+                            ></div>
+
+                        </section>
+
+
+                        <section>
+
+                            <form
+                                id="recurring-form"
+                                class="management-form recurring-form"
+                            >
+
+                                <h2 id="recurring-form-title">
+                                    Add Recurring Item
+                                </h2>
+
+                                <label for="recurring-name">
+                                    Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="recurring-name"
+                                    placeholder="e.g. Netflix, Salary, Rent"
+                                    required
+                                >
+
+                                <label for="recurring-kind">
+                                    Kind
+                                </label>
+
+                                <select id="recurring-kind" required>
+                                    <option value="recurring">
+                                        Recurring Transaction
+                                    </option>
+                                    <option value="subscription">
+                                        Subscription
+                                    </option>
+                                </select>
+
+                                <label for="recurring-type">
+                                    Type
+                                </label>
+
+                                <select id="recurring-type" required>
+                                    <option value="expense">Expense</option>
+                                    <option value="income">Income</option>
+                                </select>
+
+                                <label for="recurring-account">
+                                    Account
+                                </label>
+
+                                <select id="recurring-account" required>
+                                    <option value="">Select account</option>
+                                </select>
+
+                                <label for="recurring-category">
+                                    Category
+                                </label>
+
+                                <select id="recurring-category" required>
+                                    <option value="">Select category</option>
+                                </select>
+
+                                <div id="recurring-income-source-group">
+
+                                    <label for="recurring-income-source">
+                                        Income Source
+                                    </label>
+
+                                    <select id="recurring-income-source">
+                                        <option value="">Select income source</option>
+                                    </select>
+
+                                </div>
+
+                                <label for="recurring-amount">
+                                    Amount
+                                </label>
+
+                                <input
+                                    type="number"
+                                    id="recurring-amount"
+                                    min="0.01"
+                                    step="0.01"
+                                    inputmode="decimal"
+                                    placeholder="0.00"
+                                    required
+                                >
+
+                                <label for="recurring-frequency">
+                                    Frequency
+                                </label>
+
+                                <select id="recurring-frequency" required>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly" selected>Monthly</option>
+                                    <option value="yearly">Yearly</option>
+                                </select>
+
+                                <label for="recurring-next-due-date">
+                                    Next Due Date
+                                </label>
+
+                                <input
+                                    type="date"
+                                    id="recurring-next-due-date"
+                                    required
+                                >
+
+
+                                <div class="recurring-reminder-settings">
+
+                                    <label class="recurring-reminder-toggle">
+
+                                        <input
+                                            type="checkbox"
+                                            id="recurring-reminder-enabled"
+                                            checked
+                                        >
+
+                                        <span>
+                                            Enable reminder
+                                        </span>
+
+                                    </label>
+
+                                    <div
+                                        id="recurring-reminder-days-group"
+                                        class="recurring-reminder-days-group"
+                                    >
+
+                                        <label for="recurring-reminder-days">
+                                            Remind Me
+                                        </label>
+
+                                        <div class="recurring-reminder-days-input">
+
+                                            <input
+                                                type="number"
+                                                id="recurring-reminder-days"
+                                                min="0"
+                                                max="30"
+                                                step="1"
+                                                inputmode="numeric"
+                                                value="3"
+                                            >
+
+                                            <span>
+                                                days before
+                                            </span>
+
+                                        </div>
+
+                                        <p>
+                                            Use 0 to remind only on the due date. Pending overdue items remain visible until marked Paid or Skipped.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <label for="recurring-notes">
+                                    Notes
+                                    <span class="optional-label">Optional</span>
+                                </label>
+
+                                <textarea
+                                    id="recurring-notes"
+                                    rows="3"
+                                    placeholder="Optional notes..."
+                                ></textarea>
+
+                                <div class="form-actions">
+
+                                    <button
+                                        type="submit"
+                                        id="save-recurring-button"
+                                    >
+                                        Save Recurring Item
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        id="cancel-recurring-edit-button"
+                                        class="secondary-button hidden-button"
+                                    >
+                                        Cancel Edit
+                                    </button>
+
+                                </div>
+
+                                <p
+                                    id="recurring-message"
+                                    class="form-message"
+                                ></p>
+
+                            </form>
+
+                        </section>
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =================================================
                      MOBILE MORE HUB
                 ================================================== -->
 
@@ -1907,6 +2323,39 @@
 
                                     <p>
                                         Manage salary, side income and other sources.
+                                    </p>
+
+                                </div>
+
+                                <span class="more-hub-arrow" aria-hidden="true">
+                                    ›
+                                </span>
+
+                            </a>
+
+
+                            <a
+                                href="#recurring"
+                                class="more-hub-card more-hub-link"
+                                data-page="recurring"
+                            >
+
+                                <div class="more-hub-icon">
+                                    ↻
+                                </div>
+
+                                <div class="more-hub-content">
+
+                                    <div class="more-hub-title-row">
+
+                                        <h3>
+                                            Recurring & Subscriptions
+                                        </h3>
+
+                                    </div>
+
+                                    <p>
+                                        Track repeating bills, income and subscriptions.
                                     </p>
 
                                 </div>
