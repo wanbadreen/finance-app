@@ -1849,6 +1849,119 @@ a {
 
 
 /* ======================================================
+   MOBILE MORE HUB
+====================================================== */
+
+.more-hub-section {
+    margin-top: 4px;
+}
+
+.more-hub-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.more-hub-card {
+    min-width: 0;
+    padding: 18px;
+    display: grid;
+    grid-template-columns:
+        auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background-color: white;
+    color: #1f2937;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
+}
+
+.more-hub-link:hover {
+    border-color: #bfdbfe;
+    box-shadow:
+        0 8px 22px
+        rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+}
+
+.more-hub-link:focus-visible {
+    outline: 3px solid #dbeafe;
+    border-color: #2563eb;
+}
+
+.more-hub-icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background-color: #f3f4f6;
+    color: #111827;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.more-hub-content {
+    min-width: 0;
+}
+
+.more-hub-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.more-hub-title-row h3 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.more-hub-content p {
+    margin:
+        5px
+        0
+        0;
+    color: #6b7280;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.more-hub-arrow {
+    color: #9ca3af;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.more-hub-badge {
+    flex-shrink: 0;
+    padding:
+        4px
+        7px;
+    border-radius: 999px;
+    background-color: #f3f4f6;
+    color: #6b7280;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.more-hub-card-disabled {
+    opacity: 0.72;
+}
+
+#categories-management-section,
+#income-sources-management-section {
+    scroll-margin-top: 18px;
+}
+
+
+/* ======================================================
    TABLET
 ====================================================== */
 
@@ -2077,6 +2190,24 @@ a {
     .transaction-filter-field:last-child {
         grid-column: 1 / -1;
     }
+
+    /* MORE HUB */
+
+    .more-hub-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .more-hub-card {
+        padding: 15px;
+    }
+
+    .more-hub-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+
 
     /* ==============================================
        MOBILE BOTTOM NAV

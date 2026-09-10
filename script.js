@@ -261,6 +261,16 @@ const allPageNavItems =
         ".nav-item[data-page], .mobile-nav-item[data-page]"
     );
 
+const moreHubPageLinks =
+    document.querySelectorAll(
+        ".more-hub-link[data-page]"
+    );
+
+const moreHubManageLinks =
+    document.querySelectorAll(
+        ".more-hub-link[data-manage-target]"
+    );
+
 const appPageTitle =
     document.getElementById(
         "app-page-title"
@@ -5549,7 +5559,8 @@ const pageTitles = {
     transactions: "Transactions",
     budgets: "Budgets",
     accounts: "Accounts",
-    manage: "Manage"
+    manage: "Manage",
+    more: "More"
 };
 
 
@@ -5628,10 +5639,22 @@ function navigateToPage(
     mobileNavItems.forEach(
         function (item) {
 
+            const isMoreSection =
+                item.dataset.page === "more"
+                && [
+                    "more",
+                    "accounts",
+                    "manage"
+                ].includes(
+                    pageName
+                );
+
             item.classList.toggle(
                 "active",
                 item.dataset.page ===
                     pageName
+                ||
+                isMoreSection
             );
         }
     );
@@ -5747,6 +5770,82 @@ allPageNavItems.forEach(
         );
     }
 );
+
+
+// ======================================================
+// MOBILE MORE HUB
+// ======================================================
+
+moreHubPageLinks.forEach(
+    function (link) {
+
+        link.addEventListener(
+            "click",
+            function (event) {
+
+                const pageName =
+                    link.dataset.page;
+
+                if (!pageName) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                navigateToPage(
+                    pageName
+                );
+            }
+        );
+    }
+);
+
+
+moreHubManageLinks.forEach(
+    function (link) {
+
+        link.addEventListener(
+            "click",
+            function (event) {
+
+                const targetId =
+                    link.dataset.manageTarget;
+
+                if (!targetId) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                navigateToPage(
+                    "manage",
+                    {
+                        scrollToTop:
+                            false
+                    }
+                );
+
+                requestAnimationFrame(
+                    function () {
+
+                        document
+                            .getElementById(
+                                targetId
+                            )
+                            ?.scrollIntoView({
+                                behavior:
+                                    "smooth",
+
+                                block:
+                                    "start"
+                            });
+                    }
+                );
+            }
+        );
+    }
+);
+
 
 
 dashboardViewAllTransactions
@@ -5873,7 +5972,8 @@ function getPageFromHash() {
         "transactions",
         "budgets",
         "accounts",
-        "manage"
+        "manage",
+        "more"
     ];
 
 
@@ -5906,7 +6006,10 @@ function getPageFromHash() {
             "accounts",
 
         "manage-page":
-            "manage"
+            "manage",
+
+        "more-page":
+            "more"
     };
 
 
