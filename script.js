@@ -202,6 +202,39 @@ const formTitle =
 const dateInput =
     document.getElementById("date");
 
+const receiptFileInput =
+    document.getElementById("receipt-file");
+
+const receiptPreview =
+    document.getElementById("receipt-preview");
+
+const receiptPreviewImage =
+    document.getElementById("receipt-preview-image");
+
+const receiptPreviewPdf =
+    document.getElementById("receipt-preview-pdf");
+
+const receiptFileName =
+    document.getElementById("receipt-file-name");
+
+const receiptFileMeta =
+    document.getElementById("receipt-file-meta");
+
+const removeSelectedReceiptButton =
+    document.getElementById("remove-selected-receipt");
+
+const savedReceiptPanel =
+    document.getElementById("saved-receipt-panel");
+
+const viewSavedReceiptButton =
+    document.getElementById("view-saved-receipt");
+
+const removeSavedReceiptButton =
+    document.getElementById("remove-saved-receipt");
+
+const receiptMessage =
+    document.getElementById("receipt-message");
+
 const transactionSearchInput =
     document.getElementById("transaction-search");
 
@@ -319,6 +352,21 @@ let editingCategoryId = null;
 let editingIncomeSourceId = null;
 let editingTransactionId = null;
 let editingBudgetId = null;
+
+let selectedReceiptFile = null;
+let selectedReceiptObjectUrl = null;
+let editingReceiptPath = null;
+let removeEditingReceipt = false;
+
+const RECEIPT_BUCKET = "receipts";
+const MAX_RECEIPT_FILE_SIZE = 5 * 1024 * 1024;
+
+const ALLOWED_RECEIPT_TYPES = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/pdf"
+]);
 
 let showAllTransactions = false;
 
@@ -3019,6 +3067,485 @@ async function createIncomeSourceFromTransaction() {
 
 
 // ======================================================
+// RECEIPT STORAGE / PREVIEW
+// ======================================================
+
+function formatReceiptFileSize(bytes) {
+
+    const size =
+        Number(bytes) || 0;
+
+    if (size < 1024) {
+        return `${size} B`;
+    }
+
+    if (size < 1024 * 1024) {
+        return `${(
+            size / 1024
+        ).toFixed(1)} KB`;
+    }
+
+    return `${(
+        size / (1024 * 1024)
+    ).toFixed(1)} MB`;
+}
+
+
+function clearReceiptObjectUrl() {
+
+    if (selectedReceiptObjectUrl) {
+
+        URL.revokeObjectURL(
+            selectedReceiptObjectUrl
+        );
+
+        selectedReceiptObjectUrl =
+            null;
+    }
+}
+
+
+function clearSelectedReceipt() {
+
+    selectedReceiptFile =
+        null;
+
+    clearReceiptObjectUrl();
+
+    if (receiptFileInput) {
+        receiptFileInput.value =
+            "";
+    }
+
+    if (receiptPreviewImage) {
+        receiptPreviewImage.src =
+            "";
+
+        receiptPreviewImage.style.display =
+            "none";
+    }
+
+    if (receiptPreviewPdf) {
+        receiptPreviewPdf.style.display =
+            "none";
+    }
+
+    if (receiptPreview) {
+        receiptPreview.style.display =
+            "none";
+    }
+
+    if (receiptFileName) {
+        receiptFileName.textContent =
+            "";
+    }
+
+    if (receiptFileMeta) {
+        receiptFileMeta.textContent =
+            "";
+    }
+}
+
+
+function renderSelectedReceiptPreview(file) {
+
+    if (!file || !receiptPreview) {
+        return;
+    }
+
+    clearReceiptObjectUrl();
+
+    selectedReceiptFile =
+        file;
+
+    receiptPreview.style.display =
+        "flex";
+
+    if (receiptFileName) {
+        receiptFileName.textContent =
+            file.name ||
+            "Receipt";
+    }
+
+    if (receiptFileMeta) {
+        receiptFileMeta.textContent =
+            `${formatReceiptFileSize(
+                file.size
+            )} • ${
+                file.type === "application/pdf"
+                    ? "PDF"
+                    : "Image"
+            }`;
+    }
+
+    if (
+        file.type ===
+        "application/pdf"
+    ) {
+
+        if (receiptPreviewImage) {
+            receiptPreviewImage.style.display =
+                "none";
+        }
+
+        if (receiptPreviewPdf) {
+            receiptPreviewPdf.style.display =
+                "flex";
+        }
+
+    } else {
+
+        selectedReceiptObjectUrl =
+            URL.createObjectURL(file);
+
+        if (receiptPreviewImage) {
+            receiptPreviewImage.src =
+                selectedReceiptObjectUrl;
+
+            receiptPreviewImage.style.display =
+                "block";
+        }
+
+        if (receiptPreviewPdf) {
+            receiptPreviewPdf.style.display =
+                "none";
+        }
+    }
+
+    if (receiptMessage) {
+
+        receiptMessage.textContent =
+            editingReceiptPath
+                ? "This new receipt will replace the saved receipt when you save changes."
+                : "Receipt ready to upload when you save the transaction.";
+    }
+}
+
+
+function renderSavedReceiptPanel() {
+
+    if (!savedReceiptPanel) {
+        return;
+    }
+
+    const shouldShow =
+        Boolean(editingReceiptPath);
+
+    savedReceiptPanel.style.display =
+        shouldShow
+            ? "flex"
+            : "none";
+
+    savedReceiptPanel.classList.toggle(
+        "marked-for-removal",
+        removeEditingReceipt
+    );
+
+    if (viewSavedReceiptButton) {
+
+        viewSavedReceiptButton.disabled =
+            removeEditingReceipt;
+    }
+
+    if (removeSavedReceiptButton) {
+
+        removeSavedReceiptButton.textContent =
+            removeEditingReceipt
+                ? "Undo"
+                : "Remove";
+    }
+}
+
+
+function getReceiptExtension(file) {
+
+    const extensionByType = {
+        "image/jpeg": "jpg",
+        "image/png": "png",
+        "image/webp": "webp",
+        "application/pdf": "pdf"
+    };
+
+    return (
+        extensionByType[file.type]
+        ||
+        "bin"
+    );
+}
+
+
+function generateReceiptUniqueId() {
+
+    if (
+        globalThis.crypto &&
+        typeof globalThis.crypto.randomUUID === "function"
+    ) {
+
+        return globalThis.crypto.randomUUID();
+    }
+
+    const timestamp =
+        Date.now().toString(36);
+
+    const randomPart =
+        Math.random()
+            .toString(36)
+            .slice(2, 12);
+
+    return `${timestamp}-${randomPart}`;
+}
+
+
+function createReceiptStoragePath(file) {
+
+    const extension =
+        getReceiptExtension(file);
+
+    const dateFolder =
+        getTodayDate();
+
+    const uniqueId =
+        generateReceiptUniqueId();
+
+    return `${currentUser.id}/${dateFolder}/${uniqueId}.${extension}`;
+}
+
+
+async function uploadReceipt(file) {
+
+    const path =
+        createReceiptStoragePath(file);
+
+    const {
+        data,
+        error
+    } =
+        await supabase.storage
+            .from(RECEIPT_BUCKET)
+            .upload(
+                path,
+                file,
+                {
+                    cacheControl:
+                        "3600",
+                    upsert:
+                        false,
+                    contentType:
+                        file.type
+                }
+            );
+
+    if (error) {
+        throw error;
+    }
+
+    return (
+        data?.path
+        ||
+        path
+    );
+}
+
+
+async function deleteReceipt(path) {
+
+    if (!path) {
+        return true;
+    }
+
+    const {
+        error
+    } =
+        await supabase.storage
+            .from(RECEIPT_BUCKET)
+            .remove([path]);
+
+    if (error) {
+
+        console.warn(
+            "Receipt cleanup error:",
+            error
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+
+async function openReceipt(path) {
+
+    if (!path) {
+        return;
+    }
+
+    const previewWindow =
+        window.open(
+            "about:blank",
+            "_blank"
+        );
+
+    const {
+        data,
+        error
+    } =
+        await supabase.storage
+            .from(RECEIPT_BUCKET)
+            .createSignedUrl(
+                path,
+                60
+            );
+
+    if (error || !data?.signedUrl) {
+
+        if (previewWindow) {
+            previewWindow.close();
+        }
+
+        alert(
+            error?.message
+            ||
+            "Unable to open this receipt."
+        );
+
+        return;
+    }
+
+    if (previewWindow) {
+
+        previewWindow.location.href =
+            data.signedUrl;
+
+    } else {
+
+        window.location.href =
+            data.signedUrl;
+    }
+}
+
+
+if (receiptFileInput) {
+
+    receiptFileInput.addEventListener(
+        "change",
+        function () {
+
+            const file =
+                receiptFileInput.files?.[0];
+
+            if (!file) {
+                clearSelectedReceipt();
+                return;
+            }
+
+            if (
+                !ALLOWED_RECEIPT_TYPES.has(
+                    file.type
+                )
+            ) {
+
+                alert(
+                    "Receipt must be JPG, PNG, WebP or PDF."
+                );
+
+                clearSelectedReceipt();
+
+                return;
+            }
+
+            if (
+                file.size >
+                MAX_RECEIPT_FILE_SIZE
+            ) {
+
+                alert(
+                    "Receipt must be 5 MB or smaller."
+                );
+
+                clearSelectedReceipt();
+
+                return;
+            }
+
+            removeEditingReceipt =
+                false;
+
+            renderSavedReceiptPanel();
+
+            renderSelectedReceiptPreview(
+                file
+            );
+        }
+    );
+}
+
+
+if (removeSelectedReceiptButton) {
+
+    removeSelectedReceiptButton.addEventListener(
+        "click",
+        function () {
+
+            clearSelectedReceipt();
+
+            if (receiptMessage) {
+                receiptMessage.textContent =
+                    "";
+            }
+        }
+    );
+}
+
+
+if (viewSavedReceiptButton) {
+
+    viewSavedReceiptButton.addEventListener(
+        "click",
+        function () {
+
+            if (
+                editingReceiptPath &&
+                !removeEditingReceipt
+            ) {
+
+                openReceipt(
+                    editingReceiptPath
+                );
+            }
+        }
+    );
+}
+
+
+if (removeSavedReceiptButton) {
+
+    removeSavedReceiptButton.addEventListener(
+        "click",
+        function () {
+
+            if (!editingReceiptPath) {
+                return;
+            }
+
+            removeEditingReceipt =
+                !removeEditingReceipt;
+
+            renderSavedReceiptPanel();
+
+            if (receiptMessage) {
+
+                receiptMessage.textContent =
+                    removeEditingReceipt
+                        ? "Saved receipt will be removed when you save changes."
+                        : "Saved receipt will be kept.";
+            }
+        }
+    );
+}
+
+
+// ======================================================
 // CREATE / UPDATE TRANSACTION
 // ======================================================
 
@@ -3148,85 +3675,158 @@ transactionForm.addEventListener(
             "Saving...";
 
 
-        const transactionData = {
-
-            user_id:
-                currentUser.id,
-
-            account_id:
-                accountId,
-
-            category_id:
-                categoryId,
-
-            income_source_id:
-                incomeSourceId,
-
-            description,
-
-            notes:
-                notes || null,
-
-            amount,
-
-            type,
-
-            transaction_date:
-                transactionDate
-        };
-
-
-        let result;
-
-        if (
+        const originalReceiptPath =
             editingTransactionId === null
-        ) {
+                ? null
+                : editingReceiptPath;
 
-            result =
-                await supabase
-                    .from("transactions")
-                    .insert(
-                        transactionData
+        let uploadedReceiptPath =
+            null;
+
+        let nextReceiptPath =
+            originalReceiptPath;
+
+
+        try {
+
+            if (selectedReceiptFile) {
+
+                submitButton.textContent =
+                    "Uploading receipt...";
+
+                uploadedReceiptPath =
+                    await uploadReceipt(
+                        selectedReceiptFile
                     );
 
-        } else {
+                nextReceiptPath =
+                    uploadedReceiptPath;
 
-            result =
-                await supabase
-                    .from("transactions")
-                    .update(
-                        transactionData
-                    )
-                    .eq(
-                        "id",
-                        editingTransactionId
+            } else if (
+                editingTransactionId !== null &&
+                removeEditingReceipt
+            ) {
+
+                nextReceiptPath =
+                    null;
+            }
+
+
+            const transactionData = {
+
+                user_id:
+                    currentUser.id,
+
+                account_id:
+                    accountId,
+
+                category_id:
+                    categoryId,
+
+                income_source_id:
+                    incomeSourceId,
+
+                description,
+
+                notes:
+                    notes || null,
+
+                amount,
+
+                type,
+
+                transaction_date:
+                    transactionDate,
+
+                receipt_path:
+                    nextReceiptPath
+            };
+
+
+            submitButton.textContent =
+                "Saving...";
+
+
+            let result;
+
+            if (
+                editingTransactionId === null
+            ) {
+
+                result =
+                    await supabase
+                        .from("transactions")
+                        .insert(
+                            transactionData
+                        );
+
+            } else {
+
+                result =
+                    await supabase
+                        .from("transactions")
+                        .update(
+                            transactionData
+                        )
+                        .eq(
+                            "id",
+                            editingTransactionId
+                        );
+            }
+
+
+            if (result.error) {
+
+                if (uploadedReceiptPath) {
+                    await deleteReceipt(
+                        uploadedReceiptPath
                     );
-        }
+                }
 
-        submitButton.disabled =
-            false;
+                throw result.error;
+            }
 
-        if (result.error) {
 
-            console.error(
-                result.error
-            );
+            if (
+                originalReceiptPath &&
+                originalReceiptPath !==
+                    nextReceiptPath
+            ) {
 
-            alert(
-                result.error.message
-            );
+                await deleteReceipt(
+                    originalReceiptPath
+                );
+            }
+
+
+            submitButton.disabled =
+                false;
+
+            resetTransactionForm();
+
+            await loadTransactions();
+
+        } catch (error) {
+
+            submitButton.disabled =
+                false;
 
             submitButton.textContent =
                 editingTransactionId
                     ? "Save Changes"
                     : "+ Add Transaction";
 
-            return;
+            console.error(
+                "Transaction save error:",
+                error
+            );
+
+            alert(
+                error?.message
+                ||
+                "Unable to save this transaction."
+            );
         }
-
-        resetTransactionForm();
-
-        await loadTransactions();
     }
 );
 
@@ -3852,6 +4452,38 @@ function renderTransactions() {
             }
 
 
+            if (transaction.receipt_path) {
+
+                const receiptButton =
+                    document.createElement(
+                        "button"
+                    );
+
+                receiptButton.type =
+                    "button";
+
+                receiptButton.className =
+                    "transaction-receipt-button";
+
+                receiptButton.textContent =
+                    "View Receipt";
+
+                receiptButton.addEventListener(
+                    "click",
+                    function () {
+
+                        openReceipt(
+                            transaction.receipt_path
+                        );
+                    }
+                );
+
+                left.appendChild(
+                    receiptButton
+                );
+            }
+
+
             const right =
                 document.createElement(
                     "div"
@@ -4263,6 +4895,24 @@ function editTransaction(id) {
         transaction
     );
 
+    clearSelectedReceipt();
+
+    editingReceiptPath =
+        transaction.receipt_path ||
+        null;
+
+    removeEditingReceipt =
+        false;
+
+    renderSavedReceiptPanel();
+
+    if (receiptMessage) {
+        receiptMessage.textContent =
+            editingReceiptPath
+                ? "You can view, remove or replace the saved receipt."
+                : "";
+    }
+
     formTitle.textContent =
         "Edit Transaction";
 
@@ -4409,6 +5059,21 @@ function resetTransactionForm() {
 
     customIncomeSourceGroup.style.display =
         "none";
+
+    clearSelectedReceipt();
+
+    editingReceiptPath =
+        null;
+
+    removeEditingReceipt =
+        false;
+
+    renderSavedReceiptPanel();
+
+    if (receiptMessage) {
+        receiptMessage.textContent =
+            "";
+    }
 
     refreshTransactionDropdowns();
 }

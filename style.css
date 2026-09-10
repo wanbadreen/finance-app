@@ -2490,3 +2490,167 @@ a {
         0
         0;
 }
+
+/* ======================================================
+   RECEIPT UPLOAD
+====================================================== */
+
+.receipt-upload-section {
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 13px;
+    background-color: #f9fafb;
+}
+
+.receipt-upload-section > label {
+    margin-bottom: 4px;
+}
+
+.optional-label {
+    margin-left: 5px;
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.receipt-help-text {
+    margin: 0 0 12px;
+    color: #6b7280;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+#receipt-file {
+    margin-bottom: 0;
+    padding: 10px;
+    background-color: white;
+}
+
+#receipt-file::file-selector-button {
+    margin-right: 10px;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    background-color: #111827;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.receipt-preview,
+.saved-receipt-panel {
+    margin-top: 12px;
+    padding: 12px;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 11px;
+    background-color: white;
+}
+
+.receipt-preview-image {
+    width: 58px;
+    height: 58px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    object-fit: cover;
+    border: 1px solid #e5e7eb;
+}
+
+.receipt-preview-pdf {
+    width: 58px;
+    height: 58px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background-color: #f3f4f6;
+    color: #4b5563;
+    font-size: 9px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.receipt-preview-details {
+    min-width: 0;
+    flex: 1;
+}
+
+.receipt-preview-details p,
+.saved-receipt-title {
+    margin: 0 0 3px;
+    font-size: 12px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.receipt-preview-details span,
+.saved-receipt-panel span {
+    color: #6b7280;
+    font-size: 10px;
+}
+
+.saved-receipt-panel {
+    display: flex;
+    justify-content: space-between;
+}
+
+.saved-receipt-panel.marked-for-removal {
+    border-color: #fecaca;
+    background-color: #fef2f2;
+}
+
+.saved-receipt-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.receipt-text-button,
+.transaction-receipt-button {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.receipt-text-button.danger {
+    color: #b42318;
+}
+
+.receipt-text-button:disabled {
+    color: #9ca3af;
+}
+
+.receipt-message {
+    min-height: 16px;
+    margin: 8px 0 0;
+    color: #6b7280;
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+.transaction-receipt-button {
+    margin-top: 7px;
+}
+
+@media (max-width: 760px) {
+
+    .receipt-upload-section {
+        padding: 13px;
+    }
+
+    .receipt-preview,
+    .saved-receipt-panel {
+        align-items: flex-start;
+    }
+
+    .saved-receipt-panel {
+        flex-direction: column;
+    }
+}

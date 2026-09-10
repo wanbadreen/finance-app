@@ -1055,6 +1055,108 @@
 
 
 
+
+
+                        <!-- RECEIPT -->
+
+                        <div class="receipt-upload-section">
+
+                            <label for="receipt-file">
+                                Receipt
+                                <span class="optional-label">Optional</span>
+                            </label>
+
+                            <p class="receipt-help-text">
+                                Upload a receipt photo or PDF. Maximum file size: 5 MB.
+                            </p>
+
+                            <input
+                                type="file"
+                                id="receipt-file"
+                                accept="image/jpeg,image/png,image/webp,application/pdf"
+                            >
+
+                            <div
+                                id="receipt-preview"
+                                class="receipt-preview hidden-button"
+                            >
+
+                                <img
+                                    id="receipt-preview-image"
+                                    class="receipt-preview-image hidden-button"
+                                    alt="Receipt preview"
+                                >
+
+                                <div
+                                    id="receipt-preview-pdf"
+                                    class="receipt-preview-pdf hidden-button"
+                                >
+                                    PDF Receipt
+                                </div>
+
+                                <div class="receipt-preview-details">
+
+                                    <p id="receipt-file-name"></p>
+
+                                    <span id="receipt-file-meta"></span>
+
+                                </div>
+
+                                <button
+                                    type="button"
+                                    id="remove-selected-receipt"
+                                    class="receipt-text-button danger"
+                                >
+                                    Remove
+                                </button>
+
+                            </div>
+
+                            <div
+                                id="saved-receipt-panel"
+                                class="saved-receipt-panel hidden-button"
+                            >
+
+                                <div>
+                                    <p class="saved-receipt-title">
+                                        Saved receipt
+                                    </p>
+
+                                    <span>
+                                        This transaction already has a receipt attached.
+                                    </span>
+                                </div>
+
+                                <div class="saved-receipt-actions">
+
+                                    <button
+                                        type="button"
+                                        id="view-saved-receipt"
+                                        class="receipt-text-button"
+                                    >
+                                        View
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        id="remove-saved-receipt"
+                                        class="receipt-text-button danger"
+                                    >
+                                        Remove
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                            <p
+                                id="receipt-message"
+                                class="receipt-message"
+                            ></p>
+
+                        </div>
+
+
                         <!-- SAVE -->
 
                         <button
