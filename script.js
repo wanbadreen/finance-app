@@ -26,6 +26,238 @@ const balanceElement = document.getElementById("balance");
 const incomeElement = document.getElementById("income");
 const expensesElement = document.getElementById("expenses");
 
+const dashboardGoalsSummary =
+    document.getElementById("dashboard-goals-summary");
+
+const dashboardInsightsPreview =
+    document.getElementById("dashboard-insights-preview");
+
+const insightSavingsRate =
+    document.getElementById("insight-savings-rate");
+
+const insightSpendingTrend =
+    document.getElementById("insight-spending-trend");
+
+const insightRecurringShare =
+    document.getElementById("insight-recurring-share");
+
+const insightEmergencyReadiness =
+    document.getElementById("insight-emergency-readiness");
+
+const priorityInsightsList =
+    document.getElementById("priority-insights-list");
+
+const insightSpendingSnapshot =
+    document.getElementById("insight-spending-snapshot");
+
+const insightBudgetRiskList =
+    document.getElementById("insight-budget-risk-list");
+
+const insightUnusualSpendingList =
+    document.getElementById("insight-unusual-spending-list");
+
+const insightMonthlySummary =
+    document.getElementById("insight-monthly-summary");
+
+
+// GOALS & PLANNING
+
+const goalsList =
+    document.getElementById("goals-list");
+
+const goalForm =
+    document.getElementById("goal-form");
+
+const goalFormTitle =
+    document.getElementById("goal-form-title");
+
+const goalNameInput =
+    document.getElementById("goal-name");
+
+const goalTargetAmountInput =
+    document.getElementById("goal-target-amount");
+
+const goalCurrentAmountInput =
+    document.getElementById("goal-current-amount");
+
+const goalTargetDateInput =
+    document.getElementById("goal-target-date");
+
+const goalAccountSelect =
+    document.getElementById("goal-account");
+
+const goalNotesInput =
+    document.getElementById("goal-notes");
+
+const saveGoalButton =
+    document.getElementById("save-goal-button");
+
+const cancelGoalEditButton =
+    document.getElementById("cancel-goal-edit-button");
+
+const goalMessage =
+    document.getElementById("goal-message");
+
+const goalsActiveCount =
+    document.getElementById("goals-active-count");
+
+const goalsTotalSaved =
+    document.getElementById("goals-total-saved");
+
+const goalsTotalTarget =
+    document.getElementById("goals-total-target");
+
+const goalsOverallProgress =
+    document.getElementById("goals-overall-progress");
+
+const emergencyMonthlyExpenses =
+    document.getElementById("emergency-monthly-expenses");
+
+const emergencyMonths =
+    document.getElementById("emergency-months");
+
+const emergencyFundResult =
+    document.getElementById("emergency-fund-result");
+
+const projectionMonths =
+    document.getElementById("projection-months");
+
+const projectionCurrentBalance =
+    document.getElementById("projection-current-balance");
+
+const projectionMonthlyNet =
+    document.getElementById("projection-monthly-net");
+
+const projectionResult =
+    document.getElementById("projection-result");
+
+const loanPrincipal =
+    document.getElementById("loan-principal");
+
+const loanRate =
+    document.getElementById("loan-rate");
+
+const loanTermMonths =
+    document.getElementById("loan-term-months");
+
+const loanMonthlyPayment =
+    document.getElementById("loan-monthly-payment");
+
+const loanTotalInterest =
+    document.getElementById("loan-total-interest");
+
+const loanTotalRepayment =
+    document.getElementById("loan-total-repayment");
+
+
+// REPORTS
+
+const reportMonthInput =
+    document.getElementById("report-month");
+
+const reportCurrentMonthButton =
+    document.getElementById("report-current-month-button");
+
+const reportExportCsvButton =
+    document.getElementById("report-export-csv-button");
+
+const reportPrintButton =
+    document.getElementById("report-print-button");
+
+const reportTotalIncome =
+    document.getElementById("report-total-income");
+
+const reportTotalExpenses =
+    document.getElementById("report-total-expenses");
+
+const reportNetCashflow =
+    document.getElementById("report-net-cashflow");
+
+const reportTransactionCount =
+    document.getElementById("report-transaction-count");
+
+const reportIncomeChange =
+    document.getElementById("report-income-change");
+
+const reportExpenseChange =
+    document.getElementById("report-expense-change");
+
+const reportCategoryBreakdown =
+    document.getElementById("report-category-breakdown");
+
+const reportIncomeBreakdown =
+    document.getElementById("report-income-breakdown");
+
+const reportAccountBreakdown =
+    document.getElementById("report-account-breakdown");
+
+const reportBudgetPerformance =
+    document.getElementById("report-budget-performance");
+
+const reportTrendTable =
+    document.getElementById("report-trend-table");
+
+const reportTransactionList =
+    document.getElementById("report-transaction-list");
+
+const reportTransactionSubtitle =
+    document.getElementById("report-transaction-subtitle");
+
+
+// SCHEDULED EMAIL REPORTS
+
+const scheduledReportForm =
+    document.getElementById("scheduled-report-form");
+
+const scheduledReportEnabled =
+    document.getElementById("scheduled-report-enabled");
+
+const scheduledReportStatusBadge =
+    document.getElementById("scheduled-report-status-badge");
+
+const scheduledReportEmail =
+    document.getElementById("scheduled-report-email");
+
+const scheduledReportFrequency =
+    document.getElementById("scheduled-report-frequency");
+
+const scheduledReportMonthlyDayGroup =
+    document.getElementById("scheduled-report-monthly-day-group");
+
+const scheduledReportWeeklyDayGroup =
+    document.getElementById("scheduled-report-weekly-day-group");
+
+const scheduledReportDayOfMonth =
+    document.getElementById("scheduled-report-day-of-month");
+
+const scheduledReportDayOfWeek =
+    document.getElementById("scheduled-report-day-of-week");
+
+const scheduledReportTime =
+    document.getElementById("scheduled-report-time");
+
+const scheduledReportTimezone =
+    document.getElementById("scheduled-report-timezone");
+
+const scheduledReportIncludeCsv =
+    document.getElementById("scheduled-report-include-csv");
+
+const scheduledReportSaveButton =
+    document.getElementById("scheduled-report-save-button");
+
+const scheduledReportTestButton =
+    document.getElementById("scheduled-report-test-button");
+
+const scheduledReportLastSent =
+    document.getElementById("scheduled-report-last-sent");
+
+const scheduledReportLastError =
+    document.getElementById("scheduled-report-last-error");
+
+const scheduledReportMessage =
+    document.getElementById("scheduled-report-message");
+
+
 // SPENDING ANALYTICS
 
 const spendingPeriodLabel =
@@ -169,6 +401,30 @@ const transactionList =
 
 const deletedTransactionList =
     document.getElementById("deleted-transaction-list");
+
+const transactionSuccessSnackbar =
+    document.getElementById("transaction-success-snackbar");
+
+const transactionSuccessTitle =
+    document.getElementById("transaction-success-title");
+
+const transactionSuccessMessage =
+    document.getElementById("transaction-success-message");
+
+const transactionUndoSnackbar =
+    document.getElementById("transaction-undo-snackbar");
+
+const transactionUndoButton =
+    document.getElementById("transaction-undo-button");
+
+const transactionUndoTitle =
+    document.getElementById("transaction-undo-title");
+
+const transactionUndoMessage =
+    document.getElementById("transaction-undo-message");
+
+const transactionUndoProgress =
+    document.getElementById("transaction-undo-progress");
 
 const transactionAccountSelect =
     document.getElementById("transaction-account");
@@ -395,6 +651,12 @@ const recurringAccountSelect =
 const recurringCategorySelect =
     document.getElementById("recurring-category");
 
+const recurringCustomCategoryGroup =
+    document.getElementById("recurring-custom-category-group");
+
+const recurringCustomCategoryInput =
+    document.getElementById("recurring-custom-category-name");
+
 const recurringIncomeSourceGroup =
     document.getElementById("recurring-income-source-group");
 
@@ -434,8 +696,29 @@ const recurringMonthlyEstimate =
 const recurringReminderCount =
     document.getElementById("recurring-reminder-count");
 
+const recurringAnalyticsIncome =
+    document.getElementById("recurring-analytics-income");
+
+const recurringAnalyticsExpenses =
+    document.getElementById("recurring-analytics-expenses");
+
+const recurringAnalyticsNet =
+    document.getElementById("recurring-analytics-net");
+
+const recurringAnalyticsAnnualExpenses =
+    document.getElementById("recurring-analytics-annual-expenses");
+
+const recurringAnalyticsCategoryList =
+    document.getElementById("recurring-analytics-category-list");
+
+const recurringAnalyticsTopList =
+    document.getElementById("recurring-analytics-top-list");
+
 const recurringReminderList =
     document.getElementById("recurring-reminder-list");
+
+const recurringActivityList =
+    document.getElementById("recurring-activity-list");
 
 const recurringReminderEnabled =
     document.getElementById("recurring-reminder-enabled");
@@ -498,6 +781,14 @@ let deletedTransactions = [];
 let budgets = [];
 let recurringTransactions = [];
 let recurringOccurrenceStatuses = [];
+let savingsGoals = [];
+let reportEmailPreference = null;
+
+let editingGoalId = null;
+
+let pendingTransactionDelete = null;
+let transactionUndoTimer = null;
+let transactionSuccessTimer = null;
 
 let editingAccountId = null;
 let editingCategoryId = null;
@@ -506,6 +797,7 @@ let editingTransactionId = null;
 let editingBudgetId = null;
 let editingRecurringId = null;
 let pendingRecurringId = null;
+let pendingRecurringDueDate = null;
 
 let selectedReceiptFile = null;
 let selectedReceiptObjectUrl = null;
@@ -609,6 +901,10 @@ function showLoggedOutState() {
     budgets = [];
     recurringTransactions = [];
     recurringOccurrenceStatuses = [];
+    savingsGoals = [];
+    reportEmailPreference = null;
+
+    editingGoalId = null;
 
     authSection.style.display = "flex";
     financeApp.style.display = "none";
@@ -637,19 +933,29 @@ async function showLoggedInState(user) {
 
     await loadTags();
 
+    await cleanupStaleDeletedTransactions();
+
     await loadTransactions();
 
-    await loadDeletedTransactions();
-
     setDefaultBudgetMonth();
+
+    setDefaultReportMonth();
 
     await loadBudgets();
 
     await loadRecurringTransactions();
 
+    await loadSavingsGoals();
+
+    await loadReportEmailPreference();
+
     refreshTransactionDropdowns();
 
     refreshRecurringFormOptions();
+
+    refreshGoalAccountOptions();
+
+    renderPlanningTools();
 }
 
 
@@ -699,7 +1005,7 @@ registerButton.addEventListener(
 
                 options: {
                     emailRedirectTo:
-                        "http://localhost:5173"
+                        window.location.origin
                 }
 
             });
@@ -863,6 +1169,75 @@ supabase.auth.onAuthStateChange(
 );
 
 
+
+function scrollToFormAndFocus(
+    form,
+    focusElement
+) {
+
+    if (!form) {
+        return;
+    }
+
+    requestAnimationFrame(
+        function () {
+
+            form.scrollIntoView({
+                behavior:
+                    "smooth",
+                block:
+                    "start"
+            });
+
+            window.setTimeout(
+                function () {
+
+                    focusElement?.focus({
+                        preventScroll:
+                            true
+                    });
+                },
+                450
+            );
+        }
+    );
+}
+
+
+async function getReferenceCount(
+    table,
+    column,
+    value
+) {
+
+    const {
+        count,
+        error
+    } =
+        await supabase
+            .from(table)
+            .select(
+                "id",
+                {
+                    count:
+                        "exact",
+                    head:
+                        true
+                }
+            )
+            .eq(
+                column,
+                value
+            );
+
+    if (error) {
+        throw error;
+    }
+
+    return count || 0;
+}
+
+
 // ======================================================
 // ACCOUNTS
 // ======================================================
@@ -1016,7 +1391,14 @@ function renderAccounts() {
                         );
                     },
 
-                    account.is_active
+                    account.is_active,
+
+                    function () {
+
+                        deleteAccountPermanently(
+                            account
+                        );
+                    }
                 );
 
             right.appendChild(balance);
@@ -1133,6 +1515,10 @@ accountForm.addEventListener(
         updateDashboard();
 
         refreshTransactionDropdowns();
+
+        refreshGoalAccountOptions();
+
+        renderPlanningTools();
     }
 );
 
@@ -1175,6 +1561,13 @@ function editAccount(id) {
 
     cancelAccountEditButton.style.display =
         "block";
+
+    scrollToFormAndFocus(
+        accountForm,
+        document.getElementById(
+            "account-name"
+        )
+    );
 }
 
 
@@ -1218,6 +1611,100 @@ async function toggleAccountStatus(id) {
     await loadAccounts();
 
     refreshTransactionDropdowns();
+
+    refreshGoalAccountOptions();
+
+    renderPlanningTools();
+}
+
+
+
+async function deleteAccountPermanently(
+    account
+) {
+
+    if (
+        !account ||
+        account.is_active
+    ) {
+        return;
+    }
+
+    try {
+
+        const [
+            transactionCount,
+            recurringCount
+        ] =
+            await Promise.all([
+                getReferenceCount(
+                    "transactions",
+                    "account_id",
+                    account.id
+                ),
+                getReferenceCount(
+                    "recurring_transactions",
+                    "account_id",
+                    account.id
+                )
+            ]);
+
+        if (
+            transactionCount > 0 ||
+            recurringCount > 0
+        ) {
+
+            alert(
+                `"${account.name}" cannot be permanently deleted because it has transaction or recurring history. Keep the account inactive instead.`
+            );
+
+            return;
+        }
+
+        const confirmed =
+            confirm(
+                `Delete "${account.name}" permanently?\n\nThis cannot be undone.`
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+        const {
+            error
+        } =
+            await supabase
+                .from("accounts")
+                .delete()
+                .eq(
+                    "id",
+                    account.id
+                );
+
+        if (error) {
+            throw error;
+        }
+
+        resetAccountForm();
+
+        await loadAccounts();
+
+        refreshTransactionDropdowns();
+
+        refreshRecurringFormOptions();
+
+    } catch (error) {
+
+        console.error(
+            "Delete account error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Unable to permanently delete this account."
+        );
+    }
 }
 
 
@@ -1343,6 +1830,14 @@ function renderCategories() {
                             toggleCategoryStatus(
                                 category.id
                             );
+                        },
+
+                    onDelete:
+                        function () {
+
+                            deleteCategoryPermanently(
+                                category
+                            );
                         }
                 });
 
@@ -1463,6 +1958,13 @@ function editCategory(id) {
 
     cancelCategoryEditButton.style.display =
         "block";
+
+    scrollToFormAndFocus(
+        categoryForm,
+        document.getElementById(
+            "category-name"
+        )
+    );
 }
 
 
@@ -1510,6 +2012,110 @@ async function toggleCategoryStatus(id) {
     refreshTransactionDropdowns();
 
     renderBudgets();
+
+    renderReports();
+    renderSmartInsights();
+}
+
+
+
+async function deleteCategoryPermanently(
+    category
+) {
+
+    if (
+        !category ||
+        category.is_active
+    ) {
+        return;
+    }
+
+    try {
+
+        const [
+            transactionCount,
+            recurringCount,
+            budgetCount
+        ] =
+            await Promise.all([
+                getReferenceCount(
+                    "transactions",
+                    "category_id",
+                    category.id
+                ),
+                getReferenceCount(
+                    "recurring_transactions",
+                    "category_id",
+                    category.id
+                ),
+                getReferenceCount(
+                    "budgets",
+                    "category_id",
+                    category.id
+                )
+            ]);
+
+        if (
+            transactionCount > 0 ||
+            recurringCount > 0 ||
+            budgetCount > 0
+        ) {
+
+            alert(
+                `"${category.name}" cannot be permanently deleted because it is used by transaction, recurring, or budget history. Keep it inactive instead.`
+            );
+
+            return;
+        }
+
+        const confirmed =
+            confirm(
+                `Delete category "${category.name}" permanently?\n\nThis cannot be undone.`
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+        const {
+            error
+        } =
+            await supabase
+                .from("categories")
+                .delete()
+                .eq(
+                    "id",
+                    category.id
+                );
+
+        if (error) {
+            throw error;
+        }
+
+        resetCategoryForm();
+
+        await loadCategories();
+
+        populateBudgetCategorySelect();
+
+        refreshTransactionDropdowns();
+
+        refreshRecurringFormOptions();
+
+        renderBudgets();
+
+    } catch (error) {
+
+        console.error(
+            "Delete category error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Unable to permanently delete this category."
+        );
+    }
 }
 
 
@@ -1628,6 +2234,14 @@ function renderIncomeSources() {
                             toggleIncomeSourceStatus(
                                 source.id
                             );
+                        },
+
+                    onDelete:
+                        function () {
+
+                            deleteIncomeSourcePermanently(
+                                source
+                            );
                         }
                 });
 
@@ -1731,6 +2345,13 @@ function editIncomeSource(id) {
 
     cancelIncomeSourceEditButton.style.display =
         "block";
+
+    scrollToFormAndFocus(
+        incomeSourceForm,
+        document.getElementById(
+            "income-source-name"
+        )
+    );
 }
 
 
@@ -1773,6 +2394,96 @@ async function toggleIncomeSourceStatus(id) {
     await loadIncomeSources();
 
     refreshTransactionDropdowns();
+}
+
+
+
+async function deleteIncomeSourcePermanently(
+    source
+) {
+
+    if (
+        !source ||
+        source.is_active
+    ) {
+        return;
+    }
+
+    try {
+
+        const [
+            transactionCount,
+            recurringCount
+        ] =
+            await Promise.all([
+                getReferenceCount(
+                    "transactions",
+                    "income_source_id",
+                    source.id
+                ),
+                getReferenceCount(
+                    "recurring_transactions",
+                    "income_source_id",
+                    source.id
+                )
+            ]);
+
+        if (
+            transactionCount > 0 ||
+            recurringCount > 0
+        ) {
+
+            alert(
+                `"${source.name}" cannot be permanently deleted because it is used by transaction or recurring history. Keep it inactive instead.`
+            );
+
+            return;
+        }
+
+        const confirmed =
+            confirm(
+                `Delete income source "${source.name}" permanently?\n\nThis cannot be undone.`
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+        const {
+            error
+        } =
+            await supabase
+                .from("income_sources")
+                .delete()
+                .eq(
+                    "id",
+                    source.id
+                );
+
+        if (error) {
+            throw error;
+        }
+
+        resetIncomeSourceForm();
+
+        await loadIncomeSources();
+
+        refreshTransactionDropdowns();
+
+        refreshRecurringFormOptions();
+
+    } catch (error) {
+
+        console.error(
+            "Delete income source error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Unable to permanently delete this income source."
+        );
+    }
 }
 
 
@@ -2540,7 +3251,7 @@ function renderBudgets() {
             const deleteButton =
                 createTextButton(
                     "Delete",
-                    "delete-button"
+                    "delete-button delete-permanently-button"
                 );
 
 
@@ -3206,6 +3917,14 @@ async function loadTransactions() {
 
     loadDashboardBudgetSummary();
 
+    renderDashboardGoalsSummary();
+
+    renderPlanningTools();
+
+    renderReports();
+
+    renderSmartInsights();
+
     if (
         budgetMonthInput.value &&
         budgets.length
@@ -3469,9 +4188,13 @@ async function loadRecurringTransactions() {
 
     renderRecurringTransactions();
     renderRecurringSummary();
+    renderRecurringAnalytics();
     renderRecurringReminderCenter();
+    renderRecentRecurringActivity();
     renderFinancialCalendar();
     renderDashboardUpcomingCommitments();
+    renderPlanningTools();
+    renderSmartInsights();
 }
 
 
@@ -3495,7 +4218,7 @@ async function loadRecurringOccurrenceStatuses() {
                 "recurring_occurrence_statuses"
             )
             .select(
-                "id, recurring_id, due_date, status"
+                "id, recurring_id, due_date, status, created_at, updated_at"
             )
             .order(
                 "due_date",
@@ -3826,6 +4549,425 @@ function updateRecurringReminderControls() {
     recurringReminderDaysGroup.classList.toggle(
         "disabled",
         !enabled
+    );
+}
+
+
+
+function getRecurringActivityTransaction(
+    statusRow
+) {
+
+    if (!statusRow) {
+        return null;
+    }
+
+    return transactions.find(
+        transaction =>
+            transaction.recurring_id ===
+                statusRow.recurring_id
+            &&
+            transaction.recurring_due_date ===
+                statusRow.due_date
+    ) || null;
+}
+
+
+function getRecurringActivityTimestamp(
+    statusRow,
+    transaction
+) {
+
+    if (transaction?.created_at) {
+
+        return new Date(
+            transaction.created_at
+        );
+    }
+
+    if (statusRow?.updated_at) {
+
+        return new Date(
+            statusRow.updated_at
+        );
+    }
+
+    if (statusRow?.created_at) {
+
+        return new Date(
+            statusRow.created_at
+        );
+    }
+
+    return new Date(
+        `${statusRow.due_date}T00:00:00`
+    );
+}
+
+
+function formatActivityRecordedDate(
+    dateValue
+) {
+
+    const date =
+        dateValue instanceof Date
+            ? dateValue
+            : new Date(
+                dateValue
+            );
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return "";
+    }
+
+    return date.toLocaleDateString(
+        "en-MY",
+        {
+            day:
+                "numeric",
+            month:
+                "short",
+            year:
+                "numeric"
+        }
+    );
+}
+
+
+function renderRecentRecurringActivity() {
+
+    if (!recurringActivityList) {
+        return;
+    }
+
+    recurringActivityList.innerHTML =
+        "";
+
+
+    const activityRows =
+        recurringOccurrenceStatuses
+            .filter(
+                row =>
+                    row.status ===
+                        "paid"
+                    ||
+                    row.status ===
+                        "skipped"
+            )
+            .map(
+                function (row) {
+
+                    const recurring =
+                        recurringTransactions.find(
+                            item =>
+                                item.id ===
+                                row.recurring_id
+                        );
+
+                    if (!recurring) {
+                        return null;
+                    }
+
+                    const transaction =
+                        getRecurringActivityTransaction(
+                            row
+                        );
+
+                    const timestamp =
+                        getRecurringActivityTimestamp(
+                            row,
+                            transaction
+                        );
+
+                    return {
+                        row,
+                        recurring,
+                        transaction,
+                        timestamp
+                    };
+                }
+            )
+            .filter(Boolean)
+            .sort(
+                (
+                    first,
+                    second
+                ) =>
+                    second.timestamp -
+                    first.timestamp
+            )
+            .slice(
+                0,
+                10
+            );
+
+
+    if (!activityRows.length) {
+
+        recurringActivityList.textContent =
+            "No recurring activity yet.";
+
+        return;
+    }
+
+
+    activityRows.forEach(
+        function ({
+            row,
+            recurring,
+            transaction,
+            timestamp
+        }) {
+
+            const card =
+                document.createElement(
+                    "article"
+                );
+
+            card.className =
+                "recurring-activity-card";
+
+
+            const top =
+                document.createElement(
+                    "div"
+                );
+
+            top.className =
+                "recurring-activity-top";
+
+
+            const copy =
+                document.createElement(
+                    "div"
+                );
+
+            copy.className =
+                "recurring-activity-copy";
+
+
+            const titleRow =
+                document.createElement(
+                    "div"
+                );
+
+            titleRow.className =
+                "recurring-activity-title-row";
+
+
+            const title =
+                document.createElement(
+                    "strong"
+                );
+
+            title.textContent =
+                recurring.name;
+
+
+            const badge =
+                document.createElement(
+                    "span"
+                );
+
+            badge.className =
+                `recurring-activity-status ${row.status}`;
+
+            badge.textContent =
+                getRecurringStatusLabel(
+                    row.status
+                );
+
+
+            titleRow.append(
+                title,
+                badge
+            );
+
+
+            const mainMeta =
+                document.createElement(
+                    "p"
+                );
+
+            const recordedDate =
+                transaction?.transaction_date
+                    ? formatDate(
+                        transaction.transaction_date
+                    )
+                    : formatActivityRecordedDate(
+                        timestamp
+                    );
+
+            const activityVerb =
+                row.status ===
+                    "paid"
+                    ? (
+                        transaction
+                            ? "Paid"
+                            : "Marked paid"
+                    )
+                    : "Skipped";
+
+            mainMeta.textContent =
+                `${activityVerb} ${recordedDate} • Due ${formatDate(row.due_date)}`;
+
+
+            const details =
+                document.createElement(
+                    "p"
+                );
+
+            details.className =
+                "recurring-activity-details";
+
+
+            const account =
+                accounts.find(
+                    item =>
+                        item.id ===
+                        (
+                            transaction?.account_id
+                            ||
+                            recurring.account_id
+                        )
+                );
+
+
+            const category =
+                categories.find(
+                    item =>
+                        item.id ===
+                        (
+                            transaction?.category_id
+                            ||
+                            recurring.category_id
+                        )
+                );
+
+
+            const detailParts =
+                [];
+
+
+            if (account?.name) {
+
+                detailParts.push(
+                    account.name
+                );
+            }
+
+
+            if (category?.name) {
+
+                detailParts.push(
+                    category.name
+                );
+            }
+
+
+            if (
+                row.status ===
+                    "paid"
+                &&
+                !transaction
+            ) {
+
+                detailParts.push(
+                    "No linked transaction"
+                );
+            }
+
+
+            details.textContent =
+                detailParts.join(
+                    " • "
+                );
+
+
+            copy.append(
+                titleRow,
+                mainMeta
+            );
+
+
+            if (details.textContent) {
+
+                copy.appendChild(
+                    details
+                );
+            }
+
+
+            const amount =
+                document.createElement(
+                    "strong"
+                );
+
+            amount.className =
+                recurring.type ===
+                    "income"
+                    ? "recurring-activity-amount income"
+                    : "recurring-activity-amount expense";
+
+            amount.textContent =
+                `${recurring.type === "income" ? "+" : "-"}${formatMoney(recurring.amount)}`;
+
+
+            top.append(
+                copy,
+                amount
+            );
+
+
+            const footer =
+                document.createElement(
+                    "div"
+                );
+
+            footer.className =
+                "recurring-activity-footer";
+
+
+            const recorded =
+                document.createElement(
+                    "span"
+                );
+
+            recorded.textContent =
+                `Recorded ${formatActivityRecordedDate(timestamp)}`;
+
+
+            const source =
+                document.createElement(
+                    "span"
+                );
+
+            source.textContent =
+                transaction
+                    ? "Linked transaction"
+                    : "Recurring status only";
+
+
+            footer.append(
+                recorded,
+                source
+            );
+
+
+            card.append(
+                top,
+                footer
+            );
+
+
+            recurringActivityList.appendChild(
+                card
+            );
+        }
     );
 }
 
@@ -4184,8 +5326,37 @@ function refreshRecurringFormOptions(
             }
         );
 
+    addSelectOption(
+        recurringCategorySelect,
+        "__create_new__",
+        "+ Other / Create New"
+    );
+
     recurringCategorySelect.value =
         selectedCategory;
+
+    if (
+        recurringCustomCategoryGroup &&
+        recurringCustomCategoryInput
+    ) {
+
+        const creatingNew =
+            recurringCategorySelect.value ===
+            "__create_new__";
+
+        recurringCustomCategoryGroup.style.display =
+            creatingNew
+                ? "block"
+                : "none";
+
+        recurringCustomCategoryInput.required =
+            creatingNew;
+
+        if (!creatingNew) {
+            recurringCustomCategoryInput.value =
+                "";
+        }
+    }
 
 
     const isIncome =
@@ -4246,6 +5417,16 @@ function resetRecurringForm() {
     if (recurringFrequencySelect) {
         recurringFrequencySelect.value =
             "monthly";
+    }
+
+    if (recurringCustomCategoryInput) {
+        recurringCustomCategoryInput.value =
+            "";
+    }
+
+    if (recurringCustomCategoryGroup) {
+        recurringCustomCategoryGroup.style.display =
+            "none";
     }
 
     if (recurringNextDueDateInput) {
@@ -4325,6 +5506,430 @@ function recurringMonthlyEquivalent(
     }
 
     return amount;
+}
+
+
+
+function getRecurringCategoryName(
+    categoryId
+) {
+
+    if (!categoryId) {
+        return "Uncategorized";
+    }
+
+    return (
+        categories.find(
+            category =>
+                category.id ===
+                categoryId
+        )?.name
+        ||
+        "Uncategorized"
+    );
+}
+
+
+function createRecurringAnalyticsRow({
+    title,
+    subtitle,
+    amount,
+    total,
+    amountClass = ""
+}) {
+
+    const row =
+        document.createElement(
+            "div"
+        );
+
+    row.className =
+        "recurring-analytics-row";
+
+
+    const copy =
+        document.createElement(
+            "div"
+        );
+
+    copy.className =
+        "recurring-analytics-row-copy";
+
+
+    const heading =
+        document.createElement(
+            "strong"
+        );
+
+    heading.textContent =
+        title;
+
+
+    const description =
+        document.createElement(
+            "span"
+        );
+
+    description.textContent =
+        subtitle;
+
+
+    copy.append(
+        heading,
+        description
+    );
+
+
+    const right =
+        document.createElement(
+            "div"
+        );
+
+    right.className =
+        "recurring-analytics-row-right";
+
+
+    const amountElement =
+        document.createElement(
+            "strong"
+        );
+
+    amountElement.className =
+        amountClass;
+
+    amountElement.textContent =
+        formatMoney(amount);
+
+
+    right.appendChild(
+        amountElement
+    );
+
+
+    if (
+        Number.isFinite(total) &&
+        total > 0
+    ) {
+
+        const share =
+            Math.max(
+                0,
+                Math.min(
+                    100,
+                    amount /
+                    total *
+                    100
+                )
+            );
+
+        const shareText =
+            document.createElement(
+                "span"
+            );
+
+        shareText.textContent =
+            `${share.toFixed(1)}%`;
+
+        right.appendChild(
+            shareText
+        );
+    }
+
+
+    row.append(
+        copy,
+        right
+    );
+
+
+    return row;
+}
+
+
+function renderRecurringAnalytics() {
+
+    if (
+        !recurringAnalyticsIncome ||
+        !recurringAnalyticsExpenses ||
+        !recurringAnalyticsNet ||
+        !recurringAnalyticsAnnualExpenses ||
+        !recurringAnalyticsCategoryList ||
+        !recurringAnalyticsTopList
+    ) {
+        return;
+    }
+
+
+    const active =
+        recurringTransactions.filter(
+            item =>
+                item.is_active
+        );
+
+
+    const activeIncome =
+        active.filter(
+            item =>
+                item.type ===
+                "income"
+        );
+
+
+    const activeExpenses =
+        active.filter(
+            item =>
+                item.type ===
+                "expense"
+        );
+
+
+    const monthlyIncome =
+        activeIncome.reduce(
+            (
+                total,
+                item
+            ) =>
+                total +
+                recurringMonthlyEquivalent(
+                    item
+                ),
+            0
+        );
+
+
+    const monthlyExpenses =
+        activeExpenses.reduce(
+            (
+                total,
+                item
+            ) =>
+                total +
+                recurringMonthlyEquivalent(
+                    item
+                ),
+            0
+        );
+
+
+    const net =
+        monthlyIncome -
+        monthlyExpenses;
+
+
+    recurringAnalyticsIncome.textContent =
+        formatMoney(
+            monthlyIncome
+        );
+
+    recurringAnalyticsExpenses.textContent =
+        formatMoney(
+            monthlyExpenses
+        );
+
+    recurringAnalyticsNet.textContent =
+        formatMoney(
+            net
+        );
+
+    recurringAnalyticsNet.classList.toggle(
+        "income",
+        net >= 0
+    );
+
+    recurringAnalyticsNet.classList.toggle(
+        "expense",
+        net < 0
+    );
+
+    recurringAnalyticsAnnualExpenses.textContent =
+        formatMoney(
+            monthlyExpenses *
+            12
+        );
+
+
+    // ----------------------------------------------
+    // Expense category breakdown
+    // ----------------------------------------------
+
+    recurringAnalyticsCategoryList.innerHTML =
+        "";
+
+
+    const categoryTotals =
+        new Map();
+
+
+    activeExpenses.forEach(
+        function (item) {
+
+            const categoryName =
+                getRecurringCategoryName(
+                    item.category_id
+                );
+
+            const monthlyAmount =
+                recurringMonthlyEquivalent(
+                    item
+                );
+
+            categoryTotals.set(
+                categoryName,
+                (
+                    categoryTotals.get(
+                        categoryName
+                    )
+                    ||
+                    0
+                )
+                +
+                monthlyAmount
+            );
+        }
+    );
+
+
+    const categoryRows =
+        Array.from(
+            categoryTotals.entries()
+        )
+            .sort(
+                (
+                    first,
+                    second
+                ) =>
+                    second[1] -
+                    first[1]
+            );
+
+
+    if (!categoryRows.length) {
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+        empty.className =
+            "recurring-analytics-empty";
+
+        empty.textContent =
+            "No active recurring expenses yet.";
+
+        recurringAnalyticsCategoryList.appendChild(
+            empty
+        );
+
+    } else {
+
+        categoryRows.forEach(
+            (
+                [
+                    categoryName,
+                    amount
+                ]
+            ) => {
+
+                recurringAnalyticsCategoryList.appendChild(
+                    createRecurringAnalyticsRow({
+                        title:
+                            categoryName,
+                        subtitle:
+                            "Monthly equivalent",
+                        amount,
+                        total:
+                            monthlyExpenses,
+                        amountClass:
+                            "expense"
+                    })
+                );
+            }
+        );
+    }
+
+
+    // ----------------------------------------------
+    // Top commitments
+    // ----------------------------------------------
+
+    recurringAnalyticsTopList.innerHTML =
+        "";
+
+
+    const topExpenses =
+        activeExpenses
+            .map(
+                item => ({
+                    ...item,
+                    monthlyEquivalent:
+                        recurringMonthlyEquivalent(
+                            item
+                        )
+                })
+            )
+            .sort(
+                (
+                    first,
+                    second
+                ) =>
+                    second.monthlyEquivalent -
+                    first.monthlyEquivalent
+            )
+            .slice(
+                0,
+                5
+            );
+
+
+    if (!topExpenses.length) {
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+        empty.className =
+            "recurring-analytics-empty";
+
+        empty.textContent =
+            "No recurring commitments to analyse yet.";
+
+        recurringAnalyticsTopList.appendChild(
+            empty
+        );
+
+    } else {
+
+        topExpenses.forEach(
+            function (item) {
+
+                const categoryName =
+                    getRecurringCategoryName(
+                        item.category_id
+                    );
+
+                const frequency =
+                    formatRecurringFrequency(
+                        item.frequency
+                    );
+
+                recurringAnalyticsTopList.appendChild(
+                    createRecurringAnalyticsRow({
+                        title:
+                            item.name,
+                        subtitle:
+                            `${frequency} • ${categoryName}`,
+                        amount:
+                            item.monthlyEquivalent,
+                        total:
+                            monthlyExpenses,
+                        amountClass:
+                            "expense"
+                    })
+                );
+            }
+        );
+    }
 }
 
 
@@ -5615,26 +7220,37 @@ function renderRecurringTransactions() {
             }
 
 
-            const edit =
-                document.createElement(
-                    "button"
+            if (item.is_active) {
+
+                const edit =
+                    document.createElement(
+                        "button"
+                    );
+
+                edit.type =
+                    "button";
+
+                edit.className =
+                    "inline-action-button edit-button";
+
+                edit.textContent =
+                    "Edit";
+
+                applySemanticActionButtonStyle(
+                    edit,
+                    "Edit"
                 );
 
-            edit.type =
-                "button";
+                edit.addEventListener(
+                    "click",
+                    () =>
+                        editRecurringItem(
+                            item
+                        )
+                );
 
-            edit.textContent =
-                "Edit";
-
-            edit.addEventListener(
-                "click",
-                () =>
-                    editRecurringItem(
-                        item
-                    )
-            );
-
-            actions.appendChild(edit);
+                actions.appendChild(edit);
+            }
 
 
             const toggle =
@@ -5644,6 +7260,11 @@ function renderRecurringTransactions() {
 
             toggle.type =
                 "button";
+
+            toggle.className =
+                item.is_active
+                    ? "inline-action-button status-button"
+                    : "inline-action-button status-button positive-action-button";
 
             toggle.textContent =
                 item.is_active
@@ -5664,6 +7285,36 @@ function renderRecurringTransactions() {
             );
 
             actions.appendChild(toggle);
+
+
+            if (!item.is_active) {
+
+                const remove =
+                    document.createElement(
+                        "button"
+                    );
+
+                remove.type =
+                    "button";
+
+                remove.className =
+                    "inline-action-button delete-permanently-button recurring-delete-button";
+
+                remove.textContent =
+                    "Delete Permanently";
+
+                remove.addEventListener(
+                    "click",
+                    () =>
+                        deleteRecurringItemPermanently(
+                            item
+                        )
+                );
+
+                actions.appendChild(
+                    remove
+                );
+            }
 
 
             card.append(
@@ -5739,12 +7390,10 @@ function editRecurringItem(item) {
     cancelRecurringEditButton.style.display =
         "inline-flex";
 
-    recurringForm.scrollIntoView({
-        behavior:
-            "smooth",
-        block:
-            "start"
-    });
+    scrollToFormAndFocus(
+        recurringForm,
+        recurringNameInput
+    );
 }
 
 
@@ -5772,6 +7421,66 @@ async function toggleRecurringItem(item) {
             "Unable to update recurring item."
         );
         return;
+    }
+
+    await loadRecurringTransactions();
+}
+
+
+
+async function deleteRecurringItemPermanently(
+    item
+) {
+
+    if (
+        !item ||
+        item.is_active
+    ) {
+        return;
+    }
+
+    const confirmed =
+        confirm(
+            `Delete "${item.name}" permanently?\n\nIts recurring schedule and saved occurrence statuses will be removed. Logged transactions remain unchanged.`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const {
+        error
+    } =
+        await supabase
+            .from(
+                "recurring_transactions"
+            )
+            .delete()
+            .eq(
+                "id",
+                item.id
+            );
+
+    if (error) {
+
+        console.error(
+            "Delete recurring item error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Unable to permanently delete this recurring item."
+        );
+
+        return;
+    }
+
+    if (
+        editingRecurringId ===
+        item.id
+    ) {
+        resetRecurringForm();
     }
 
     await loadRecurringTransactions();
@@ -5870,17 +7579,21 @@ function addRecurringInterval(
 
 function nextRecurringDateAfter(
     item,
-    afterDate
+    dueDate,
+    transactionDate
 ) {
 
     let next =
-        item.next_due_date;
+        addRecurringInterval(
+            dueDate,
+            item.frequency
+        );
 
     let guard =
         0;
 
     while (
-        next <= afterDate &&
+        next <= transactionDate &&
         guard < 60
     ) {
 
@@ -5899,23 +7612,21 @@ function nextRecurringDateAfter(
 
 async function advanceRecurringSchedule(
     recurringId,
-    transactionDate
+    dueDate,
+    nextDueDate
 ) {
 
-    const item =
-        recurringTransactions.find(
-            recurring =>
-                recurring.id ===
-                recurringId
-        );
-
-    if (!item) {
+    if (
+        !recurringId ||
+        !dueDate ||
+        !nextDueDate
+    ) {
         return;
     }
 
     await markRecurringOccurrencePaid(
         recurringId,
-        item.next_due_date
+        dueDate
     );
 
     const {
@@ -5927,10 +7638,7 @@ async function advanceRecurringSchedule(
             )
             .update({
                 next_due_date:
-                    nextRecurringDateAfter(
-                        item,
-                        transactionDate
-                    )
+                    nextDueDate
             })
             .eq(
                 "id",
@@ -5941,6 +7649,7 @@ async function advanceRecurringSchedule(
         throw error;
     }
 
+    await loadRecurringOccurrenceStatuses();
     await loadRecurringTransactions();
 }
 
@@ -5951,6 +7660,9 @@ function useRecurringItem(item) {
 
     pendingRecurringId =
         item.id;
+
+    pendingRecurringDueDate =
+        item.next_due_date;
 
     transactionDescriptionInput.value =
         item.name;
@@ -6039,6 +7751,50 @@ if (recurringTypeSelect) {
 }
 
 
+if (recurringCategorySelect) {
+
+    recurringCategorySelect
+        .addEventListener(
+            "change",
+            function () {
+
+                const creatingNew =
+                    recurringCategorySelect.value ===
+                    "__create_new__";
+
+                if (
+                    recurringCustomCategoryGroup &&
+                    recurringCustomCategoryInput
+                ) {
+
+                    recurringCustomCategoryGroup.style.display =
+                        creatingNew
+                            ? "block"
+                            : "none";
+
+                    recurringCustomCategoryInput.required =
+                        creatingNew;
+
+                    if (creatingNew) {
+
+                        window.setTimeout(
+                            () =>
+                                recurringCustomCategoryInput
+                                    .focus(),
+                            50
+                        );
+
+                    } else {
+
+                        recurringCustomCategoryInput.value =
+                            "";
+                    }
+                }
+            }
+        );
+}
+
+
 if (cancelRecurringEditButton) {
 
     cancelRecurringEditButton
@@ -6046,6 +7802,103 @@ if (cancelRecurringEditButton) {
             "click",
             resetRecurringForm
         );
+}
+
+
+
+async function resolveRecurringCategoryId(
+    selectedCategoryId,
+    type
+) {
+
+    if (
+        selectedCategoryId !==
+        "__create_new__"
+    ) {
+        return selectedCategoryId;
+    }
+
+    const name =
+        recurringCustomCategoryInput
+            ?.value
+            .trim();
+
+    if (!name) {
+
+        throw new Error(
+            "Enter a name for the new category."
+        );
+    }
+
+    const existing =
+        categories.find(
+            category =>
+                category.name
+                    .trim()
+                    .toLowerCase() ===
+                    name.toLowerCase()
+                &&
+                (
+                    category.type ===
+                        type
+                    ||
+                    category.type ===
+                        "both"
+                )
+        );
+
+    if (existing) {
+
+        if (!existing.is_active) {
+
+            const {
+                error
+            } =
+                await supabase
+                    .from("categories")
+                    .update({
+                        is_active:
+                            true
+                    })
+                    .eq(
+                        "id",
+                        existing.id
+                    );
+
+            if (error) {
+                throw error;
+            }
+        }
+
+        await loadCategories();
+
+        return existing.id;
+    }
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("categories")
+            .insert({
+                user_id:
+                    currentUser.id,
+                name,
+                type
+            })
+            .select(
+                "id"
+            )
+            .single();
+
+    if (error) {
+        throw error;
+    }
+
+    await loadCategories();
+
+    return data.id;
 }
 
 
@@ -6075,7 +7928,7 @@ if (recurringForm) {
             const accountId =
                 recurringAccountSelect.value;
 
-            const categoryId =
+            let categoryId =
                 recurringCategorySelect.value;
 
             const amount =
@@ -6147,6 +8000,23 @@ if (recurringForm) {
                 alert(
                     "Please complete all required recurring fields."
                 );
+
+                return;
+            }
+
+            try {
+
+                categoryId =
+                    await resolveRecurringCategoryId(
+                        categoryId,
+                        type
+                    );
+
+            } catch (error) {
+
+                recurringMessage.textContent =
+                    error.message ||
+                    "Unable to create the category.";
 
                 return;
             }
@@ -10668,9 +12538,21 @@ transactionForm.addEventListener(
                 .getElementById("date")
                 .value;
 
+        const wasEditingTransaction =
+            editingTransactionId !== null;
+
+        const wasRecurringLog =
+            editingTransactionId === null &&
+            pendingRecurringId !== null;
+
         const recurringIdToAdvance =
             editingTransactionId === null
                 ? pendingRecurringId
+                : null;
+
+        const recurringDueDateToAdvance =
+            recurringIdToAdvance
+                ? pendingRecurringDueDate
                 : null;
 
         const notes =
@@ -10823,6 +12705,43 @@ transactionForm.addEventListener(
             }
 
 
+            let recurringNextDueDate =
+                null;
+
+            if (
+                recurringIdToAdvance &&
+                recurringDueDateToAdvance
+            ) {
+
+                const recurringItem =
+                    recurringTransactions.find(
+                        item =>
+                            item.id ===
+                            recurringIdToAdvance
+                    );
+
+                if (recurringItem) {
+
+                    recurringNextDueDate =
+                        nextRecurringDateAfter(
+                            recurringItem,
+                            recurringDueDateToAdvance,
+                            transactionDate
+                        );
+                }
+            }
+
+
+            const existingTransaction =
+                editingTransactionId !== null
+                    ? transactions.find(
+                        item =>
+                            item.id ===
+                            editingTransactionId
+                    )
+                    : null;
+
+
             const transactionData = {
 
                 user_id:
@@ -10850,7 +12769,22 @@ transactionForm.addEventListener(
                     transactionDate,
 
                 receipt_path:
-                    nextReceiptPath
+                    nextReceiptPath,
+
+                recurring_id:
+                    recurringIdToAdvance ||
+                    existingTransaction?.recurring_id ||
+                    null,
+
+                recurring_due_date:
+                    recurringDueDateToAdvance ||
+                    existingTransaction?.recurring_due_date ||
+                    null,
+
+                recurring_next_due_date:
+                    recurringNextDueDate ||
+                    existingTransaction?.recurring_next_due_date ||
+                    null
             };
 
 
@@ -10949,7 +12883,8 @@ transactionForm.addEventListener(
 
                     await advanceRecurringSchedule(
                         recurringIdToAdvance,
-                        transactionDate
+                        recurringDueDateToAdvance,
+                        recurringNextDueDate
                     );
 
                 } catch (error) {
@@ -10966,6 +12901,34 @@ transactionForm.addEventListener(
             resetTransactionForm();
 
             await loadTransactions();
+
+            if (wasRecurringLog) {
+
+                showTransactionSuccessSnackbar({
+                    title:
+                        "Recurring transaction logged",
+                    message:
+                        "The transaction was saved and the recurring schedule was updated."
+                });
+
+            } else if (wasEditingTransaction) {
+
+                showTransactionSuccessSnackbar({
+                    title:
+                        "Transaction updated",
+                    message:
+                        "Your changes were saved successfully."
+                });
+
+            } else {
+
+                showTransactionSuccessSnackbar({
+                    title:
+                        "Transaction added",
+                    message:
+                        "Your transaction was saved successfully."
+                });
+            }
 
             if (tagSyncWarning) {
                 alert(
@@ -11801,7 +13764,7 @@ function renderTransactions() {
             const deleteButton =
                 createTextButton(
                     "Delete",
-                    "delete-button"
+                    "delete-button delete-permanently-button"
                 );
 
 
@@ -12027,6 +13990,10 @@ transactionViewAllButton
 
 function renderDeletedTransactions() {
 
+    if (!deletedTransactionList) {
+        return;
+    }
+
     deletedTransactionList.innerHTML =
         "";
 
@@ -12093,7 +14060,7 @@ function renderDeletedTransactions() {
             const restore =
                 createTextButton(
                     "Restore",
-                    "restore-button"
+                    "restore-button positive-action-button"
                 );
 
 
@@ -12208,20 +14175,451 @@ function editTransaction(id) {
     cancelEditButton.style.display =
         "inline-flex";
 
-    transactionForm.scrollIntoView({
-
-        behavior:
-            "smooth",
-
-        block:
-            "start"
-    });
+    scrollToFormAndFocus(
+        transactionForm,
+        transactionDescriptionInput
+    );
 }
 
 
 // ======================================================
-// SOFT DELETE TRANSACTION
+// TRANSACTION DELETE WITH 5-SECOND UNDO
 // ======================================================
+
+
+function hideTransactionSuccessSnackbar() {
+
+    if (!transactionSuccessSnackbar) {
+        return;
+    }
+
+    transactionSuccessSnackbar.classList.remove(
+        "show"
+    );
+}
+
+
+function showTransactionSuccessSnackbar({
+    title,
+    message
+}) {
+
+    if (!transactionSuccessSnackbar) {
+        return;
+    }
+
+    if (transactionSuccessTimer) {
+
+        window.clearTimeout(
+            transactionSuccessTimer
+        );
+
+        transactionSuccessTimer =
+            null;
+    }
+
+    if (transactionSuccessTitle) {
+
+        transactionSuccessTitle.textContent =
+            title ||
+            "Transaction saved";
+    }
+
+    if (transactionSuccessMessage) {
+
+        transactionSuccessMessage.textContent =
+            message ||
+            "Your transaction has been saved successfully.";
+    }
+
+    transactionSuccessSnackbar.classList.add(
+        "show"
+    );
+
+    transactionSuccessTimer =
+        window.setTimeout(
+            function () {
+
+                hideTransactionSuccessSnackbar();
+
+                transactionSuccessTimer =
+                    null;
+            },
+            3200
+        );
+}
+
+
+function hideTransactionUndoSnackbar() {
+
+    if (!transactionUndoSnackbar) {
+        return;
+    }
+
+    transactionUndoSnackbar.classList.remove(
+        "show"
+    );
+
+    if (transactionUndoProgress) {
+        transactionUndoProgress.style.animation =
+            "none";
+    }
+}
+
+
+
+async function setRecurringOccurrenceStatusDirect(
+    recurringId,
+    dueDate,
+    status
+) {
+
+    if (
+        !currentUser ||
+        !recurringId ||
+        !dueDate
+    ) {
+        return;
+    }
+
+    const {
+        error
+    } =
+        await supabase
+            .from(
+                "recurring_occurrence_statuses"
+            )
+            .upsert(
+                {
+                    user_id:
+                        currentUser.id,
+                    recurring_id:
+                        recurringId,
+                    due_date:
+                        dueDate,
+                    status
+                },
+                {
+                    onConflict:
+                        "user_id,recurring_id,due_date"
+                }
+            );
+
+    if (error) {
+        throw error;
+    }
+}
+
+
+async function restoreRecurringAfterTransactionDelete(
+    transaction
+) {
+
+    if (
+        !transaction?.recurring_id ||
+        !transaction?.recurring_due_date
+    ) {
+        return false;
+    }
+
+    await setRecurringOccurrenceStatusDirect(
+        transaction.recurring_id,
+        transaction.recurring_due_date,
+        "pending"
+    );
+
+
+    if (
+        transaction.recurring_next_due_date
+    ) {
+
+        const {
+            data,
+            error
+        } =
+            await supabase
+                .from(
+                    "recurring_transactions"
+                )
+                .select(
+                    "id, next_due_date"
+                )
+                .eq(
+                    "id",
+                    transaction.recurring_id
+                )
+                .maybeSingle();
+
+        if (error) {
+            throw error;
+        }
+
+        if (
+            data &&
+            (
+                data.next_due_date ===
+                    transaction.recurring_next_due_date
+                ||
+                data.next_due_date ===
+                    transaction.recurring_due_date
+            )
+        ) {
+
+            const {
+                error:
+                    scheduleError
+            } =
+                await supabase
+                    .from(
+                        "recurring_transactions"
+                    )
+                    .update({
+                        next_due_date:
+                            transaction.recurring_due_date
+                    })
+                    .eq(
+                        "id",
+                        transaction.recurring_id
+                    );
+
+            if (scheduleError) {
+                throw scheduleError;
+            }
+        }
+    }
+
+
+    await loadRecurringOccurrenceStatuses();
+    await loadRecurringTransactions();
+
+    return true;
+}
+
+
+async function reapplyRecurringAfterTransactionUndo(
+    transaction
+) {
+
+    if (
+        !transaction?.recurring_id ||
+        !transaction?.recurring_due_date
+    ) {
+        return false;
+    }
+
+    await setRecurringOccurrenceStatusDirect(
+        transaction.recurring_id,
+        transaction.recurring_due_date,
+        "paid"
+    );
+
+
+    if (
+        transaction.recurring_next_due_date
+    ) {
+
+        const {
+            data,
+            error
+        } =
+            await supabase
+                .from(
+                    "recurring_transactions"
+                )
+                .select(
+                    "id, next_due_date"
+                )
+                .eq(
+                    "id",
+                    transaction.recurring_id
+                )
+                .maybeSingle();
+
+        if (error) {
+            throw error;
+        }
+
+        if (
+            data &&
+            data.next_due_date ===
+                transaction.recurring_due_date
+        ) {
+
+            const {
+                error:
+                    scheduleError
+            } =
+                await supabase
+                    .from(
+                        "recurring_transactions"
+                    )
+                    .update({
+                        next_due_date:
+                            transaction.recurring_next_due_date
+                    })
+                    .eq(
+                        "id",
+                        transaction.recurring_id
+                    );
+
+            if (scheduleError) {
+                throw scheduleError;
+            }
+        }
+    }
+
+
+    await loadRecurringOccurrenceStatuses();
+    await loadRecurringTransactions();
+
+    return true;
+}
+
+
+async function permanentlyDeleteTransaction(
+    pendingDelete
+) {
+
+    if (!pendingDelete?.id) {
+        return;
+    }
+
+    if (pendingDelete.receipt_path) {
+
+        await deleteReceipt(
+            pendingDelete.receipt_path
+        );
+    }
+
+    const {
+        error
+    } =
+        await supabase
+            .from("transactions")
+            .delete()
+            .eq(
+                "id",
+                pendingDelete.id
+            )
+            .not(
+                "deleted_at",
+                "is",
+                null
+            );
+
+    if (error) {
+
+        console.error(
+            "Permanent transaction delete error:",
+            error
+        );
+
+        return;
+    }
+}
+
+
+async function finalizePendingTransactionDelete() {
+
+    if (!pendingTransactionDelete) {
+        return;
+    }
+
+    const target =
+        pendingTransactionDelete;
+
+    pendingTransactionDelete =
+        null;
+
+    if (transactionUndoTimer) {
+
+        window.clearTimeout(
+            transactionUndoTimer
+        );
+
+        transactionUndoTimer =
+            null;
+    }
+
+    hideTransactionUndoSnackbar();
+
+    await permanentlyDeleteTransaction(
+        target
+    );
+}
+
+
+function showTransactionUndoSnackbar(
+    transaction
+) {
+
+    if (!transactionUndoSnackbar) {
+        return;
+    }
+
+    if (transactionUndoTimer) {
+
+        window.clearTimeout(
+            transactionUndoTimer
+        );
+
+        transactionUndoTimer =
+            null;
+    }
+
+    pendingTransactionDelete = {
+        id:
+            transaction.id,
+        description:
+            transaction.description,
+        receipt_path:
+            transaction.receipt_path ||
+            null,
+        recurring_id:
+            transaction.recurring_id ||
+            null,
+        recurring_due_date:
+            transaction.recurring_due_date ||
+            null,
+        recurring_next_due_date:
+            transaction.recurring_next_due_date ||
+            null
+    };
+
+    if (transactionUndoTitle) {
+
+        transactionUndoTitle.textContent =
+            `"${transaction.description}" deleted`;
+    }
+
+    if (transactionUndoMessage) {
+
+        transactionUndoMessage.textContent =
+            "Undo within 5 seconds.";
+    }
+
+    transactionUndoSnackbar.classList.add(
+        "show"
+    );
+
+    if (transactionUndoProgress) {
+
+        transactionUndoProgress.style.animation =
+            "none";
+
+        void transactionUndoProgress.offsetWidth;
+
+        transactionUndoProgress.style.animation =
+            "transactionUndoCountdown 5s linear forwards";
+    }
+
+    transactionUndoTimer =
+        window.setTimeout(
+            finalizePendingTransactionDelete,
+            5000
+        );
+}
+
 
 async function deleteTransaction(id) {
 
@@ -12235,14 +14633,13 @@ async function deleteTransaction(id) {
         return;
     }
 
-    const confirmed =
-        confirm(
-            `Delete "${transaction.description}"?`
-        );
-
-    if (!confirmed) {
-        return;
+    if (pendingTransactionDelete) {
+        await finalizePendingTransactionDelete();
     }
+
+    const deletedAt =
+        new Date()
+            .toISOString();
 
     const {
         error
@@ -12250,10 +14647,8 @@ async function deleteTransaction(id) {
         await supabase
             .from("transactions")
             .update({
-
                 deleted_at:
-                    new Date()
-                        .toISOString()
+                    deletedAt
             })
             .eq(
                 "id",
@@ -12269,19 +14664,87 @@ async function deleteTransaction(id) {
         return;
     }
 
-    resetTransactionForm();
 
-    await loadTransactions();
+    try {
 
-    await loadDeletedTransactions();
+        await restoreRecurringAfterTransactionDelete(
+            transaction
+        );
+
+    } catch (recurringError) {
+
+        console.error(
+            "Recurring delete reversal error:",
+            recurringError
+        );
+
+        await supabase
+            .from("transactions")
+            .update({
+                deleted_at:
+                    null
+            })
+            .eq(
+                "id",
+                id
+            );
+
+        alert(
+            "The transaction was not deleted because its recurring schedule could not be restored. Please try again."
+        );
+
+        return;
+    }
+
+
+    transactions =
+        transactions.filter(
+            item =>
+                item.id !== id
+        );
+
+    updateDashboard();
+    renderTransactions();
+    renderAccounts();
+    renderSpendingDashboard();
+    renderDashboardRecentTransactions();
+    loadDashboardBudgetSummary();
+    renderDashboardUpcomingCommitments();
+    renderRecurringSummary();
+    renderRecurringAnalytics();
+    renderRecurringReminderCenter();
+    renderRecentRecurringActivity();
+    renderFinancialCalendar();
+
+    showTransactionUndoSnackbar(
+        transaction
+    );
 }
 
 
-// ======================================================
-// RESTORE
-// ======================================================
+async function undoPendingTransactionDelete() {
 
-async function restoreTransaction(id) {
+    if (!pendingTransactionDelete) {
+        return;
+    }
+
+    const target =
+        pendingTransactionDelete;
+
+    pendingTransactionDelete =
+        null;
+
+    if (transactionUndoTimer) {
+
+        window.clearTimeout(
+            transactionUndoTimer
+        );
+
+        transactionUndoTimer =
+            null;
+    }
+
+    hideTransactionUndoSnackbar();
 
     const {
         error
@@ -12289,11 +14752,12 @@ async function restoreTransaction(id) {
         await supabase
             .from("transactions")
             .update({
-                deleted_at: null
+                deleted_at:
+                    null
             })
             .eq(
                 "id",
-                id
+                target.id
             );
 
     if (error) {
@@ -12305,10 +14769,119 @@ async function restoreTransaction(id) {
         return;
     }
 
+
+    try {
+
+        await reapplyRecurringAfterTransactionUndo(
+            target
+        );
+
+    } catch (recurringError) {
+
+        console.error(
+            "Recurring undo restore error:",
+            recurringError
+        );
+
+        alert(
+            "The transaction was restored, but its recurring status could not be restored automatically. Please review the recurring item."
+        );
+    }
+
+
     await loadTransactions();
 
-    await loadDeletedTransactions();
+    renderDashboardUpcomingCommitments();
+    renderRecurringSummary();
+    renderRecurringAnalytics();
+    renderRecurringReminderCenter();
+    renderRecentRecurringActivity();
+    renderFinancialCalendar();
 }
+
+
+async function cleanupStaleDeletedTransactions() {
+
+    if (!currentUser) {
+        return;
+    }
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("transactions")
+            .select(
+                "id, receipt_path, recurring_id, recurring_due_date, recurring_next_due_date"
+            )
+            .not(
+                "deleted_at",
+                "is",
+                null
+            );
+
+    if (error) {
+
+        console.warn(
+            "Stale deleted transaction lookup error:",
+            error
+        );
+
+        return;
+    }
+
+    for (const item of data || []) {
+
+        try {
+
+            await restoreRecurringAfterTransactionDelete(
+                item
+            );
+
+        } catch (recurringError) {
+
+            console.warn(
+                "Stale recurring reversal error:",
+                recurringError
+            );
+        }
+
+        if (item.receipt_path) {
+
+            await deleteReceipt(
+                item.receipt_path
+            );
+        }
+    }
+
+    const {
+        error: deleteError
+    } =
+        await supabase
+            .from("transactions")
+            .delete()
+            .not(
+                "deleted_at",
+                "is",
+                null
+            );
+
+    if (deleteError) {
+
+        console.warn(
+            "Stale transaction cleanup error:",
+            deleteError
+        );
+    }
+}
+
+
+transactionUndoButton
+    ?.addEventListener(
+        "click",
+        undoPendingTransactionDelete
+    );
 
 
 // ======================================================
@@ -12321,6 +14894,9 @@ function resetTransactionForm() {
         null;
 
     pendingRecurringId =
+        null;
+
+    pendingRecurringDueDate =
         null;
 
     hideDescriptionSuggestions();
@@ -13270,7 +15846,8 @@ function createSimpleManagementCard({
     meta,
     active,
     onEdit,
-    onToggle
+    onToggle,
+    onDelete = null
 }) {
 
     const card =
@@ -13333,7 +15910,8 @@ function createSimpleManagementCard({
         createManagementButtons(
             onEdit,
             onToggle,
-            active
+            active,
+            onDelete
         );
 
 
@@ -13352,7 +15930,8 @@ function createSimpleManagementCard({
 function createManagementButtons(
     onEdit,
     onToggle,
-    active
+    active,
+    onDelete = null
 ) {
 
     const buttons =
@@ -13364,39 +15943,143 @@ function createManagementButtons(
         "management-buttons";
 
 
-    const edit =
-        createTextButton(
-            "Edit",
-            "edit-button"
+    if (active) {
+
+        const edit =
+            createTextButton(
+                "Edit",
+                "edit-button"
+            );
+
+        edit.addEventListener(
+            "click",
+            onEdit
         );
+
+        buttons.appendChild(
+            edit
+        );
+    }
 
 
     const status =
         createTextButton(
             active
                 ? "Deactivate"
-                : "Activate",
+                : "Reactivate",
 
-            "status-button"
+            active
+                ? "status-button"
+                : "status-button positive-action-button"
         );
-
-
-    edit.addEventListener(
-        "click",
-        onEdit
-    );
 
     status.addEventListener(
         "click",
         onToggle
     );
 
+    buttons.appendChild(
+        status
+    );
 
-    buttons.appendChild(edit);
-    buttons.appendChild(status);
+
+    if (
+        !active &&
+        onDelete
+    ) {
+
+        const remove =
+            createTextButton(
+                "Delete Permanently",
+                "delete-permanently-button"
+            );
+
+        remove.addEventListener(
+            "click",
+            onDelete
+        );
+
+        buttons.appendChild(
+            remove
+        );
+    }
 
 
     return buttons;
+}
+
+
+
+function applySemanticActionButtonStyle(
+    button,
+    label
+) {
+
+    if (!button) {
+        return;
+    }
+
+    const normalized =
+        String(
+            label ||
+            button.textContent ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+    button.classList.add(
+        "inline-action-button"
+    );
+
+    if (
+        normalized === "edit" ||
+        normalized.startsWith("log ")
+    ) {
+
+        button.classList.add(
+            "edit-button"
+        );
+
+        return;
+    }
+
+    if (
+        normalized === "paid" ||
+        normalized === "reactivate" ||
+        normalized === "reopen" ||
+        normalized === "restore"
+    ) {
+
+        button.classList.add(
+            "positive-action-button"
+        );
+
+        return;
+    }
+
+    if (
+        normalized.includes("delete") ||
+        normalized === "remove"
+    ) {
+
+        button.classList.add(
+            "delete-permanently-button"
+        );
+
+        return;
+    }
+
+    if (
+        normalized === "skip" ||
+        normalized === "pause" ||
+        normalized === "deactivate"
+    ) {
+
+        button.classList.add(
+            "status-button"
+        );
+    }
 }
 
 
@@ -13406,7 +16089,7 @@ function createManagementButtons(
 
 function createTextButton(
     text,
-    className
+    className = ""
 ) {
 
     const button =
@@ -13418,10 +16101,20 @@ function createTextButton(
         "button";
 
     button.className =
-        className;
+        [
+            "inline-action-button",
+            className
+        ]
+            .filter(Boolean)
+            .join(" ");
 
     button.textContent =
         text;
+
+    applySemanticActionButtonStyle(
+        button,
+        text
+    );
 
     return button;
 }
@@ -13509,6 +16202,4101 @@ function getIncomeSourceName(id) {
             item.id === id
     )?.name;
 }
+
+
+
+
+// ======================================================
+// SMART INSIGHTS
+// ======================================================
+
+function getInsightMonthRange(offset = 0) {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    const endDate = new Date(now.getFullYear(), now.getMonth() + offset + 1, 1);
+
+    const toKey = date => [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        String(date.getDate()).padStart(2, "0")
+    ].join("-");
+
+    return {
+        start: toKey(startDate),
+        end: toKey(endDate)
+    };
+}
+
+
+function getInsightRangeTransactions(start, end) {
+    return transactions.filter(
+        item =>
+            item.transaction_date >= start &&
+            item.transaction_date < end
+    );
+}
+
+
+function getInsightTotals(rows) {
+    const income = rows
+        .filter(item => item.type === "income")
+        .reduce((total, item) => total + Number(item.amount), 0);
+
+    const expenses = rows
+        .filter(item => item.type === "expense")
+        .reduce((total, item) => total + Number(item.amount), 0);
+
+    return {
+        income,
+        expenses,
+        net: income - expenses
+    };
+}
+
+
+function getInsightBudgetRows(currentRows) {
+    const monthStart = getInsightMonthRange(0).start;
+
+    return budgets
+        .filter(budget => budget.month_start === monthStart)
+        .map(budget => {
+            const spent = currentRows
+                .filter(item =>
+                    item.type === "expense" &&
+                    item.category_id === budget.category_id
+                )
+                .reduce((total, item) => total + Number(item.amount), 0);
+
+            const category = categories.find(item => item.id === budget.category_id);
+            const limit = Number(budget.amount);
+
+            return {
+                categoryName: category?.name || "Unknown Category",
+                spent,
+                limit,
+                percent: limit > 0 ? spent / limit * 100 : 0
+            };
+        });
+}
+
+
+function getInsightTopCategory(currentRows) {
+    const totals = new Map();
+
+    currentRows
+        .filter(item => item.type === "expense")
+        .forEach(item => {
+            const name =
+                categories.find(category => category.id === item.category_id)?.name
+                || "Uncategorized";
+
+            totals.set(
+                name,
+                (totals.get(name) || 0) + Number(item.amount)
+            );
+        });
+
+    return Array.from(totals.entries())
+        .sort((a, b) => b[1] - a[1])[0] || null;
+}
+
+
+function getInsightRecurringExpense() {
+    return recurringTransactions
+        .filter(item => item.is_active && item.type === "expense")
+        .reduce(
+            (total, item) => total + recurringMonthlyEquivalent(item),
+            0
+        );
+}
+
+
+function getInsightUnusualTransactions() {
+    const current = getInsightMonthRange(0);
+    const historyStart = getInsightMonthRange(-3).start;
+
+    const history = getInsightRangeTransactions(historyStart, current.start)
+        .filter(item => item.type === "expense");
+
+    const currentExpenses = getInsightRangeTransactions(current.start, current.end)
+        .filter(item => item.type === "expense");
+
+    const byCategory = new Map();
+
+    history.forEach(item => {
+        const key = item.category_id || "uncategorized";
+
+        if (!byCategory.has(key)) {
+            byCategory.set(key, []);
+        }
+
+        byCategory.get(key).push(Number(item.amount));
+    });
+
+    return currentExpenses
+        .map(item => {
+            const historyAmounts =
+                byCategory.get(item.category_id || "uncategorized") || [];
+
+            if (historyAmounts.length < 2) {
+                return null;
+            }
+
+            const average =
+                historyAmounts.reduce((total, amount) => total + amount, 0)
+                / historyAmounts.length;
+
+            const amount = Number(item.amount);
+
+            if (
+                average <= 0 ||
+                amount < average * 1.75 ||
+                amount - average < 10
+            ) {
+                return null;
+            }
+
+            return {
+                transaction: item,
+                average,
+                multiple: amount / average
+            };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.multiple - a.multiple)
+        .slice(0, 5);
+}
+
+
+function buildSmartInsightData() {
+    const currentRange = getInsightMonthRange(0);
+    const previousRange = getInsightMonthRange(-1);
+
+    const currentRows =
+        getInsightRangeTransactions(currentRange.start, currentRange.end);
+
+    const previousRows =
+        getInsightRangeTransactions(previousRange.start, previousRange.end);
+
+    const currentTotals = getInsightTotals(currentRows);
+    const previousTotals = getInsightTotals(previousRows);
+
+    const savingsRate =
+        currentTotals.income > 0
+            ? currentTotals.net / currentTotals.income * 100
+            : 0;
+
+    const spendingTrend =
+        previousTotals.expenses > 0
+            ? (currentTotals.expenses - previousTotals.expenses)
+                / previousTotals.expenses * 100
+            : currentTotals.expenses > 0
+                ? 100
+                : 0;
+
+    const recurringExpenses = getInsightRecurringExpense();
+
+    const recurringShare =
+        currentTotals.expenses > 0
+            ? recurringExpenses / currentTotals.expenses * 100
+            : 0;
+
+    const expenseBase =
+        currentTotals.expenses > 0
+            ? currentTotals.expenses
+            : previousTotals.expenses;
+
+    const emergencyReadiness =
+        expenseBase > 0
+            ? Math.max(0, getCurrentTotalBalance() / expenseBase)
+            : 0;
+
+    return {
+        currentRows,
+        previousRows,
+        currentTotals,
+        previousTotals,
+        savingsRate,
+        spendingTrend,
+        recurringExpenses,
+        recurringShare,
+        emergencyReadiness,
+        topCategory: getInsightTopCategory(currentRows),
+        budgetRows: getInsightBudgetRows(currentRows),
+        unusual: getInsightUnusualTransactions()
+    };
+}
+
+
+function buildPriorityInsights(data) {
+    const insights = [];
+
+    if (data.currentTotals.income > 0) {
+        if (data.savingsRate < 0) {
+            insights.push({
+                severity: "danger",
+                score: 100,
+                title: "Negative cash flow this month",
+                message: `Your expenses are ${formatMoney(Math.abs(data.currentTotals.net))} higher than your income. Review non-essential spending first.`
+            });
+        } else if (data.savingsRate < 10) {
+            insights.push({
+                severity: "warning",
+                score: 80,
+                title: "Savings rate is low",
+                message: `You are currently keeping ${data.savingsRate.toFixed(1)}% of your income after expenses.`
+            });
+        } else if (data.savingsRate >= 20) {
+            insights.push({
+                severity: "positive",
+                score: 30,
+                title: "Healthy savings rate",
+                message: `You are keeping ${data.savingsRate.toFixed(1)}% of your income this month.`
+            });
+        }
+    }
+
+    const overBudget = data.budgetRows
+        .filter(item => item.percent > 100)
+        .sort((a, b) => b.percent - a.percent)[0];
+
+    const nearBudget = data.budgetRows
+        .filter(item => item.percent >= 80 && item.percent <= 100)
+        .sort((a, b) => b.percent - a.percent)[0];
+
+    if (overBudget) {
+        insights.push({
+            severity: "danger",
+            score: 95,
+            title: `${overBudget.categoryName} is over budget`,
+            message: `You have used ${overBudget.percent.toFixed(1)}% of this category's monthly budget.`
+        });
+    } else if (nearBudget) {
+        insights.push({
+            severity: "warning",
+            score: 75,
+            title: `${nearBudget.categoryName} is close to its limit`,
+            message: `${nearBudget.percent.toFixed(1)}% of the monthly budget has already been used.`
+        });
+    }
+
+    if (data.previousTotals.expenses > 0 && data.spendingTrend > 20) {
+        insights.push({
+            severity: "warning",
+            score: 70,
+            title: "Spending increased from last month",
+            message: `Expenses are up ${data.spendingTrend.toFixed(1)}% compared with the previous month.`
+        });
+    }
+
+    if (data.currentTotals.expenses > 0 && data.recurringShare > 50) {
+        insights.push({
+            severity: "warning",
+            score: 65,
+            title: "Recurring commitments are taking a large share",
+            message: `Active recurring expenses equal about ${data.recurringShare.toFixed(1)}% of this month's spending.`
+        });
+    }
+
+    if (data.emergencyReadiness > 0 && data.emergencyReadiness < 3) {
+        insights.push({
+            severity: "warning",
+            score: 85,
+            title: "Emergency buffer looks thin",
+            message: `Your current balances cover roughly ${data.emergencyReadiness.toFixed(1)} months of recent spending.`
+        });
+    } else if (data.emergencyReadiness >= 6) {
+        insights.push({
+            severity: "positive",
+            score: 25,
+            title: "Strong emergency-fund coverage",
+            message: `Your current balances could cover about ${data.emergencyReadiness.toFixed(1)} months of recent spending.`
+        });
+    }
+
+    if (data.unusual.length) {
+        const first = data.unusual[0];
+
+        insights.push({
+            severity: "warning",
+            score: 60,
+            title: "Unusually high transaction detected",
+            message: `${first.transaction.description} was ${first.multiple.toFixed(1)}× your recent average for that category.`
+        });
+    }
+
+    if (!insights.length) {
+        insights.push({
+            severity: "positive",
+            score: 10,
+            title: "No major issues detected",
+            message: "Your recorded finances do not currently show a strong budget, spending or cash-flow warning."
+        });
+    }
+
+    return insights
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+}
+
+
+function renderPriorityInsights(data) {
+    if (!priorityInsightsList) {
+        return;
+    }
+
+    priorityInsightsList.innerHTML = "";
+
+    buildPriorityInsights(data).forEach(insight => {
+        const card = document.createElement("article");
+        card.className = `priority-insight-card ${insight.severity}`;
+
+        const indicator = document.createElement("span");
+        indicator.className = "priority-insight-indicator";
+        indicator.textContent =
+            insight.severity === "danger"
+                ? "!"
+                : insight.severity === "warning"
+                    ? "•"
+                    : "✓";
+
+        const copy = document.createElement("div");
+        const title = document.createElement("strong");
+        const message = document.createElement("p");
+
+        title.textContent = insight.title;
+        message.textContent = insight.message;
+
+        copy.append(title, message);
+        card.append(indicator, copy);
+        priorityInsightsList.appendChild(card);
+    });
+}
+
+
+function renderInsightSnapshot(data) {
+    if (!insightSpendingSnapshot) {
+        return;
+    }
+
+    insightSpendingSnapshot.innerHTML = "";
+
+    const rows = [
+        ["Income this month", formatMoney(data.currentTotals.income), "income"],
+        ["Expenses this month", formatMoney(data.currentTotals.expenses), "expense"],
+        ["Net cash flow", formatMoney(data.currentTotals.net), data.currentTotals.net >= 0 ? "income" : "expense"],
+        ["Top spending category", data.topCategory ? `${data.topCategory[0]} • ${formatMoney(data.topCategory[1])}` : "No expense data", ""]
+    ];
+
+    rows.forEach(([labelText, valueText, className]) => {
+        const row = document.createElement("div");
+        const label = document.createElement("span");
+        const value = document.createElement("strong");
+
+        label.textContent = labelText;
+        value.textContent = valueText;
+
+        if (className) {
+            value.classList.add(className);
+        }
+
+        row.append(label, value);
+        insightSpendingSnapshot.appendChild(row);
+    });
+}
+
+
+function renderInsightBudgetRisk(data) {
+    if (!insightBudgetRiskList) {
+        return;
+    }
+
+    insightBudgetRiskList.innerHTML = "";
+
+    const risky = data.budgetRows
+        .filter(row => row.percent >= 70)
+        .sort((a, b) => b.percent - a.percent);
+
+    if (!risky.length) {
+        insightBudgetRiskList.textContent =
+            data.budgetRows.length
+                ? "No budget category is currently above 70% usage."
+                : "No budgets are configured for the current month.";
+        return;
+    }
+
+    risky.forEach(row => {
+        const element = document.createElement("div");
+        element.className = "insight-detail-row";
+
+        const copy = document.createElement("div");
+        const title = document.createElement("strong");
+        const description = document.createElement("span");
+        const percent = document.createElement("strong");
+
+        title.textContent = row.categoryName;
+        description.textContent = `${formatMoney(row.spent)} of ${formatMoney(row.limit)}`;
+        percent.textContent = `${row.percent.toFixed(1)}%`;
+        percent.className = row.percent > 100 ? "expense" : "warning-text";
+
+        copy.append(title, description);
+        element.append(copy, percent);
+        insightBudgetRiskList.appendChild(element);
+    });
+}
+
+
+function renderInsightUnusual(data) {
+    if (!insightUnusualSpendingList) {
+        return;
+    }
+
+    insightUnusualSpendingList.innerHTML = "";
+
+    if (!data.unusual.length) {
+        insightUnusualSpendingList.textContent =
+            "No clearly unusual spending was detected from the available recent history.";
+        return;
+    }
+
+    data.unusual.forEach(item => {
+        const element = document.createElement("div");
+        element.className = "insight-detail-row";
+
+        const copy = document.createElement("div");
+        const title = document.createElement("strong");
+        const description = document.createElement("span");
+        const amount = document.createElement("strong");
+
+        const category =
+            categories.find(row => row.id === item.transaction.category_id)?.name
+            || "Uncategorized";
+
+        title.textContent = item.transaction.description;
+        description.textContent = `${category} • recent average ${formatMoney(item.average)}`;
+        amount.textContent = formatMoney(item.transaction.amount);
+        amount.className = "expense";
+
+        copy.append(title, description);
+        element.append(copy, amount);
+        insightUnusualSpendingList.appendChild(element);
+    });
+}
+
+
+function renderInsightMonthlySummary(data) {
+    if (!insightMonthlySummary) {
+        return;
+    }
+
+    insightMonthlySummary.innerHTML = "";
+
+    const trendText =
+        data.previousTotals.expenses > 0
+            ? data.spendingTrend > 0
+                ? `Spending increased ${Math.abs(data.spendingTrend).toFixed(1)}% from last month.`
+                : data.spendingTrend < 0
+                    ? `Spending decreased ${Math.abs(data.spendingTrend).toFixed(1)}% from last month.`
+                    : "Spending is unchanged from last month."
+            : "There is not enough previous-month spending data for a comparison.";
+
+    const categoryText =
+        data.topCategory
+            ? `${data.topCategory[0]} is your largest expense category this month at ${formatMoney(data.topCategory[1])}.`
+            : "No expense category has been recorded this month.";
+
+    [
+        `Income: ${formatMoney(data.currentTotals.income)} • Expenses: ${formatMoney(data.currentTotals.expenses)} • Net: ${formatMoney(data.currentTotals.net)}.`,
+        trendText,
+        categoryText,
+        `Active recurring expenses are estimated at ${formatMoney(data.recurringExpenses)} per month.`
+    ].forEach(text => {
+        const row = document.createElement("p");
+        row.textContent = text;
+        insightMonthlySummary.appendChild(row);
+    });
+}
+
+
+function renderDashboardInsights(data) {
+    if (!dashboardInsightsPreview) {
+        return;
+    }
+
+    dashboardInsightsPreview.innerHTML = "";
+
+    buildPriorityInsights(data)
+        .slice(0, 3)
+        .forEach(insight => {
+            const row = document.createElement("div");
+            row.className = `dashboard-insight-row ${insight.severity}`;
+
+            const dot = document.createElement("span");
+            dot.className = "dashboard-insight-dot";
+
+            const copy = document.createElement("div");
+            const title = document.createElement("strong");
+            const message = document.createElement("span");
+
+            title.textContent = insight.title;
+            message.textContent = insight.message;
+
+            copy.append(title, message);
+            row.append(dot, copy);
+            dashboardInsightsPreview.appendChild(row);
+        });
+}
+
+
+function renderSmartInsights() {
+    if (
+        !insightSavingsRate ||
+        !insightSpendingTrend ||
+        !insightRecurringShare ||
+        !insightEmergencyReadiness
+    ) {
+        return;
+    }
+
+    const data = buildSmartInsightData();
+
+    insightSavingsRate.textContent = `${data.savingsRate.toFixed(1)}%`;
+    insightSavingsRate.classList.toggle("income", data.savingsRate >= 20);
+    insightSavingsRate.classList.toggle("expense", data.savingsRate < 0);
+
+    insightSpendingTrend.textContent =
+        `${data.spendingTrend > 0 ? "+" : ""}${data.spendingTrend.toFixed(1)}%`;
+    insightSpendingTrend.classList.toggle("expense", data.spendingTrend > 20);
+    insightSpendingTrend.classList.toggle("income", data.spendingTrend < 0);
+
+    insightRecurringShare.textContent = `${data.recurringShare.toFixed(1)}%`;
+
+    insightEmergencyReadiness.textContent =
+        `${data.emergencyReadiness.toFixed(1)} months`;
+    insightEmergencyReadiness.classList.toggle(
+        "income",
+        data.emergencyReadiness >= 6
+    );
+    insightEmergencyReadiness.classList.toggle(
+        "expense",
+        data.emergencyReadiness > 0 && data.emergencyReadiness < 3
+    );
+
+    renderPriorityInsights(data);
+    renderInsightSnapshot(data);
+    renderInsightBudgetRisk(data);
+    renderInsightUnusual(data);
+    renderInsightMonthlySummary(data);
+    renderDashboardInsights(data);
+}
+
+
+// ======================================================
+// GOALS & PLANNING
+// ======================================================
+
+async function loadSavingsGoals() {
+
+    if (!currentUser) {
+
+        savingsGoals = [];
+
+        return;
+    }
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("savings_goals")
+            .select("*")
+            .order(
+                "created_at",
+                {
+                    ascending: true
+                }
+            );
+
+    if (error) {
+
+        console.error(
+            "Load savings goals error:",
+            error
+        );
+
+        if (goalMessage) {
+            goalMessage.textContent =
+                error.message;
+        }
+
+        return;
+    }
+
+    savingsGoals =
+        data || [];
+
+    renderSavingsGoals();
+    renderGoalsOverview();
+    renderDashboardGoalsSummary();
+}
+
+
+function refreshGoalAccountOptions(
+    selectedValue = null
+) {
+
+    if (!goalAccountSelect) {
+        return;
+    }
+
+    const current =
+        selectedValue !== null
+            ? selectedValue
+            : goalAccountSelect.value;
+
+    goalAccountSelect.innerHTML =
+        '<option value="">No linked account</option>';
+
+    accounts
+        .filter(
+            account =>
+                account.is_active ||
+                account.id === current
+        )
+        .forEach(
+            function (account) {
+
+                addSelectOption(
+                    goalAccountSelect,
+                    account.id,
+                    account.name
+                );
+            }
+        );
+
+    goalAccountSelect.value =
+        current || "";
+}
+
+
+function getGoalProgress(goal) {
+
+    const target =
+        Number(
+            goal.target_amount
+        );
+
+    const current =
+        Number(
+            goal.current_amount
+        );
+
+    if (
+        !Number.isFinite(target) ||
+        target <= 0
+    ) {
+        return 0;
+    }
+
+    return Math.max(
+        0,
+        Math.min(
+            100,
+            current /
+            target *
+            100
+        )
+    );
+}
+
+
+function getGoalRemaining(goal) {
+
+    return Math.max(
+        0,
+        Number(
+            goal.target_amount
+        )
+        -
+        Number(
+            goal.current_amount
+        )
+    );
+}
+
+
+function getGoalTimeText(goal) {
+
+    if (!goal.target_date) {
+        return "No target date";
+    }
+
+    const today =
+        new Date();
+
+    today.setHours(
+        0,
+        0,
+        0,
+        0
+    );
+
+    const target =
+        new Date(
+            `${goal.target_date}T00:00:00`
+        );
+
+    const days =
+        Math.ceil(
+            (
+                target -
+                today
+            )
+            /
+            86400000
+        );
+
+    if (
+        goal.status ===
+        "completed"
+    ) {
+        return `Target date ${formatDate(goal.target_date)}`;
+    }
+
+    if (days < 0) {
+        return `${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} overdue`;
+    }
+
+    if (days === 0) {
+        return "Due today";
+    }
+
+    return `${days} day${days === 1 ? "" : "s"} remaining`;
+}
+
+
+function renderGoalsOverview() {
+
+    if (
+        !goalsActiveCount ||
+        !goalsTotalSaved ||
+        !goalsTotalTarget ||
+        !goalsOverallProgress
+    ) {
+        return;
+    }
+
+    const active =
+        savingsGoals.filter(
+            goal =>
+                goal.status ===
+                "active"
+        );
+
+    const totalSaved =
+        active.reduce(
+            (
+                total,
+                goal
+            ) =>
+                total +
+                Number(
+                    goal.current_amount
+                ),
+            0
+        );
+
+    const totalTarget =
+        active.reduce(
+            (
+                total,
+                goal
+            ) =>
+                total +
+                Number(
+                    goal.target_amount
+                ),
+            0
+        );
+
+    const overall =
+        totalTarget > 0
+            ? Math.min(
+                100,
+                totalSaved /
+                totalTarget *
+                100
+            )
+            : 0;
+
+    goalsActiveCount.textContent =
+        String(
+            active.length
+        );
+
+    goalsTotalSaved.textContent =
+        formatMoney(
+            totalSaved
+        );
+
+    goalsTotalTarget.textContent =
+        formatMoney(
+            totalTarget
+        );
+
+    goalsOverallProgress.textContent =
+        `${overall.toFixed(1)}%`;
+}
+
+
+function renderSavingsGoals() {
+
+    if (!goalsList) {
+        return;
+    }
+
+    goalsList.innerHTML =
+        "";
+
+    if (!savingsGoals.length) {
+
+        renderEmptyState(
+            goalsList,
+            "No savings goals yet."
+        );
+
+        return;
+    }
+
+    const ordered =
+        [
+            ...savingsGoals
+        ].sort(
+            (
+                first,
+                second
+            ) => {
+
+                const statusOrder = {
+                    active: 0,
+                    paused: 1,
+                    completed: 2
+                };
+
+                const statusDifference =
+                    (
+                        statusOrder[first.status] ??
+                        9
+                    )
+                    -
+                    (
+                        statusOrder[second.status] ??
+                        9
+                    );
+
+                if (statusDifference !== 0) {
+                    return statusDifference;
+                }
+
+                if (
+                    first.target_date &&
+                    second.target_date
+                ) {
+                    return first.target_date
+                        .localeCompare(
+                            second.target_date
+                        );
+                }
+
+                return 0;
+            }
+        );
+
+    ordered.forEach(
+        function (goal) {
+
+            const card =
+                document.createElement(
+                    "article"
+                );
+
+            card.className =
+                "goal-card";
+
+            card.dataset.status =
+                goal.status;
+
+
+            const header =
+                document.createElement(
+                    "div"
+                );
+
+            header.className =
+                "goal-card-header";
+
+
+            const copy =
+                document.createElement(
+                    "div"
+                );
+
+            copy.className =
+                "goal-card-copy";
+
+
+            const titleRow =
+                document.createElement(
+                    "div"
+                );
+
+            titleRow.className =
+                "goal-title-row";
+
+
+            const name =
+                document.createElement(
+                    "h3"
+                );
+
+            name.textContent =
+                goal.name;
+
+
+            const badge =
+                document.createElement(
+                    "span"
+                );
+
+            badge.className =
+                `goal-status-badge ${goal.status}`;
+
+            badge.textContent =
+                goal.status ===
+                    "completed"
+                    ? "Completed"
+                    : goal.status ===
+                        "paused"
+                        ? "Paused"
+                        : "Active";
+
+
+            titleRow.append(
+                name,
+                badge
+            );
+
+
+            const meta =
+                document.createElement(
+                    "p"
+                );
+
+            const account =
+                goal.account_id
+                    ? accounts.find(
+                        item =>
+                            item.id ===
+                            goal.account_id
+                    )?.name
+                    : null;
+
+            meta.textContent =
+                [
+                    getGoalTimeText(goal),
+                    account
+                        ? `Linked to ${account}`
+                        : null
+                ]
+                    .filter(Boolean)
+                    .join(" • ");
+
+
+            copy.append(
+                titleRow,
+                meta
+            );
+
+
+            const amount =
+                document.createElement(
+                    "div"
+                );
+
+            amount.className =
+                "goal-card-amount";
+
+            amount.innerHTML =
+                `<strong>${formatMoney(goal.current_amount)}</strong><span>of ${formatMoney(goal.target_amount)}</span>`;
+
+
+            header.append(
+                copy,
+                amount
+            );
+
+
+            const progress =
+                getGoalProgress(
+                    goal
+                );
+
+
+            const progressHeader =
+                document.createElement(
+                    "div"
+                );
+
+            progressHeader.className =
+                "goal-progress-header";
+
+
+            const progressText =
+                document.createElement(
+                    "span"
+                );
+
+            progressText.textContent =
+                `${progress.toFixed(1)}% complete`;
+
+
+            const remainingText =
+                document.createElement(
+                    "span"
+                );
+
+            remainingText.textContent =
+                getGoalRemaining(goal) > 0
+                    ? `${formatMoney(getGoalRemaining(goal))} remaining`
+                    : "Target reached";
+
+
+            progressHeader.append(
+                progressText,
+                remainingText
+            );
+
+
+            const track =
+                document.createElement(
+                    "div"
+                );
+
+            track.className =
+                "goal-progress-track";
+
+
+            const fill =
+                document.createElement(
+                    "div"
+                );
+
+            fill.className =
+                "goal-progress-fill";
+
+            fill.style.width =
+                `${progress}%`;
+
+            track.appendChild(
+                fill
+            );
+
+
+            if (
+                goal.notes &&
+                goal.notes.trim()
+            ) {
+
+                const notes =
+                    document.createElement(
+                        "p"
+                    );
+
+                notes.className =
+                    "goal-card-notes";
+
+                notes.textContent =
+                    goal.notes;
+
+                card.append(
+                    header,
+                    progressHeader,
+                    track,
+                    notes
+                );
+
+            } else {
+
+                card.append(
+                    header,
+                    progressHeader,
+                    track
+                );
+            }
+
+
+            const actions =
+                document.createElement(
+                    "div"
+                );
+
+            actions.className =
+                "goal-card-actions";
+
+
+            if (
+                goal.status !==
+                "completed"
+            ) {
+
+                const edit =
+                    createTextButton(
+                        "Edit",
+                        "edit-button"
+                    );
+
+                edit.addEventListener(
+                    "click",
+                    () =>
+                        editSavingsGoal(
+                            goal
+                        )
+                );
+
+                actions.appendChild(
+                    edit
+                );
+            }
+
+
+            if (
+                goal.status ===
+                "active"
+            ) {
+
+                const pause =
+                    createTextButton(
+                        "Pause",
+                        "status-button"
+                    );
+
+                pause.addEventListener(
+                    "click",
+                    () =>
+                        updateGoalStatus(
+                            goal,
+                            "paused"
+                        )
+                );
+
+                actions.appendChild(
+                    pause
+                );
+            }
+
+
+            if (
+                goal.status ===
+                "paused"
+            ) {
+
+                const reactivate =
+                    createTextButton(
+                        "Reactivate",
+                        "status-button positive-action-button"
+                    );
+
+                reactivate.addEventListener(
+                    "click",
+                    () =>
+                        updateGoalStatus(
+                            goal,
+                            "active"
+                        )
+                );
+
+                actions.appendChild(
+                    reactivate
+                );
+            }
+
+
+            if (
+                goal.status ===
+                "completed"
+            ) {
+
+                const reopen =
+                    createTextButton(
+                        "Reopen",
+                        "status-button positive-action-button"
+                    );
+
+                reopen.addEventListener(
+                    "click",
+                    () =>
+                        updateGoalStatus(
+                            goal,
+                            "active"
+                        )
+                );
+
+                actions.appendChild(
+                    reopen
+                );
+            }
+
+
+            if (
+                goal.status !==
+                "active"
+            ) {
+
+                const remove =
+                    createTextButton(
+                        "Delete Permanently",
+                        "delete-permanently-button"
+                    );
+
+                remove.addEventListener(
+                    "click",
+                    () =>
+                        deleteSavingsGoal(
+                            goal
+                        )
+                );
+
+                actions.appendChild(
+                    remove
+                );
+            }
+
+
+            card.appendChild(
+                actions
+            );
+
+            goalsList.appendChild(
+                card
+            );
+        }
+    );
+}
+
+
+function resetGoalForm() {
+
+    if (!goalForm) {
+        return;
+    }
+
+    goalForm.reset();
+
+    editingGoalId =
+        null;
+
+    goalCurrentAmountInput.value =
+        "0";
+
+    goalFormTitle.textContent =
+        "Add Savings Goal";
+
+    saveGoalButton.textContent =
+        "+ Add Goal";
+
+    cancelGoalEditButton.style.display =
+        "none";
+
+    goalMessage.textContent =
+        "";
+
+    refreshGoalAccountOptions(
+        ""
+    );
+}
+
+
+function editSavingsGoal(
+    goal
+) {
+
+    if (!goal) {
+        return;
+    }
+
+    editingGoalId =
+        goal.id;
+
+    goalNameInput.value =
+        goal.name;
+
+    goalTargetAmountInput.value =
+        goal.target_amount;
+
+    goalCurrentAmountInput.value =
+        goal.current_amount;
+
+    goalTargetDateInput.value =
+        goal.target_date ||
+        "";
+
+    goalNotesInput.value =
+        goal.notes ||
+        "";
+
+    refreshGoalAccountOptions(
+        goal.account_id ||
+        ""
+    );
+
+    goalFormTitle.textContent =
+        "Edit Savings Goal";
+
+    saveGoalButton.textContent =
+        "Save Changes";
+
+    cancelGoalEditButton.style.display =
+        "block";
+
+    scrollToFormAndFocus(
+        goalForm,
+        goalNameInput
+    );
+}
+
+
+async function updateGoalStatus(
+    goal,
+    status
+) {
+
+    if (!goal) {
+        return;
+    }
+
+    const {
+        error
+    } =
+        await supabase
+            .from("savings_goals")
+            .update({
+                status
+            })
+            .eq(
+                "id",
+                goal.id
+            );
+
+    if (error) {
+
+        alert(
+            error.message
+        );
+
+        return;
+    }
+
+    if (
+        editingGoalId ===
+        goal.id
+    ) {
+        resetGoalForm();
+    }
+
+    await loadSavingsGoals();
+}
+
+
+async function deleteSavingsGoal(
+    goal
+) {
+
+    if (
+        !goal ||
+        goal.status ===
+            "active"
+    ) {
+        return;
+    }
+
+    const confirmed =
+        confirm(
+            `Delete savings goal "${goal.name}" permanently?\n\nThis cannot be undone.`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const {
+        error
+    } =
+        await supabase
+            .from("savings_goals")
+            .delete()
+            .eq(
+                "id",
+                goal.id
+            );
+
+    if (error) {
+
+        alert(
+            error.message
+        );
+
+        return;
+    }
+
+    if (
+        editingGoalId ===
+        goal.id
+    ) {
+        resetGoalForm();
+    }
+
+    await loadSavingsGoals();
+}
+
+
+goalForm
+    ?.addEventListener(
+        "submit",
+        async function (event) {
+
+            event.preventDefault();
+
+            if (!currentUser) {
+                return;
+            }
+
+            const name =
+                goalNameInput.value
+                    .trim();
+
+            const targetAmount =
+                Number(
+                    goalTargetAmountInput.value
+                );
+
+            const currentAmount =
+                Number(
+                    goalCurrentAmountInput.value
+                );
+
+            const targetDate =
+                goalTargetDateInput.value ||
+                null;
+
+            const accountId =
+                goalAccountSelect.value ||
+                null;
+
+            const notes =
+                goalNotesInput.value
+                    .trim() ||
+                null;
+
+
+            if (
+                !name ||
+                !Number.isFinite(
+                    targetAmount
+                ) ||
+                targetAmount <= 0 ||
+                !Number.isFinite(
+                    currentAmount
+                ) ||
+                currentAmount < 0
+            ) {
+
+                goalMessage.textContent =
+                    "Enter a valid goal name, target amount and saved amount.";
+
+                return;
+            }
+
+
+            const status =
+                currentAmount >=
+                    targetAmount
+                    ? "completed"
+                    : (
+                        savingsGoals.find(
+                            goal =>
+                                goal.id ===
+                                editingGoalId
+                        )?.status ===
+                            "paused"
+                            ? "paused"
+                            : "active"
+                    );
+
+
+            saveGoalButton.disabled =
+                true;
+
+            goalMessage.textContent =
+                editingGoalId
+                    ? "Saving changes..."
+                    : "Adding goal...";
+
+
+            let result;
+
+            if (!editingGoalId) {
+
+                result =
+                    await supabase
+                        .from(
+                            "savings_goals"
+                        )
+                        .insert({
+                            user_id:
+                                currentUser.id,
+                            name,
+                            target_amount:
+                                targetAmount,
+                            current_amount:
+                                currentAmount,
+                            target_date:
+                                targetDate,
+                            account_id:
+                                accountId,
+                            status,
+                            notes
+                        });
+
+            } else {
+
+                result =
+                    await supabase
+                        .from(
+                            "savings_goals"
+                        )
+                        .update({
+                            name,
+                            target_amount:
+                                targetAmount,
+                            current_amount:
+                                currentAmount,
+                            target_date:
+                                targetDate,
+                            account_id:
+                                accountId,
+                            status,
+                            notes
+                        })
+                        .eq(
+                            "id",
+                            editingGoalId
+                        );
+            }
+
+
+            saveGoalButton.disabled =
+                false;
+
+
+            if (result.error) {
+
+                goalMessage.textContent =
+                    result.error.message;
+
+                return;
+            }
+
+
+            const wasEditing =
+                editingGoalId !==
+                null;
+
+
+            resetGoalForm();
+
+            await loadSavingsGoals();
+
+
+            showTransactionSuccessSnackbar({
+                title:
+                    wasEditing
+                        ? "Goal updated"
+                        : (
+                            status ===
+                                "completed"
+                                ? "Goal completed"
+                                : "Goal added"
+                        ),
+                message:
+                    status ===
+                        "completed"
+                        ? "Your savings target has been reached."
+                        : "Your savings goal was saved successfully."
+            });
+        }
+    );
+
+
+cancelGoalEditButton
+    ?.addEventListener(
+        "click",
+        resetGoalForm
+    );
+
+
+function renderDashboardGoalsSummary() {
+
+    if (!dashboardGoalsSummary) {
+        return;
+    }
+
+    dashboardGoalsSummary.innerHTML =
+        "";
+
+    const active =
+        savingsGoals
+            .filter(
+                goal =>
+                    goal.status ===
+                    "active"
+            )
+            .sort(
+                (
+                    first,
+                    second
+                ) => {
+
+                    if (
+                        first.target_date &&
+                        second.target_date
+                    ) {
+                        return first.target_date
+                            .localeCompare(
+                                second.target_date
+                            );
+                    }
+
+                    if (first.target_date) {
+                        return -1;
+                    }
+
+                    if (second.target_date) {
+                        return 1;
+                    }
+
+                    return 0;
+                }
+            )
+            .slice(
+                0,
+                3
+            );
+
+
+    if (!active.length) {
+
+        dashboardGoalsSummary.textContent =
+            "No active savings goals yet.";
+
+        return;
+    }
+
+
+    const wrap =
+        document.createElement(
+            "div"
+        );
+
+    wrap.className =
+        "dashboard-goals-grid";
+
+
+    active.forEach(
+        function (goal) {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "dashboard-goal-card";
+
+
+            const top =
+                document.createElement(
+                    "div"
+                );
+
+            top.className =
+                "dashboard-goal-top";
+
+
+            const name =
+                document.createElement(
+                    "strong"
+                );
+
+            name.textContent =
+                goal.name;
+
+
+            const percent =
+                document.createElement(
+                    "span"
+                );
+
+            const progress =
+                getGoalProgress(
+                    goal
+                );
+
+            percent.textContent =
+                `${progress.toFixed(0)}%`;
+
+
+            top.append(
+                name,
+                percent
+            );
+
+
+            const amount =
+                document.createElement(
+                    "p"
+                );
+
+            amount.textContent =
+                `${formatMoney(goal.current_amount)} of ${formatMoney(goal.target_amount)}`;
+
+
+            const track =
+                document.createElement(
+                    "div"
+                );
+
+            track.className =
+                "goal-progress-track";
+
+
+            const fill =
+                document.createElement(
+                    "div"
+                );
+
+            fill.className =
+                "goal-progress-fill";
+
+            fill.style.width =
+                `${progress}%`;
+
+            track.appendChild(
+                fill
+            );
+
+
+            card.append(
+                top,
+                amount,
+                track
+            );
+
+            wrap.appendChild(
+                card
+            );
+        }
+    );
+
+
+    dashboardGoalsSummary.appendChild(
+        wrap
+    );
+}
+
+
+function getCurrentTotalBalance() {
+
+    return accounts.reduce(
+        (
+            total,
+            account
+        ) =>
+            total +
+            calculateAccountBalance(
+                account.id
+            ),
+        0
+    );
+}
+
+
+function getMonthlyRecurringNet() {
+
+    return recurringTransactions
+        .filter(
+            item =>
+                item.is_active
+        )
+        .reduce(
+            (
+                total,
+                item
+            ) => {
+
+                const monthly =
+                    recurringMonthlyEquivalent(
+                        item
+                    );
+
+                return total +
+                    (
+                        item.type ===
+                            "income"
+                            ? monthly
+                            : -monthly
+                    );
+            },
+            0
+        );
+}
+
+
+function renderEmergencyFundCalculator() {
+
+    if (
+        !emergencyMonthlyExpenses ||
+        !emergencyMonths ||
+        !emergencyFundResult
+    ) {
+        return;
+    }
+
+    const monthly =
+        Number(
+            emergencyMonthlyExpenses.value
+        );
+
+    const months =
+        Number(
+            emergencyMonths.value
+        );
+
+    const target =
+        (
+            Number.isFinite(monthly) &&
+            monthly >= 0 &&
+            Number.isFinite(months) &&
+            months > 0
+        )
+            ? monthly *
+                months
+            : 0;
+
+    emergencyFundResult.textContent =
+        formatMoney(
+            target
+        );
+}
+
+
+function renderFutureBalanceProjection() {
+
+    if (
+        !projectionMonths ||
+        !projectionCurrentBalance ||
+        !projectionMonthlyNet ||
+        !projectionResult
+    ) {
+        return;
+    }
+
+    const currentBalance =
+        getCurrentTotalBalance();
+
+    const monthlyNet =
+        getMonthlyRecurringNet();
+
+    const months =
+        Number(
+            projectionMonths.value
+        );
+
+    const projected =
+        currentBalance +
+        (
+            Number.isFinite(months)
+                ? monthlyNet *
+                    months
+                : 0
+        );
+
+    projectionCurrentBalance.textContent =
+        formatMoney(
+            currentBalance
+        );
+
+    projectionMonthlyNet.textContent =
+        formatMoney(
+            monthlyNet
+        );
+
+    projectionMonthlyNet.classList.toggle(
+        "income",
+        monthlyNet >= 0
+    );
+
+    projectionMonthlyNet.classList.toggle(
+        "expense",
+        monthlyNet < 0
+    );
+
+    projectionResult.textContent =
+        formatMoney(
+            projected
+        );
+
+    projectionResult.classList.toggle(
+        "income",
+        projected >= 0
+    );
+
+    projectionResult.classList.toggle(
+        "expense",
+        projected < 0
+    );
+}
+
+
+function renderLoanCalculator() {
+
+    if (
+        !loanPrincipal ||
+        !loanRate ||
+        !loanTermMonths ||
+        !loanMonthlyPayment ||
+        !loanTotalInterest ||
+        !loanTotalRepayment
+    ) {
+        return;
+    }
+
+    const principal =
+        Number(
+            loanPrincipal.value
+        );
+
+    const annualRate =
+        Number(
+            loanRate.value
+        );
+
+    const months =
+        Number(
+            loanTermMonths.value
+        );
+
+
+    if (
+        !Number.isFinite(principal) ||
+        principal <= 0 ||
+        !Number.isFinite(annualRate) ||
+        annualRate < 0 ||
+        !Number.isFinite(months) ||
+        months <= 0
+    ) {
+
+        loanMonthlyPayment.textContent =
+            formatMoney(0);
+
+        loanTotalInterest.textContent =
+            formatMoney(0);
+
+        loanTotalRepayment.textContent =
+            formatMoney(0);
+
+        return;
+    }
+
+
+    const monthlyRate =
+        annualRate /
+        100 /
+        12;
+
+
+    let monthlyPayment;
+
+    if (monthlyRate === 0) {
+
+        monthlyPayment =
+            principal /
+            months;
+
+    } else {
+
+        const factor =
+            Math.pow(
+                1 +
+                monthlyRate,
+                months
+            );
+
+        monthlyPayment =
+            principal *
+            monthlyRate *
+            factor /
+            (
+                factor -
+                1
+            );
+    }
+
+
+    const totalRepayment =
+        monthlyPayment *
+        months;
+
+    const totalInterest =
+        Math.max(
+            0,
+            totalRepayment -
+            principal
+        );
+
+
+    loanMonthlyPayment.textContent =
+        formatMoney(
+            monthlyPayment
+        );
+
+    loanTotalInterest.textContent =
+        formatMoney(
+            totalInterest
+        );
+
+    loanTotalRepayment.textContent =
+        formatMoney(
+            totalRepayment
+        );
+}
+
+
+function renderPlanningTools() {
+
+    renderEmergencyFundCalculator();
+    renderFutureBalanceProjection();
+    renderLoanCalculator();
+}
+
+
+[
+    emergencyMonthlyExpenses,
+    emergencyMonths
+]
+    .filter(Boolean)
+    .forEach(
+        element =>
+            element.addEventListener(
+                "input",
+                renderEmergencyFundCalculator
+            )
+    );
+
+
+projectionMonths
+    ?.addEventListener(
+        "change",
+        renderFutureBalanceProjection
+    );
+
+
+[
+    loanPrincipal,
+    loanRate,
+    loanTermMonths
+]
+    .filter(Boolean)
+    .forEach(
+        element =>
+            element.addEventListener(
+                "input",
+                renderLoanCalculator
+            )
+    );
+
+
+
+
+// ======================================================
+// SCHEDULED EMAIL REPORTS
+// ======================================================
+
+function populateScheduledReportDays() {
+
+    if (!scheduledReportDayOfMonth) {
+        return;
+    }
+
+    if (
+        scheduledReportDayOfMonth
+            .options
+            .length >
+        0
+    ) {
+        return;
+    }
+
+    for (
+        let day = 1;
+        day <= 28;
+        day += 1
+    ) {
+
+        const option =
+            document.createElement(
+                "option"
+            );
+
+        option.value =
+            String(
+                day
+            );
+
+        option.textContent =
+            day === 1
+                ? "1st of each month"
+                : `${day}th of each month`;
+
+        scheduledReportDayOfMonth
+            .appendChild(
+                option
+            );
+    }
+}
+
+
+function updateScheduledReportFrequencyFields() {
+
+    if (
+        !scheduledReportFrequency ||
+        !scheduledReportMonthlyDayGroup ||
+        !scheduledReportWeeklyDayGroup
+    ) {
+        return;
+    }
+
+    const weekly =
+        scheduledReportFrequency.value ===
+        "weekly";
+
+    scheduledReportMonthlyDayGroup.style.display =
+        weekly
+            ? "none"
+            : "block";
+
+    scheduledReportWeeklyDayGroup.style.display =
+        weekly
+            ? "block"
+            : "none";
+}
+
+
+function updateScheduledReportStatusBadge() {
+
+    if (
+        !scheduledReportStatusBadge ||
+        !scheduledReportEnabled
+    ) {
+        return;
+    }
+
+    const enabled =
+        scheduledReportEnabled.checked;
+
+    scheduledReportStatusBadge.textContent =
+        enabled
+            ? "Enabled"
+            : "Disabled";
+
+    scheduledReportStatusBadge.classList.toggle(
+        "enabled",
+        enabled
+    );
+
+    scheduledReportStatusBadge.classList.toggle(
+        "disabled",
+        !enabled
+    );
+}
+
+
+function formatScheduledReportTimestamp(
+    value
+) {
+
+    if (!value) {
+        return "Never";
+    }
+
+    const date =
+        new Date(
+            value
+        );
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return "Never";
+    }
+
+    return date.toLocaleString(
+        "en-MY",
+        {
+            dateStyle:
+                "medium",
+            timeStyle:
+                "short"
+        }
+    );
+}
+
+
+function renderReportEmailPreference() {
+
+    populateScheduledReportDays();
+
+    if (
+        !scheduledReportForm ||
+        !currentUser
+    ) {
+        return;
+    }
+
+
+    if (!reportEmailPreference) {
+
+        scheduledReportEnabled.checked =
+            false;
+
+        scheduledReportEmail.value =
+            currentUser.email ||
+            "";
+
+        scheduledReportFrequency.value =
+            "monthly";
+
+        scheduledReportDayOfMonth.value =
+            "1";
+
+        scheduledReportDayOfWeek.value =
+            "1";
+
+        scheduledReportTime.value =
+            "08:00";
+
+        scheduledReportTimezone.value =
+            "Asia/Kuala_Lumpur";
+
+        scheduledReportIncludeCsv.checked =
+            false;
+
+        scheduledReportLastSent.textContent =
+            "Last sent: Never";
+
+        scheduledReportLastError.textContent =
+            "";
+
+        updateScheduledReportFrequencyFields();
+        updateScheduledReportStatusBadge();
+
+        return;
+    }
+
+
+    scheduledReportEnabled.checked =
+        Boolean(
+            reportEmailPreference.enabled
+        );
+
+    scheduledReportEmail.value =
+        reportEmailPreference.recipient_email ||
+        currentUser.email ||
+        "";
+
+    scheduledReportFrequency.value =
+        reportEmailPreference.frequency ||
+        "monthly";
+
+    scheduledReportDayOfMonth.value =
+        String(
+            reportEmailPreference.day_of_month ||
+            1
+        );
+
+    scheduledReportDayOfWeek.value =
+        String(
+            reportEmailPreference.day_of_week ??
+            1
+        );
+
+    scheduledReportTime.value =
+        String(
+            reportEmailPreference.send_time ||
+            "08:00"
+        )
+            .slice(
+                0,
+                5
+            );
+
+    scheduledReportTimezone.value =
+        reportEmailPreference.timezone ||
+        "Asia/Kuala_Lumpur";
+
+    scheduledReportIncludeCsv.checked =
+        Boolean(
+            reportEmailPreference.include_excel
+        );
+
+
+    scheduledReportLastSent.textContent =
+        `Last sent: ${formatScheduledReportTimestamp(reportEmailPreference.last_sent_at)}`;
+
+
+    if (
+        reportEmailPreference.last_error
+    ) {
+
+        scheduledReportLastError.textContent =
+            `Last error: ${reportEmailPreference.last_error}`;
+
+        scheduledReportLastError.classList.add(
+            "error"
+        );
+
+    } else {
+
+        scheduledReportLastError.textContent =
+            "";
+
+        scheduledReportLastError.classList.remove(
+            "error"
+        );
+    }
+
+
+    updateScheduledReportFrequencyFields();
+    updateScheduledReportStatusBadge();
+}
+
+
+async function loadReportEmailPreference() {
+
+    if (!currentUser) {
+
+        reportEmailPreference =
+            null;
+
+        return;
+    }
+
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from(
+                "report_email_preferences"
+            )
+            .select("*")
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .maybeSingle();
+
+
+    if (error) {
+
+        console.error(
+            "Load email report preference error:",
+            error
+        );
+
+        if (scheduledReportMessage) {
+
+            scheduledReportMessage.textContent =
+                error.message;
+        }
+
+        return;
+    }
+
+
+    reportEmailPreference =
+        data ||
+        null;
+
+    renderReportEmailPreference();
+}
+
+
+scheduledReportFrequency
+    ?.addEventListener(
+        "change",
+        updateScheduledReportFrequencyFields
+    );
+
+
+scheduledReportEnabled
+    ?.addEventListener(
+        "change",
+        updateScheduledReportStatusBadge
+    );
+
+
+scheduledReportForm
+    ?.addEventListener(
+        "submit",
+        async function (event) {
+
+            event.preventDefault();
+
+            if (!currentUser) {
+                return;
+            }
+
+
+            const email =
+                scheduledReportEmail
+                    .value
+                    .trim();
+
+
+            if (!email) {
+
+                scheduledReportMessage.textContent =
+                    "Enter a recipient email address.";
+
+                return;
+            }
+
+
+            scheduledReportSaveButton.disabled =
+                true;
+
+            scheduledReportMessage.textContent =
+                "Saving email schedule...";
+
+
+            const frequency =
+                scheduledReportFrequency.value;
+
+
+            const payload = {
+                user_id:
+                    currentUser.id,
+
+                enabled:
+                    scheduledReportEnabled.checked,
+
+                frequency,
+
+                day_of_week:
+                    frequency ===
+                        "weekly"
+                        ? Number(
+                            scheduledReportDayOfWeek.value
+                        )
+                        : null,
+
+                day_of_month:
+                    frequency ===
+                        "monthly"
+                        ? Number(
+                            scheduledReportDayOfMonth.value
+                        )
+                        : null,
+
+                send_time:
+                    scheduledReportTime.value ||
+                    "08:00",
+
+                timezone:
+                    scheduledReportTimezone.value ||
+                    "Asia/Kuala_Lumpur",
+
+                recipient_email:
+                    email,
+
+                include_excel:
+                    scheduledReportIncludeCsv.checked
+            };
+
+
+            const {
+                data,
+                error
+            } =
+                await supabase
+                    .from(
+                        "report_email_preferences"
+                    )
+                    .upsert(
+                        payload,
+                        {
+                            onConflict:
+                                "user_id"
+                        }
+                    )
+                    .select("*")
+                    .single();
+
+
+            scheduledReportSaveButton.disabled =
+                false;
+
+
+            if (error) {
+
+                scheduledReportMessage.textContent =
+                    error.message;
+
+                return;
+            }
+
+
+            reportEmailPreference =
+                data;
+
+            renderReportEmailPreference();
+
+            scheduledReportMessage.textContent =
+                "Email schedule saved successfully.";
+
+            showTransactionSuccessSnackbar({
+                title:
+                    "Email schedule saved",
+                message:
+                    scheduledReportEnabled.checked
+                        ? "Scheduled reports are enabled."
+                        : "Your report email settings were saved."
+            });
+        }
+    );
+
+
+scheduledReportTestButton
+    ?.addEventListener(
+        "click",
+        async function () {
+
+            if (!currentUser) {
+                return;
+            }
+
+
+            if (!reportEmailPreference) {
+
+                scheduledReportMessage.textContent =
+                    "Save your email report settings first.";
+
+                return;
+            }
+
+
+            scheduledReportTestButton.disabled =
+                true;
+
+            scheduledReportMessage.textContent =
+                "Sending report email...";
+
+
+            const {
+                data,
+                error
+            } =
+                await supabase
+                    .functions
+                    .invoke(
+                        "scheduled-email-reports",
+                        {
+                            body: {
+                                mode:
+                                    "manual",
+                                month_start:
+                                    getReportMonthStart()
+                            }
+                        }
+                    );
+
+
+            scheduledReportTestButton.disabled =
+                false;
+
+
+            if (error) {
+
+                scheduledReportMessage.textContent =
+                    error.message ||
+                    "Unable to send the report email.";
+
+                await loadReportEmailPreference();
+
+                return;
+            }
+
+
+            if (
+                data &&
+                data.ok === false
+            ) {
+
+                scheduledReportMessage.textContent =
+                    data.error ||
+                    "Unable to send the report email.";
+
+                await loadReportEmailPreference();
+
+                return;
+            }
+
+
+            scheduledReportMessage.textContent =
+                "Report email sent successfully.";
+
+            await loadReportEmailPreference();
+
+
+            showTransactionSuccessSnackbar({
+                title:
+                    "Report email sent",
+                message:
+                    "The selected finance report was emailed successfully."
+            });
+        }
+    );
+
+
+// ======================================================
+// REPORTS
+// ======================================================
+
+function setDefaultReportMonth() {
+
+    if (!reportMonthInput) {
+        return;
+    }
+
+    if (!reportMonthInput.value) {
+
+        reportMonthInput.value =
+            getCurrentMonthValue();
+    }
+}
+
+
+function getReportMonthStart() {
+
+    const value =
+        reportMonthInput?.value;
+
+    if (
+        !value ||
+        !/^\d{4}-\d{2}$/.test(
+            value
+        )
+    ) {
+        return `${getCurrentMonthValue()}-01`;
+    }
+
+    return `${value}-01`;
+}
+
+
+function addMonthsToMonthStart(
+    monthStart,
+    amount
+) {
+
+    const date =
+        new Date(
+            `${monthStart}T00:00:00`
+        );
+
+    date.setMonth(
+        date.getMonth() +
+        amount
+    );
+
+    return [
+        date.getFullYear(),
+        String(
+            date.getMonth() +
+            1
+        ).padStart(
+            2,
+            "0"
+        ),
+        "01"
+    ].join("-");
+}
+
+
+function getMonthEndExclusive(
+    monthStart
+) {
+
+    return addMonthsToMonthStart(
+        monthStart,
+        1
+    );
+}
+
+
+function getTransactionsForMonth(
+    monthStart
+) {
+
+    const endExclusive =
+        getMonthEndExclusive(
+            monthStart
+        );
+
+    return transactions.filter(
+        transaction =>
+            transaction.transaction_date >=
+                monthStart
+            &&
+            transaction.transaction_date <
+                endExclusive
+    );
+}
+
+
+function getReportTotals(
+    monthTransactions
+) {
+
+    const income =
+        monthTransactions
+            .filter(
+                item =>
+                    item.type ===
+                    "income"
+            )
+            .reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    Number(
+                        item.amount
+                    ),
+                0
+            );
+
+    const expenses =
+        monthTransactions
+            .filter(
+                item =>
+                    item.type ===
+                    "expense"
+            )
+            .reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    Number(
+                        item.amount
+                    ),
+                0
+            );
+
+    return {
+        income,
+        expenses,
+        net:
+            income -
+            expenses,
+        count:
+            monthTransactions.length
+    };
+}
+
+
+function getMonthLabel(
+    monthStart
+) {
+
+    return new Date(
+        `${monthStart}T00:00:00`
+    )
+        .toLocaleDateString(
+            "en-MY",
+            {
+                month:
+                    "long",
+                year:
+                    "numeric"
+            }
+        );
+}
+
+
+function getShortMonthLabel(
+    monthStart
+) {
+
+    return new Date(
+        `${monthStart}T00:00:00`
+    )
+        .toLocaleDateString(
+            "en-MY",
+            {
+                month:
+                    "short",
+                year:
+                    "2-digit"
+            }
+        );
+}
+
+
+function formatReportChange(
+    currentValue,
+    previousValue,
+    type
+) {
+
+    if (
+        previousValue === 0
+    ) {
+
+        if (
+            currentValue === 0
+        ) {
+            return "No change from last month.";
+        }
+
+        return "No comparable value last month.";
+    }
+
+    const percent =
+        (
+            currentValue -
+            previousValue
+        )
+        /
+        previousValue *
+        100;
+
+    const direction =
+        percent > 0
+            ? "up"
+            : percent < 0
+                ? "down"
+                : "unchanged";
+
+    if (direction === "unchanged") {
+        return "Unchanged from last month.";
+    }
+
+    const abs =
+        Math.abs(
+            percent
+        )
+            .toFixed(
+                1
+            );
+
+    if (type === "expense") {
+
+        return `${direction === "up" ? "▲" : "▼"} ${abs}% ${direction} vs last month`;
+    }
+
+    return `${direction === "up" ? "▲" : "▼"} ${abs}% ${direction} vs last month`;
+}
+
+
+function createReportListRow({
+    title,
+    subtitle,
+    amount,
+    share = null,
+    amountClass = ""
+}) {
+
+    const row =
+        document.createElement(
+            "div"
+        );
+
+    row.className =
+        "report-list-row";
+
+
+    const copy =
+        document.createElement(
+            "div"
+        );
+
+    copy.className =
+        "report-list-copy";
+
+
+    const heading =
+        document.createElement(
+            "strong"
+        );
+
+    heading.textContent =
+        title;
+
+
+    const description =
+        document.createElement(
+            "span"
+        );
+
+    description.textContent =
+        subtitle;
+
+
+    copy.append(
+        heading,
+        description
+    );
+
+
+    const right =
+        document.createElement(
+            "div"
+        );
+
+    right.className =
+        "report-list-right";
+
+
+    const amountElement =
+        document.createElement(
+            "strong"
+        );
+
+    amountElement.className =
+        amountClass;
+
+    amountElement.textContent =
+        formatMoney(
+            amount
+        );
+
+    right.appendChild(
+        amountElement
+    );
+
+
+    if (
+        share !== null &&
+        Number.isFinite(
+            share
+        )
+    ) {
+
+        const shareText =
+            document.createElement(
+                "span"
+            );
+
+        shareText.textContent =
+            `${share.toFixed(1)}%`;
+
+        right.appendChild(
+            shareText
+        );
+    }
+
+
+    row.append(
+        copy,
+        right
+    );
+
+    return row;
+}
+
+
+function renderReportCategoryBreakdown(
+    monthTransactions,
+    totalExpenses
+) {
+
+    if (!reportCategoryBreakdown) {
+        return;
+    }
+
+    reportCategoryBreakdown.innerHTML =
+        "";
+
+
+    const totals =
+        new Map();
+
+
+    monthTransactions
+        .filter(
+            item =>
+                item.type ===
+                "expense"
+        )
+        .forEach(
+            function (item) {
+
+                const name =
+                    categories.find(
+                        category =>
+                            category.id ===
+                            item.category_id
+                    )?.name
+                    ||
+                    "Uncategorized";
+
+                totals.set(
+                    name,
+                    (
+                        totals.get(
+                            name
+                        )
+                        ||
+                        0
+                    )
+                    +
+                    Number(
+                        item.amount
+                    )
+                );
+            }
+        );
+
+
+    const rows =
+        Array.from(
+            totals.entries()
+        )
+            .sort(
+                (
+                    first,
+                    second
+                ) =>
+                    second[1] -
+                    first[1]
+            );
+
+
+    if (!rows.length) {
+
+        reportCategoryBreakdown.textContent =
+            "No expense transactions for this month.";
+
+        return;
+    }
+
+
+    rows.forEach(
+        (
+            [
+                name,
+                amount
+            ]
+        ) => {
+
+            reportCategoryBreakdown.appendChild(
+                createReportListRow({
+                    title:
+                        name,
+                    subtitle:
+                        "Monthly spending",
+                    amount,
+                    share:
+                        totalExpenses > 0
+                            ? amount /
+                                totalExpenses *
+                                100
+                            : 0,
+                    amountClass:
+                        "expense"
+                })
+            );
+        }
+    );
+}
+
+
+function renderReportIncomeBreakdown(
+    monthTransactions,
+    totalIncome
+) {
+
+    if (!reportIncomeBreakdown) {
+        return;
+    }
+
+    reportIncomeBreakdown.innerHTML =
+        "";
+
+
+    const totals =
+        new Map();
+
+
+    monthTransactions
+        .filter(
+            item =>
+                item.type ===
+                "income"
+        )
+        .forEach(
+            function (item) {
+
+                const name =
+                    incomeSources.find(
+                        source =>
+                            source.id ===
+                            item.income_source_id
+                    )?.name
+                    ||
+                    "Other Income";
+
+                totals.set(
+                    name,
+                    (
+                        totals.get(
+                            name
+                        )
+                        ||
+                        0
+                    )
+                    +
+                    Number(
+                        item.amount
+                    )
+                );
+            }
+        );
+
+
+    const rows =
+        Array.from(
+            totals.entries()
+        )
+            .sort(
+                (
+                    first,
+                    second
+                ) =>
+                    second[1] -
+                    first[1]
+            );
+
+
+    if (!rows.length) {
+
+        reportIncomeBreakdown.textContent =
+            "No income transactions for this month.";
+
+        return;
+    }
+
+
+    rows.forEach(
+        (
+            [
+                name,
+                amount
+            ]
+        ) => {
+
+            reportIncomeBreakdown.appendChild(
+                createReportListRow({
+                    title:
+                        name,
+                    subtitle:
+                        "Monthly income",
+                    amount,
+                    share:
+                        totalIncome > 0
+                            ? amount /
+                                totalIncome *
+                                100
+                            : 0,
+                    amountClass:
+                        "income"
+                })
+            );
+        }
+    );
+}
+
+
+function renderReportAccountBreakdown(
+    monthTransactions
+) {
+
+    if (!reportAccountBreakdown) {
+        return;
+    }
+
+    reportAccountBreakdown.innerHTML =
+        "";
+
+
+    const rows =
+        accounts
+            .map(
+                function (account) {
+
+                    const accountTransactions =
+                        monthTransactions.filter(
+                            item =>
+                                item.account_id ===
+                                account.id
+                        );
+
+                    const totals =
+                        getReportTotals(
+                            accountTransactions
+                        );
+
+                    return {
+                        account,
+                        ...totals
+                    };
+                }
+            )
+            .filter(
+                row =>
+                    row.count > 0
+            )
+            .sort(
+                (
+                    first,
+                    second
+                ) =>
+                    Math.abs(
+                        second.net
+                    )
+                    -
+                    Math.abs(
+                        first.net
+                    )
+            );
+
+
+    if (!rows.length) {
+
+        reportAccountBreakdown.textContent =
+            "No account activity for this month.";
+
+        return;
+    }
+
+
+    rows.forEach(
+        function (row) {
+
+            const element =
+                createReportListRow({
+                    title:
+                        row.account.name,
+                    subtitle:
+                        `${row.count} transaction${row.count === 1 ? "" : "s"} • Income ${formatMoney(row.income)} • Expense ${formatMoney(row.expenses)}`,
+                    amount:
+                        row.net,
+                    amountClass:
+                        row.net >= 0
+                            ? "income"
+                            : "expense"
+                });
+
+            reportAccountBreakdown.appendChild(
+                element
+            );
+        }
+    );
+}
+
+
+function renderReportBudgetPerformance(
+    monthStart,
+    monthTransactions
+) {
+
+    if (!reportBudgetPerformance) {
+        return;
+    }
+
+    reportBudgetPerformance.innerHTML =
+        "";
+
+
+    const monthBudgets =
+        budgets
+            .filter(
+                budget =>
+                    budget.month_start ===
+                    monthStart
+            );
+
+
+    if (!monthBudgets.length) {
+
+        reportBudgetPerformance.textContent =
+            "No budgets configured for this month.";
+
+        return;
+    }
+
+
+    monthBudgets
+        .map(
+            function (budget) {
+
+                const spent =
+                    monthTransactions
+                        .filter(
+                            item =>
+                                item.type ===
+                                    "expense"
+                            &&
+                                item.category_id ===
+                                    budget.category_id
+                        )
+                        .reduce(
+                            (
+                                total,
+                                item
+                            ) =>
+                                total +
+                                Number(
+                                    item.amount
+                                ),
+                            0
+                        );
+
+                const category =
+                    categories.find(
+                        item =>
+                            item.id ===
+                            budget.category_id
+                    );
+
+                return {
+                    budget,
+                    category,
+                    spent
+                };
+            }
+        )
+        .sort(
+            (
+                first,
+                second
+            ) =>
+                (
+                    second.spent /
+                    Number(
+                        second.budget.amount
+                    )
+                )
+                -
+                (
+                    first.spent /
+                    Number(
+                        first.budget.amount
+                    )
+                )
+        )
+        .forEach(
+            function ({
+                budget,
+                category,
+                spent
+            }) {
+
+                const limit =
+                    Number(
+                        budget.amount
+                    );
+
+                const percent =
+                    limit > 0
+                        ? spent /
+                            limit *
+                            100
+                        : 0;
+
+                reportBudgetPerformance.appendChild(
+                    createReportListRow({
+                        title:
+                            category?.name ||
+                            "Unknown Category",
+                        subtitle:
+                            `${percent.toFixed(1)}% used • Budget ${formatMoney(limit)}`,
+                        amount:
+                            spent,
+                        amountClass:
+                            spent > limit
+                                ? "expense"
+                                : ""
+                    })
+                );
+            }
+        );
+}
+
+
+function renderReportTrend(
+    selectedMonthStart
+) {
+
+    if (!reportTrendTable) {
+        return;
+    }
+
+    reportTrendTable.innerHTML =
+        "";
+
+
+    const table =
+        document.createElement(
+            "div"
+        );
+
+    table.className =
+        "report-trend-grid";
+
+
+    const headers =
+        [
+            "Month",
+            "Income",
+            "Expenses",
+            "Net"
+        ];
+
+
+    headers.forEach(
+        function (label) {
+
+            const cell =
+                document.createElement(
+                    "strong"
+                );
+
+            cell.className =
+                "report-trend-header";
+
+            cell.textContent =
+                label;
+
+            table.appendChild(
+                cell
+            );
+        }
+    );
+
+
+    for (
+        let offset = -5;
+        offset <= 0;
+        offset += 1
+    ) {
+
+        const monthStart =
+            addMonthsToMonthStart(
+                selectedMonthStart,
+                offset
+            );
+
+        const totals =
+            getReportTotals(
+                getTransactionsForMonth(
+                    monthStart
+                )
+            );
+
+
+        const monthCell =
+            document.createElement(
+                "span"
+            );
+
+        monthCell.textContent =
+            getShortMonthLabel(
+                monthStart
+            );
+
+
+        const incomeCell =
+            document.createElement(
+                "span"
+            );
+
+        incomeCell.className =
+            "income";
+
+        incomeCell.textContent =
+            formatMoney(
+                totals.income
+            );
+
+
+        const expenseCell =
+            document.createElement(
+                "span"
+            );
+
+        expenseCell.className =
+            "expense";
+
+        expenseCell.textContent =
+            formatMoney(
+                totals.expenses
+            );
+
+
+        const netCell =
+            document.createElement(
+                "span"
+            );
+
+        netCell.className =
+            totals.net >= 0
+                ? "income"
+                : "expense";
+
+        netCell.textContent =
+            formatMoney(
+                totals.net
+            );
+
+
+        table.append(
+            monthCell,
+            incomeCell,
+            expenseCell,
+            netCell
+        );
+    }
+
+
+    reportTrendTable.appendChild(
+        table
+    );
+}
+
+
+function renderReportTransactions(
+    monthStart,
+    monthTransactions
+) {
+
+    if (
+        !reportTransactionList ||
+        !reportTransactionSubtitle
+    ) {
+        return;
+    }
+
+    reportTransactionList.innerHTML =
+        "";
+
+    reportTransactionSubtitle.textContent =
+        `${monthTransactions.length} transaction${monthTransactions.length === 1 ? "" : "s"} in ${getMonthLabel(monthStart)}.`;
+
+
+    if (!monthTransactions.length) {
+
+        reportTransactionList.textContent =
+            "No transactions for this month.";
+
+        return;
+    }
+
+
+    [
+        ...monthTransactions
+    ]
+        .sort(
+            (
+                first,
+                second
+            ) =>
+                second.transaction_date
+                    .localeCompare(
+                        first.transaction_date
+                    )
+        )
+        .forEach(
+            function (transaction) {
+
+                const row =
+                    document.createElement(
+                        "div"
+                    );
+
+                row.className =
+                    "report-transaction-row";
+
+
+                const copy =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                const title =
+                    document.createElement(
+                        "strong"
+                    );
+
+                title.textContent =
+                    transaction.description;
+
+
+                const meta =
+                    document.createElement(
+                        "span"
+                    );
+
+                const account =
+                    accounts.find(
+                        item =>
+                            item.id ===
+                            transaction.account_id
+                    )?.name
+                    ||
+                    "Unknown Account";
+
+                const category =
+                    transaction.type ===
+                        "expense"
+                        ? (
+                            categories.find(
+                                item =>
+                                    item.id ===
+                                    transaction.category_id
+                            )?.name
+                            ||
+                            "Uncategorized"
+                        )
+                        : (
+                            incomeSources.find(
+                                item =>
+                                    item.id ===
+                                    transaction.income_source_id
+                            )?.name
+                            ||
+                            "Other Income"
+                        );
+
+                meta.textContent =
+                    `${formatDate(transaction.transaction_date)} • ${account} • ${category}`;
+
+
+                copy.append(
+                    title,
+                    meta
+                );
+
+
+                const amount =
+                    document.createElement(
+                        "strong"
+                    );
+
+                amount.className =
+                    transaction.type ===
+                        "income"
+                        ? "income"
+                        : "expense";
+
+                amount.textContent =
+                    `${transaction.type === "income" ? "+" : "-"}${formatMoney(transaction.amount)}`;
+
+
+                row.append(
+                    copy,
+                    amount
+                );
+
+                reportTransactionList.appendChild(
+                    row
+                );
+            }
+        );
+}
+
+
+function renderReports() {
+
+    if (
+        !reportMonthInput ||
+        !reportTotalIncome ||
+        !reportTotalExpenses ||
+        !reportNetCashflow ||
+        !reportTransactionCount
+    ) {
+        return;
+    }
+
+
+    setDefaultReportMonth();
+
+
+    const monthStart =
+        getReportMonthStart();
+
+    const previousMonthStart =
+        addMonthsToMonthStart(
+            monthStart,
+            -1
+        );
+
+
+    const monthTransactions =
+        getTransactionsForMonth(
+            monthStart
+        );
+
+    const previousTransactions =
+        getTransactionsForMonth(
+            previousMonthStart
+        );
+
+
+    const totals =
+        getReportTotals(
+            monthTransactions
+        );
+
+    const previousTotals =
+        getReportTotals(
+            previousTransactions
+        );
+
+
+    reportTotalIncome.textContent =
+        formatMoney(
+            totals.income
+        );
+
+    reportTotalExpenses.textContent =
+        formatMoney(
+            totals.expenses
+        );
+
+    reportNetCashflow.textContent =
+        formatMoney(
+            totals.net
+        );
+
+    reportNetCashflow.classList.toggle(
+        "income",
+        totals.net >= 0
+    );
+
+    reportNetCashflow.classList.toggle(
+        "expense",
+        totals.net < 0
+    );
+
+    reportTransactionCount.textContent =
+        String(
+            totals.count
+        );
+
+
+    reportIncomeChange.textContent =
+        formatReportChange(
+            totals.income,
+            previousTotals.income,
+            "income"
+        );
+
+    reportExpenseChange.textContent =
+        formatReportChange(
+            totals.expenses,
+            previousTotals.expenses,
+            "expense"
+        );
+
+
+    renderReportCategoryBreakdown(
+        monthTransactions,
+        totals.expenses
+    );
+
+    renderReportIncomeBreakdown(
+        monthTransactions,
+        totals.income
+    );
+
+    renderReportAccountBreakdown(
+        monthTransactions
+    );
+
+    renderReportBudgetPerformance(
+        monthStart,
+        monthTransactions
+    );
+
+    renderReportTrend(
+        monthStart
+    );
+
+    renderReportTransactions(
+        monthStart,
+        monthTransactions
+    );
+}
+
+
+function escapeCsvValue(
+    value
+) {
+
+    const string =
+        String(
+            value ??
+            ""
+        );
+
+    if (
+        string.includes(",") ||
+        string.includes('"') ||
+        string.includes("\n")
+    ) {
+
+        return `"${string.replaceAll('"', '""')}"`;
+    }
+
+    return string;
+}
+
+
+function exportCurrentReportCsv() {
+
+    const monthStart =
+        getReportMonthStart();
+
+    const monthTransactions =
+        getTransactionsForMonth(
+            monthStart
+        );
+
+
+    const rows =
+        [
+            [
+                "Date",
+                "Type",
+                "Description",
+                "Account",
+                "Category / Income Source",
+                "Amount",
+                "Notes",
+                "Recurring"
+            ]
+        ];
+
+
+    monthTransactions
+        .sort(
+            (
+                first,
+                second
+            ) =>
+                first.transaction_date
+                    .localeCompare(
+                        second.transaction_date
+                    )
+        )
+        .forEach(
+            function (transaction) {
+
+                const account =
+                    accounts.find(
+                        item =>
+                            item.id ===
+                            transaction.account_id
+                    )?.name
+                    ||
+                    "";
+
+                const categoryOrSource =
+                    transaction.type ===
+                        "expense"
+                        ? (
+                            categories.find(
+                                item =>
+                                    item.id ===
+                                    transaction.category_id
+                            )?.name
+                            ||
+                            ""
+                        )
+                        : (
+                            incomeSources.find(
+                                item =>
+                                    item.id ===
+                                    transaction.income_source_id
+                            )?.name
+                            ||
+                            ""
+                        );
+
+                const recurringName =
+                    transaction.recurring_id
+                        ? (
+                            recurringTransactions.find(
+                                item =>
+                                    item.id ===
+                                    transaction.recurring_id
+                            )?.name
+                            ||
+                            "Recurring"
+                        )
+                        : "";
+
+                rows.push(
+                    [
+                        transaction.transaction_date,
+                        transaction.type,
+                        transaction.description,
+                        account,
+                        categoryOrSource,
+                        Number(
+                            transaction.amount
+                        ).toFixed(
+                            2
+                        ),
+                        transaction.notes ||
+                            "",
+                        recurringName
+                    ]
+                );
+            }
+        );
+
+
+    const csv =
+        rows
+            .map(
+                row =>
+                    row
+                        .map(
+                            escapeCsvValue
+                        )
+                        .join(",")
+            )
+            .join("\n");
+
+
+    const blob =
+        new Blob(
+            [
+                "\ufeff",
+                csv
+            ],
+            {
+                type:
+                    "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+    link.href =
+        url;
+
+    link.download =
+        `finance-report-${monthStart.slice(0, 7)}.csv`;
+
+    document.body.appendChild(
+        link
+    );
+
+    link.click();
+
+    link.remove();
+
+    URL.revokeObjectURL(
+        url
+    );
+
+
+    showTransactionSuccessSnackbar({
+        title:
+            "Report exported",
+        message:
+            `${getMonthLabel(monthStart)} CSV has been downloaded.`
+    });
+}
+
+
+reportMonthInput
+    ?.addEventListener(
+        "change",
+        renderReports
+    );
+
+
+reportCurrentMonthButton
+    ?.addEventListener(
+        "click",
+        function () {
+
+            reportMonthInput.value =
+                getCurrentMonthValue();
+
+            renderReports();
+        }
+    );
+
+
+reportExportCsvButton
+    ?.addEventListener(
+        "click",
+        exportCurrentReportCsv
+    );
+
+
+reportPrintButton
+    ?.addEventListener(
+        "click",
+        function () {
+
+            window.print();
+        }
+    );
 
 
 // ======================================================
@@ -13683,6 +20471,9 @@ const pageTitles = {
     transactions: "Transactions",
     budgets: "Budgets",
     recurring: "Recurring & Subscriptions",
+    goals: "Goals & Planning",
+    reports: "Reports",
+    insights: "Smart Insights",
     accounts: "Accounts",
     manage: "Manage",
     more: "More"
@@ -13770,7 +20561,10 @@ function navigateToPage(
                     "more",
                     "accounts",
                     "manage",
-                    "recurring"
+                    "recurring",
+                    "goals",
+                    "reports",
+                    "insights"
                 ].includes(
                     pageName
                 );
@@ -13861,6 +20655,8 @@ function navigateToPage(
         renderRecurringTransactions();
 
         renderRecurringSummary();
+
+        renderRecurringAnalytics();
 
         renderRecurringReminderCenter();
 
@@ -14081,6 +20877,241 @@ quickAddTransactionLinks.forEach(
 );
 
 
+
+// ======================================================
+// PWA / INSTALL APP
+// ======================================================
+
+const installAppCard =
+    document.getElementById("install-app-card");
+
+const installAppBadge =
+    document.getElementById("install-app-badge");
+
+const installAppDescription =
+    document.getElementById("install-app-description");
+
+const offlineBanner =
+    document.getElementById("offline-banner");
+
+let deferredInstallPrompt =
+    null;
+
+
+function isIosDevice() {
+
+    return /iphone|ipad|ipod/i.test(
+        window.navigator.userAgent
+    );
+}
+
+
+function isStandaloneMode() {
+
+    return (
+        window.matchMedia(
+            "(display-mode: standalone)"
+        ).matches
+        ||
+        window.navigator.standalone ===
+            true
+    );
+}
+
+
+function updateInstallAppUi() {
+
+    if (!installAppCard) {
+        return;
+    }
+
+
+    if (isStandaloneMode()) {
+
+        installAppBadge.textContent =
+            "Installed";
+
+        installAppDescription.textContent =
+            "My Finance is already installed on this device.";
+
+        installAppCard.classList.add(
+            "installed"
+        );
+
+        return;
+    }
+
+
+    installAppCard.classList.remove(
+        "installed"
+    );
+
+
+    if (isIosDevice()) {
+
+        installAppBadge.textContent =
+            "iPhone";
+
+        installAppDescription.textContent =
+            "Open Safari Share → Add to Home Screen.";
+
+        return;
+    }
+
+
+    installAppBadge.textContent =
+        deferredInstallPrompt
+            ? "Ready"
+            : "App";
+
+    installAppDescription.textContent =
+        deferredInstallPrompt
+            ? "Install My Finance on this device."
+            : "Add My Finance to your Home Screen for faster access.";
+}
+
+
+window.addEventListener(
+    "beforeinstallprompt",
+    function (event) {
+
+        event.preventDefault();
+
+        deferredInstallPrompt =
+            event;
+
+        updateInstallAppUi();
+    }
+);
+
+
+window.addEventListener(
+    "appinstalled",
+    function () {
+
+        deferredInstallPrompt =
+            null;
+
+        updateInstallAppUi();
+
+        showTransactionSuccessSnackbar({
+            title:
+                "My Finance installed",
+            message:
+                "You can now open it directly from your Home Screen."
+        });
+    }
+);
+
+
+installAppCard
+    ?.addEventListener(
+        "click",
+        async function () {
+
+            if (isStandaloneMode()) {
+
+                showTransactionSuccessSnackbar({
+                    title:
+                        "Already installed",
+                    message:
+                        "My Finance is already running as an installed app."
+                });
+
+                return;
+            }
+
+
+            if (isIosDevice()) {
+
+                alert(
+                    "On iPhone: open this site in Safari, tap the Share button, then choose “Add to Home Screen”."
+                );
+
+                return;
+            }
+
+
+            if (deferredInstallPrompt) {
+
+                deferredInstallPrompt.prompt();
+
+                await deferredInstallPrompt
+                    .userChoice;
+
+                deferredInstallPrompt =
+                    null;
+
+                updateInstallAppUi();
+
+                return;
+            }
+
+
+            alert(
+                "Use your browser menu and choose “Install app” or “Add to Home screen”."
+            );
+        }
+    );
+
+
+function updateOnlineStatus() {
+
+    if (!offlineBanner) {
+        return;
+    }
+
+
+    offlineBanner.classList.toggle(
+        "hidden-button",
+        window.navigator.onLine
+    );
+}
+
+
+window.addEventListener(
+    "online",
+    updateOnlineStatus
+);
+
+
+window.addEventListener(
+    "offline",
+    updateOnlineStatus
+);
+
+
+updateOnlineStatus();
+updateInstallAppUi();
+
+
+if (
+    "serviceWorker" in
+    navigator
+) {
+
+    window.addEventListener(
+        "load",
+        function () {
+
+            navigator.serviceWorker
+                .register(
+                    "/service-worker.js"
+                )
+                .catch(
+                    function (error) {
+
+                        console.warn(
+                            "Service worker registration failed:",
+                            error
+                        );
+                    }
+                );
+        }
+    );
+}
+
+
 // ======================================================
 // BROWSER BACK / FORWARD
 // ======================================================
@@ -14119,6 +21150,9 @@ function getPageFromHash() {
         "transactions",
         "budgets",
         "recurring",
+        "goals",
+        "reports",
+        "insights",
         "accounts",
         "manage",
         "more"
@@ -14152,6 +21186,15 @@ function getPageFromHash() {
 
         "recurring-page":
             "recurring",
+
+        "goals-page":
+            "goals",
+
+        "reports-page":
+            "reports",
+
+        "insights-page":
+            "insights",
 
         "accounts-page":
             "accounts",

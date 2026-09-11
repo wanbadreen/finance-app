@@ -14,6 +14,41 @@
         content="Personal finance management app"
     >
 
+    <meta
+        name="theme-color"
+        content="#111827"
+    >
+
+    <meta
+        name="mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="default"
+    >
+
+    <meta
+        name="apple-mobile-web-app-title"
+        content="My Finance"
+    >
+
+    <link
+        rel="manifest"
+        href="/manifest.webmanifest"
+    >
+
+    <link
+        rel="apple-touch-icon"
+        href="/apple-touch-icon.png"
+    >
+
     <title>My Finance</title>
 
     <link
@@ -24,6 +59,14 @@
 
 
 <body>
+
+    <div
+        id="offline-banner"
+        class="offline-banner hidden-button"
+        role="status"
+    >
+        You’re offline. Saved app screens remain available, but live finance data may not refresh.
+    </div>
 
 
     <!-- =====================================================
@@ -224,6 +267,57 @@
 
                         <span>
                             Recurring
+                        </span>
+
+                    </a>
+
+
+                    <a
+                        href="#goals-page"
+                        class="nav-item"
+                        data-page="goals"
+                    >
+
+                        <span class="nav-icon">
+                            ◎
+                        </span>
+
+                        <span>
+                            Goals
+                        </span>
+
+                    </a>
+
+
+                    <a
+                        href="#reports-page"
+                        class="nav-item"
+                        data-page="reports"
+                    >
+
+                        <span class="nav-icon">
+                            ▤
+                        </span>
+
+                        <span>
+                            Reports
+                        </span>
+
+                    </a>
+
+
+                    <a
+                        href="#insights-page"
+                        class="nav-item"
+                        data-page="insights"
+                    >
+
+                        <span class="nav-icon">
+                            ✦
+                        </span>
+
+                        <span>
+                            Insights
                         </span>
 
                     </a>
@@ -597,6 +691,46 @@
 
 
                     <!-- =============================================
+                         DASHBOARD GOALS SUMMARY
+                    ============================================== -->
+
+                    <section class="dashboard-section">
+
+                        <div class="section-heading">
+
+                            <div>
+
+                                <h2>
+                                    Savings Goals
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    Progress toward your active financial goals
+                                </p>
+
+                            </div>
+
+                            <a
+                                href="#goals-page"
+                                class="section-link"
+                                data-page="goals"
+                            >
+                                View Goals
+                            </a>
+
+                        </div>
+
+                        <div
+                            id="dashboard-goals-summary"
+                            class="dashboard-placeholder"
+                        >
+                            Create a savings goal to start tracking progress.
+                        </div>
+
+                    </section>
+
+
+                    <!-- =============================================
                          DASHBOARD UPCOMING COMMITMENTS
                     ============================================== -->
 
@@ -635,6 +769,46 @@
                             class="dashboard-placeholder"
                         >
                             No upcoming recurring items yet.
+                        </div>
+
+                    </section>
+
+
+                    <!-- =============================================
+                         DASHBOARD SMART INSIGHTS
+                    ============================================== -->
+
+                    <section class="dashboard-section">
+
+                        <div class="section-heading">
+
+                            <div>
+
+                                <h2>
+                                    Smart Insights
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    Quick observations from your latest finance data
+                                </p>
+
+                            </div>
+
+                            <a
+                                href="#insights-page"
+                                class="section-link"
+                                data-page="insights"
+                            >
+                                View Insights
+                            </a>
+
+                        </div>
+
+                        <div
+                            id="dashboard-insights-preview"
+                            class="dashboard-insights-preview"
+                        >
+                            Add more transactions to unlock smart insights.
                         </div>
 
                     </section>
@@ -871,42 +1045,6 @@
 
 
                         <div id="transaction-list"></div>
-
-
-                    </section>
-
-
-
-                    <!-- =============================================
-                         RECENTLY DELETED
-                    ============================================== -->
-
-                    <section class="deleted-section">
-
-
-                        <div class="section-heading">
-
-
-                            <div>
-
-                                <h2>
-                                    Recently Deleted
-                                </h2>
-
-
-                                <p class="section-subtitle">
-                                    Restore transactions you deleted accidentally.
-                                </p>
-
-                            </div>
-
-
-                        </div>
-
-
-                        <div
-                            id="deleted-transaction-list"
-                        ></div>
 
 
                     </section>
@@ -1900,6 +2038,109 @@
                     </section>
 
 
+                    <section class="recurring-analytics-section">
+
+                        <div class="section-heading">
+
+                            <div>
+
+                                <h2>
+                                    Recurring Analytics
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    See the monthly impact of your active recurring income, bills and subscriptions.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="recurring-analytics-grid">
+
+                            <div class="recurring-analytics-card">
+                                <span>Monthly Recurring Income</span>
+                                <strong
+                                    id="recurring-analytics-income"
+                                    class="income"
+                                >
+                                    RM 0.00
+                                </strong>
+                                <p>Monthly equivalent of active recurring income.</p>
+                            </div>
+
+                            <div class="recurring-analytics-card">
+                                <span>Monthly Recurring Expenses</span>
+                                <strong
+                                    id="recurring-analytics-expenses"
+                                    class="expense"
+                                >
+                                    RM 0.00
+                                </strong>
+                                <p>Monthly equivalent of active recurring expenses.</p>
+                            </div>
+
+                            <div class="recurring-analytics-card">
+                                <span>Net Recurring Cash Flow</span>
+                                <strong id="recurring-analytics-net">
+                                    RM 0.00
+                                </strong>
+                                <p>Recurring income minus recurring expenses.</p>
+                            </div>
+
+                            <div class="recurring-analytics-card">
+                                <span>Annual Recurring Expenses</span>
+                                <strong id="recurring-analytics-annual-expenses">
+                                    RM 0.00
+                                </strong>
+                                <p>Estimated yearly cost based on current active plans.</p>
+                            </div>
+
+                        </div>
+
+                        <div class="recurring-analytics-detail-grid">
+
+                            <div class="recurring-analytics-panel">
+
+                                <div class="recurring-analytics-panel-heading">
+
+                                    <div>
+                                        <h3>Expense Breakdown</h3>
+                                        <p>Monthly recurring expense by category.</p>
+                                    </div>
+
+                                </div>
+
+                                <div
+                                    id="recurring-analytics-category-list"
+                                    class="recurring-analytics-list"
+                                ></div>
+
+                            </div>
+
+                            <div class="recurring-analytics-panel">
+
+                                <div class="recurring-analytics-panel-heading">
+
+                                    <div>
+                                        <h3>Top Commitments</h3>
+                                        <p>Your largest active recurring expenses.</p>
+                                    </div>
+
+                                </div>
+
+                                <div
+                                    id="recurring-analytics-top-list"
+                                    class="recurring-analytics-list"
+                                ></div>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
                     <section class="recurring-reminder-center">
 
                         <div class="section-heading">
@@ -1923,6 +2164,34 @@
                             class="recurring-reminder-list"
                         >
                             No reminders due right now.
+                        </div>
+
+                    </section>
+
+
+                    <section class="recurring-activity-section">
+
+                        <div class="section-heading">
+
+                            <div>
+
+                                <h2>
+                                    Recent Recurring Activity
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    A recent history of recurring items that were paid or skipped.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="recurring-activity-list"
+                            class="recurring-activity-list"
+                        >
+                            No recurring activity yet.
                         </div>
 
                     </section>
@@ -2054,6 +2323,29 @@
                                 <select id="recurring-category" required>
                                     <option value="">Select category</option>
                                 </select>
+
+                                <div
+                                    id="recurring-custom-category-group"
+                                    class="custom-field-group"
+                                    style="display: none;"
+                                >
+
+                                    <label for="recurring-custom-category-name">
+                                        New Category Name
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="recurring-custom-category-name"
+                                        placeholder="e.g. House Rental"
+                                        autocomplete="off"
+                                    >
+
+                                    <p class="field-help">
+                                        The new category will be created and used for this recurring item.
+                                    </p>
+
+                                </div>
 
                                 <div id="recurring-income-source-group">
 
@@ -2194,6 +2486,1088 @@
                         </section>
 
                     </div>
+
+                </section>
+
+
+
+                <!-- =================================================
+                     SMART INSIGHTS PAGE
+                ================================================== -->
+
+                <section
+                    id="insights-page"
+                    class="app-page"
+                    data-page="insights"
+                >
+
+                    <div class="content-page-header">
+
+                        <div>
+
+                            <h2>
+                                Smart Insights
+                            </h2>
+
+                            <p>
+                                Free financial insights generated from your recorded data.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <section class="insights-summary-grid">
+
+                        <article class="insight-summary-card">
+                            <span>Savings Rate</span>
+                            <strong id="insight-savings-rate">0%</strong>
+                            <p>Income left after expenses this month.</p>
+                        </article>
+
+                        <article class="insight-summary-card">
+                            <span>Spending Trend</span>
+                            <strong id="insight-spending-trend">0%</strong>
+                            <p>Expense change compared with last month.</p>
+                        </article>
+
+                        <article class="insight-summary-card">
+                            <span>Recurring Share</span>
+                            <strong id="insight-recurring-share">0%</strong>
+                            <p>Recurring commitments versus monthly expenses.</p>
+                        </article>
+
+                        <article class="insight-summary-card">
+                            <span>Emergency Fund Readiness</span>
+                            <strong id="insight-emergency-readiness">0.0 months</strong>
+                            <p>Estimated months current balances could cover spending.</p>
+                        </article>
+
+                    </section>
+
+
+                    <section class="insights-main-grid">
+
+                        <article class="insights-panel">
+                            <div class="section-heading">
+                                <div>
+                                    <h2>Priority Insights</h2>
+                                    <p class="section-subtitle">Highest-impact actions based on your finance patterns.</p>
+                                </div>
+                            </div>
+                            <div id="priority-insights-list" class="priority-insights-list"></div>
+                        </article>
+
+                        <article class="insights-panel">
+                            <div class="section-heading">
+                                <div>
+                                    <h2>Spending Snapshot</h2>
+                                    <p class="section-subtitle">Your most important monthly spending signals.</p>
+                                </div>
+                            </div>
+                            <div id="insight-spending-snapshot" class="insight-spending-snapshot"></div>
+                        </article>
+
+                    </section>
+
+
+                    <section class="insights-main-grid">
+
+                        <article class="insights-panel">
+                            <div class="section-heading">
+                                <div>
+                                    <h2>Budget Risk</h2>
+                                    <p class="section-subtitle">Categories approaching or exceeding their monthly limits.</p>
+                                </div>
+                            </div>
+                            <div id="insight-budget-risk-list" class="insight-detail-list"></div>
+                        </article>
+
+                        <article class="insights-panel">
+                            <div class="section-heading">
+                                <div>
+                                    <h2>Unusual Spending</h2>
+                                    <p class="section-subtitle">Transactions noticeably higher than your recent category norm.</p>
+                                </div>
+                            </div>
+                            <div id="insight-unusual-spending-list" class="insight-detail-list"></div>
+                        </article>
+
+                    </section>
+
+
+                    <section class="insights-panel">
+                        <div class="section-heading">
+                            <div>
+                                <h2>Monthly Summary</h2>
+                                <p class="section-subtitle">Current month compared with the previous month.</p>
+                            </div>
+                        </div>
+                        <div id="insight-monthly-summary" class="insight-monthly-summary"></div>
+                    </section>
+
+                </section>
+
+
+
+                <!-- =================================================
+                     REPORTS PAGE
+                ================================================== -->
+
+                <section
+                    id="reports-page"
+                    class="app-page"
+                    data-page="reports"
+                >
+
+                    <div class="content-page-header">
+
+                        <div>
+
+                            <h2>
+                                Reports
+                            </h2>
+
+                            <p>
+                                Review monthly performance, category spending and account activity.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <section class="reports-controls-section">
+
+                        <div class="reports-controls-grid">
+
+                            <div>
+
+                                <label for="report-month">
+                                    Report Month
+                                </label>
+
+                                <input
+                                    type="month"
+                                    id="report-month"
+                                >
+
+                            </div>
+
+                            <div class="reports-control-actions">
+
+                                <button
+                                    type="button"
+                                    id="report-current-month-button"
+                                    class="secondary-button"
+                                >
+                                    Current Month
+                                </button>
+
+                                <button
+                                    type="button"
+                                    id="report-export-csv-button"
+                                    class="primary-button"
+                                >
+                                    Export CSV
+                                </button>
+
+                                <button
+                                    type="button"
+                                    id="report-print-button"
+                                    class="secondary-button"
+                                >
+                                    Print / Save PDF
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+                    <section class="scheduled-report-section">
+
+                        <div class="section-heading">
+
+                            <div>
+
+                                <h2>
+                                    Scheduled Email Reports
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    Automatically email your finance report on a weekly or monthly schedule.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <form
+                            id="scheduled-report-form"
+                            class="scheduled-report-form"
+                        >
+
+                            <div class="scheduled-report-toggle-row">
+
+                                <label class="scheduled-report-toggle-label">
+
+                                    <input
+                                        type="checkbox"
+                                        id="scheduled-report-enabled"
+                                    >
+
+                                    <span>
+                                        Enable scheduled email reports
+                                    </span>
+
+                                </label>
+
+                                <span
+                                    id="scheduled-report-status-badge"
+                                    class="scheduled-report-status-badge disabled"
+                                >
+                                    Disabled
+                                </span>
+
+                            </div>
+
+
+                            <div class="scheduled-report-grid">
+
+                                <div>
+
+                                    <label for="scheduled-report-email">
+                                        Recipient Email
+                                    </label>
+
+                                    <input
+                                        type="email"
+                                        id="scheduled-report-email"
+                                        placeholder="you@example.com"
+                                        required
+                                    >
+
+                                </div>
+
+
+                                <div>
+
+                                    <label for="scheduled-report-frequency">
+                                        Frequency
+                                    </label>
+
+                                    <select id="scheduled-report-frequency">
+
+                                        <option value="monthly">
+                                            Monthly
+                                        </option>
+
+                                        <option value="weekly">
+                                            Weekly
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+
+                                <div
+                                    id="scheduled-report-monthly-day-group"
+                                >
+
+                                    <label for="scheduled-report-day-of-month">
+                                        Send On
+                                    </label>
+
+                                    <select id="scheduled-report-day-of-month"></select>
+
+                                </div>
+
+
+                                <div
+                                    id="scheduled-report-weekly-day-group"
+                                    style="display: none;"
+                                >
+
+                                    <label for="scheduled-report-day-of-week">
+                                        Send On
+                                    </label>
+
+                                    <select id="scheduled-report-day-of-week">
+
+                                        <option value="1">Monday</option>
+                                        <option value="2">Tuesday</option>
+                                        <option value="3">Wednesday</option>
+                                        <option value="4">Thursday</option>
+                                        <option value="5">Friday</option>
+                                        <option value="6">Saturday</option>
+                                        <option value="0">Sunday</option>
+
+                                    </select>
+
+                                </div>
+
+
+                                <div>
+
+                                    <label for="scheduled-report-time">
+                                        Send Time
+                                    </label>
+
+                                    <input
+                                        type="time"
+                                        id="scheduled-report-time"
+                                        value="08:00"
+                                        step="300"
+                                    >
+
+                                </div>
+
+
+                                <div>
+
+                                    <label for="scheduled-report-timezone">
+                                        Timezone
+                                    </label>
+
+                                    <select id="scheduled-report-timezone">
+
+                                        <option value="Asia/Kuala_Lumpur">
+                                            Kuala Lumpur (UTC+8)
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+
+                            <label class="scheduled-report-checkbox-row">
+
+                                <input
+                                    type="checkbox"
+                                    id="scheduled-report-include-csv"
+                                >
+
+                                <span>
+                                    Attach Excel workbook (.xlsx)
+                                </span>
+
+                            </label>
+
+                            <p class="scheduled-report-attachment-help">
+                                Includes Summary, Transactions, Category Breakdown and Budget Performance sheets.
+                            </p>
+
+
+                            <div class="scheduled-report-actions">
+
+                                <button
+                                    type="submit"
+                                    id="scheduled-report-save-button"
+                                    class="primary-button"
+                                >
+                                    Save Email Schedule
+                                </button>
+
+                                <button
+                                    type="button"
+                                    id="scheduled-report-test-button"
+                                    class="secondary-button"
+                                >
+                                    Send Current Report Now
+                                </button>
+
+                            </div>
+
+
+                            <div class="scheduled-report-meta">
+
+                                <p id="scheduled-report-last-sent">
+                                    Last sent: Never
+                                </p>
+
+                                <p id="scheduled-report-last-error"></p>
+
+                            </div>
+
+
+                            <p
+                                id="scheduled-report-message"
+                                class="form-message"
+                            ></p>
+
+                        </form>
+
+                    </section>
+
+
+                    <section class="reports-summary-grid">
+
+                        <article class="report-summary-card">
+
+                            <span>Total Income</span>
+
+                            <strong
+                                id="report-total-income"
+                                class="income"
+                            >
+                                RM 0.00
+                            </strong>
+
+                            <p id="report-income-change">
+                                No comparison available.
+                            </p>
+
+                        </article>
+
+
+                        <article class="report-summary-card">
+
+                            <span>Total Expenses</span>
+
+                            <strong
+                                id="report-total-expenses"
+                                class="expense"
+                            >
+                                RM 0.00
+                            </strong>
+
+                            <p id="report-expense-change">
+                                No comparison available.
+                            </p>
+
+                        </article>
+
+
+                        <article class="report-summary-card">
+
+                            <span>Net Cash Flow</span>
+
+                            <strong id="report-net-cashflow">
+                                RM 0.00
+                            </strong>
+
+                            <p>
+                                Income minus expenses for the selected month.
+                            </p>
+
+                        </article>
+
+
+                        <article class="report-summary-card">
+
+                            <span>Transactions</span>
+
+                            <strong id="report-transaction-count">
+                                0
+                            </strong>
+
+                            <p>
+                                Number of recorded transactions.
+                            </p>
+
+                        </article>
+
+                    </section>
+
+
+                    <section class="reports-detail-grid">
+
+                        <article class="report-panel">
+
+                            <div class="report-panel-heading">
+
+                                <div>
+
+                                    <h3>
+                                        Expense by Category
+                                    </h3>
+
+                                    <p>
+                                        Where your money went this month.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                id="report-category-breakdown"
+                                class="report-list"
+                            ></div>
+
+                        </article>
+
+
+                        <article class="report-panel">
+
+                            <div class="report-panel-heading">
+
+                                <div>
+
+                                    <h3>
+                                        Income Sources
+                                    </h3>
+
+                                    <p>
+                                        Income recorded during the selected month.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                id="report-income-breakdown"
+                                class="report-list"
+                            ></div>
+
+                        </article>
+
+
+                        <article class="report-panel">
+
+                            <div class="report-panel-heading">
+
+                                <div>
+
+                                    <h3>
+                                        Account Activity
+                                    </h3>
+
+                                    <p>
+                                        Income, expenses and net movement by account.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                id="report-account-breakdown"
+                                class="report-list"
+                            ></div>
+
+                        </article>
+
+
+                        <article class="report-panel">
+
+                            <div class="report-panel-heading">
+
+                                <div>
+
+                                    <h3>
+                                        Budget Performance
+                                    </h3>
+
+                                    <p>
+                                        Monthly spending compared with category budgets.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                id="report-budget-performance"
+                                class="report-list"
+                            ></div>
+
+                        </article>
+
+                    </section>
+
+
+                    <section class="report-panel reports-trend-panel">
+
+                        <div class="report-panel-heading">
+
+                            <div>
+
+                                <h3>
+                                    6-Month Trend
+                                </h3>
+
+                                <p>
+                                    Income, expenses and net cash flow for recent months.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="report-trend-table"
+                            class="report-trend-table"
+                        ></div>
+
+                    </section>
+
+
+                    <section class="report-panel reports-transaction-panel">
+
+                        <div class="report-panel-heading">
+
+                            <div>
+
+                                <h3>
+                                    Monthly Transactions
+                                </h3>
+
+                                <p id="report-transaction-subtitle">
+                                    Transactions included in this report.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="report-transaction-list"
+                            class="report-transaction-list"
+                        ></div>
+
+                    </section>
+
+                </section>
+
+
+
+                <!-- =================================================
+                     GOALS & PLANNING PAGE
+                ================================================== -->
+
+                <section
+                    id="goals-page"
+                    class="app-page"
+                    data-page="goals"
+                >
+
+                    <div class="content-page-header">
+
+                        <div>
+
+                            <h2>
+                                Goals & Planning
+                            </h2>
+
+                            <p>
+                                Build savings goals, estimate your emergency fund and plan future cash flow.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <section class="goals-overview-grid">
+
+                        <div class="goal-overview-card">
+                            <span>Active Goals</span>
+                            <strong id="goals-active-count">0</strong>
+                            <p>Goals currently being worked on.</p>
+                        </div>
+
+                        <div class="goal-overview-card">
+                            <span>Total Saved</span>
+                            <strong id="goals-total-saved">RM 0.00</strong>
+                            <p>Amount recorded across active goals.</p>
+                        </div>
+
+                        <div class="goal-overview-card">
+                            <span>Total Target</span>
+                            <strong id="goals-total-target">RM 0.00</strong>
+                            <p>Combined target of active goals.</p>
+                        </div>
+
+                        <div class="goal-overview-card">
+                            <span>Overall Progress</span>
+                            <strong id="goals-overall-progress">0%</strong>
+                            <p>Progress across active savings goals.</p>
+                        </div>
+
+                    </section>
+
+
+                    <section class="management-section goals-management-section">
+
+                        <div class="section-heading">
+
+                            <div>
+
+                                <h2>
+                                    My Savings Goals
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    Track a target amount and your current saved amount.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            id="goals-list"
+                            class="goals-list"
+                        ></div>
+
+
+                        <form
+                            id="goal-form"
+                            class="management-form goal-form"
+                        >
+
+                            <h2 id="goal-form-title">
+                                Add Savings Goal
+                            </h2>
+
+                            <label for="goal-name">
+                                Goal Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="goal-name"
+                                placeholder="e.g. Emergency Fund"
+                                required
+                            >
+
+                            <div class="goal-form-grid">
+
+                                <div>
+
+                                    <label for="goal-target-amount">
+                                        Target Amount
+                                    </label>
+
+                                    <input
+                                        type="number"
+                                        id="goal-target-amount"
+                                        min="0.01"
+                                        step="0.01"
+                                        placeholder="10000"
+                                        required
+                                    >
+
+                                </div>
+
+                                <div>
+
+                                    <label for="goal-current-amount">
+                                        Current Saved Amount
+                                    </label>
+
+                                    <input
+                                        type="number"
+                                        id="goal-current-amount"
+                                        min="0"
+                                        step="0.01"
+                                        value="0"
+                                        required
+                                    >
+
+                                </div>
+
+                            </div>
+
+                            <div class="goal-form-grid">
+
+                                <div>
+
+                                    <label for="goal-target-date">
+                                        Target Date
+                                    </label>
+
+                                    <input
+                                        type="date"
+                                        id="goal-target-date"
+                                    >
+
+                                </div>
+
+                                <div>
+
+                                    <label for="goal-account">
+                                        Linked Account
+                                    </label>
+
+                                    <select id="goal-account">
+                                        <option value="">No linked account</option>
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+                            <label for="goal-notes">
+                                Notes
+                            </label>
+
+                            <textarea
+                                id="goal-notes"
+                                rows="3"
+                                placeholder="Optional notes for this goal"
+                            ></textarea>
+
+                            <button
+                                type="submit"
+                                id="save-goal-button"
+                                class="primary-button"
+                            >
+                                + Add Goal
+                            </button>
+
+                            <button
+                                type="button"
+                                id="cancel-goal-edit-button"
+                                class="secondary-button hidden-button"
+                            >
+                                Cancel Edit
+                            </button>
+
+                            <p
+                                id="goal-message"
+                                class="form-message"
+                            ></p>
+
+                        </form>
+
+                    </section>
+
+
+                    <section class="planning-tools-section">
+
+                        <div class="section-heading">
+
+                            <div>
+
+                                <h2>
+                                    Financial Planning Tools
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    Quick estimates based on the values you enter and your current recurring cash flow.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="planning-tools-grid">
+
+                            <article class="planning-tool-card">
+
+                                <div class="planning-tool-heading">
+
+                                    <h3>
+                                        Emergency Fund Target
+                                    </h3>
+
+                                    <p>
+                                        Estimate a safety buffer from your essential monthly expenses.
+                                    </p>
+
+                                </div>
+
+                                <label for="emergency-monthly-expenses">
+                                    Essential Monthly Expenses
+                                </label>
+
+                                <input
+                                    type="number"
+                                    id="emergency-monthly-expenses"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="1500"
+                                >
+
+                                <label for="emergency-months">
+                                    Months of Coverage
+                                </label>
+
+                                <select id="emergency-months">
+                                    <option value="3">3 months</option>
+                                    <option value="6" selected>6 months</option>
+                                    <option value="9">9 months</option>
+                                    <option value="12">12 months</option>
+                                </select>
+
+                                <div class="planning-result-card">
+
+                                    <span>Recommended Fund</span>
+                                    <strong id="emergency-fund-result">
+                                        RM 0.00
+                                    </strong>
+
+                                </div>
+
+                            </article>
+
+
+                            <article class="planning-tool-card">
+
+                                <div class="planning-tool-heading">
+
+                                    <h3>
+                                        Future Balance Projection
+                                    </h3>
+
+                                    <p>
+                                        Projects your current balances using active recurring net cash flow.
+                                    </p>
+
+                                </div>
+
+                                <label for="projection-months">
+                                    Projection Horizon
+                                </label>
+
+                                <select id="projection-months">
+                                    <option value="3">3 months</option>
+                                    <option value="6">6 months</option>
+                                    <option value="12" selected>12 months</option>
+                                    <option value="24">24 months</option>
+                                </select>
+
+                                <div class="planning-metric-list">
+
+                                    <div>
+                                        <span>Current Balance</span>
+                                        <strong id="projection-current-balance">
+                                            RM 0.00
+                                        </strong>
+                                    </div>
+
+                                    <div>
+                                        <span>Monthly Recurring Net</span>
+                                        <strong id="projection-monthly-net">
+                                            RM 0.00
+                                        </strong>
+                                    </div>
+
+                                </div>
+
+                                <div class="planning-result-card">
+
+                                    <span>Projected Balance</span>
+                                    <strong id="projection-result">
+                                        RM 0.00
+                                    </strong>
+
+                                </div>
+
+                                <p class="planning-disclaimer">
+                                    Projection only uses active recurring items. Normal day-to-day spending is not predicted.
+                                </p>
+
+                            </article>
+
+
+                            <article class="planning-tool-card">
+
+                                <div class="planning-tool-heading">
+
+                                    <h3>
+                                        Loan Payment Calculator
+                                    </h3>
+
+                                    <p>
+                                        Estimate an installment using a standard reducing-balance calculation.
+                                    </p>
+
+                                </div>
+
+                                <label for="loan-principal">
+                                    Loan Amount
+                                </label>
+
+                                <input
+                                    type="number"
+                                    id="loan-principal"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="30000"
+                                >
+
+                                <div class="goal-form-grid">
+
+                                    <div>
+
+                                        <label for="loan-rate">
+                                            Annual Interest %
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            id="loan-rate"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="4.5"
+                                        >
+
+                                    </div>
+
+                                    <div>
+
+                                        <label for="loan-term-months">
+                                            Term (Months)
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            id="loan-term-months"
+                                            min="1"
+                                            step="1"
+                                            placeholder="60"
+                                        >
+
+                                    </div>
+
+                                </div>
+
+                                <div class="planning-metric-list">
+
+                                    <div>
+                                        <span>Monthly Payment</span>
+                                        <strong id="loan-monthly-payment">
+                                            RM 0.00
+                                        </strong>
+                                    </div>
+
+                                    <div>
+                                        <span>Total Interest</span>
+                                        <strong id="loan-total-interest">
+                                            RM 0.00
+                                        </strong>
+                                    </div>
+
+                                </div>
+
+                                <div class="planning-result-card">
+
+                                    <span>Total Repayment</span>
+                                    <strong id="loan-total-repayment">
+                                        RM 0.00
+                                    </strong>
+
+                                </div>
+
+                            </article>
+
+                        </div>
+
+                    </section>
 
                 </section>
 
@@ -2365,6 +3739,141 @@
                                 </span>
 
                             </a>
+
+
+                            <a
+                                href="#insights-page"
+                                class="more-hub-card more-hub-link"
+                                data-page="insights"
+                            >
+
+                                <div class="more-hub-icon">
+                                    ✦
+                                </div>
+
+                                <div class="more-hub-content">
+
+                                    <div class="more-hub-title-row">
+                                        <h3>Smart Insights</h3>
+                                    </div>
+
+                                    <p>
+                                        Spending trends, risks and financial signals.
+                                    </p>
+
+                                </div>
+
+                                <span class="more-hub-arrow" aria-hidden="true">
+                                    ›
+                                </span>
+
+                            </a>
+
+
+                            <a
+                                href="#reports-page"
+                                class="more-hub-card more-hub-link"
+                                data-page="reports"
+                            >
+
+                                <div class="more-hub-icon">
+                                    ▤
+                                </div>
+
+                                <div class="more-hub-content">
+
+                                    <div class="more-hub-title-row">
+
+                                        <h3>
+                                            Reports
+                                        </h3>
+
+                                    </div>
+
+                                    <p>
+                                        Monthly summaries, trends and exports.
+                                    </p>
+
+                                </div>
+
+                                <span class="more-hub-arrow" aria-hidden="true">
+                                    ›
+                                </span>
+
+                            </a>
+
+
+                            <a
+                                href="#goals-page"
+                                class="more-hub-card more-hub-link"
+                                data-page="goals"
+                            >
+
+                                <div class="more-hub-icon">
+                                    ◎
+                                </div>
+
+                                <div class="more-hub-content">
+
+                                    <div class="more-hub-title-row">
+
+                                        <h3>
+                                            Goals & Planning
+                                        </h3>
+
+                                    </div>
+
+                                    <p>
+                                        Track savings goals and use planning calculators.
+                                    </p>
+
+                                </div>
+
+                                <span class="more-hub-arrow" aria-hidden="true">
+                                    ›
+                                </span>
+
+                            </a>
+
+
+                            <button
+                                type="button"
+                                id="install-app-card"
+                                class="more-hub-card more-hub-install-card"
+                            >
+
+                                <div class="more-hub-icon">
+                                    ↓
+                                </div>
+
+                                <div class="more-hub-content">
+
+                                    <div class="more-hub-title-row">
+
+                                        <h3>
+                                            Install My Finance
+                                        </h3>
+
+                                        <span
+                                            id="install-app-badge"
+                                            class="more-hub-badge"
+                                        >
+                                            App
+                                        </span>
+
+                                    </div>
+
+                                    <p id="install-app-description">
+                                        Add My Finance to your Home Screen for faster access.
+                                    </p>
+
+                                </div>
+
+                                <span class="more-hub-arrow" aria-hidden="true">
+                                    ›
+                                </span>
+
+                            </button>
 
 
                             <div
@@ -2767,6 +4276,76 @@
 
     </main>
 
+
+
+    <!-- =====================================================
+         TRANSACTION SUCCESS SNACKBAR
+    ====================================================== -->
+
+    <div
+        id="transaction-success-snackbar"
+        class="transaction-success-snackbar"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+    >
+
+        <div class="transaction-success-icon" aria-hidden="true">
+            ✓
+        </div>
+
+        <div class="transaction-success-copy">
+
+            <strong id="transaction-success-title">
+                Transaction saved
+            </strong>
+
+            <span id="transaction-success-message">
+                Your transaction has been saved successfully.
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         TRANSACTION UNDO SNACKBAR
+    ====================================================== -->
+
+    <div
+        id="transaction-undo-snackbar"
+        class="transaction-undo-snackbar"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+    >
+
+        <div class="transaction-undo-copy">
+
+            <strong id="transaction-undo-title">
+                Transaction deleted
+            </strong>
+
+            <span id="transaction-undo-message">
+                Permanent deletion in 5 seconds.
+            </span>
+
+        </div>
+
+        <button
+            type="button"
+            id="transaction-undo-button"
+        >
+            Undo
+        </button>
+
+        <div
+            id="transaction-undo-progress"
+            class="transaction-undo-progress"
+        ></div>
+
+    </div>
 
 
     <!-- =====================================================
