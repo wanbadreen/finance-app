@@ -1,4 +1,4 @@
-const CACHE_NAME = "kira-shell-v1";
+const CACHE_NAME = "my-finance-shell-v1";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -7,10 +7,7 @@ const APP_SHELL = [
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
-  "/apple-touch-icon.png",
-  "/icon-maskable-512.png",
-  "/favicon-64.png",
-  "/kira-logo.png"
+  "/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", event => {

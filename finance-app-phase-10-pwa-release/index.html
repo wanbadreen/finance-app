@@ -36,7 +36,7 @@
 
     <meta
         name="apple-mobile-web-app-title"
-        content="Kira"
+        content="My Finance"
     >
 
     <link
@@ -45,17 +45,11 @@
     >
 
     <link
-        rel="icon"
-        type="image/png"
-        href="/favicon-64.png"
-    >
-
-    <link
         rel="apple-touch-icon"
         href="/apple-touch-icon.png"
     >
 
-    <title>Kira</title>
+    <title>My Finance</title>
 
     <link
         rel="stylesheet"
@@ -86,19 +80,13 @@
 
         <div class="auth-card">
 
-            <div class="auth-brand">
-
-                <img
-                    src="/kira-logo.png"
-                    alt="Kira"
-                    class="auth-brand-logo"
-                >
-
-            </div>
+            <h1>
+                My Finance
+            </h1>
 
 
             <p class="auth-subtitle">
-                Your personal finance companion.
+                Sign in to manage your finances.
             </p>
 
 
@@ -139,15 +127,6 @@
                     id="login-button"
                 >
                     Login
-                </button>
-
-
-                <button
-                    type="button"
-                    id="forgot-password-button"
-                    class="auth-link-button"
-                >
-                    Forgot password?
                 </button>
 
 
@@ -196,22 +175,19 @@
 
                 <div class="sidebar-brand">
 
-                    <img
-                        src="/icon-192.png"
-                        alt=""
-                        class="brand-icon brand-icon-image"
-                        aria-hidden="true"
-                    >
+                    <div class="brand-icon">
+                        MF
+                    </div>
 
 
                     <div>
 
                         <h2>
-                            Kira
+                            My Finance
                         </h2>
 
                         <p>
-                            Personal finance
+                            Personal Finance
                         </p>
 
                     </div>
@@ -380,23 +356,6 @@
 
                     </a>
 
-
-                    <a
-                        href="#settings"
-                        class="nav-item"
-                        data-page="settings"
-                    >
-
-                        <span class="nav-icon">
-                            ◐
-                        </span>
-
-                        <span>
-                            Settings
-                        </span>
-
-                    </a>
-
                 </nav>
 
 
@@ -419,14 +378,6 @@
                 <!-- SIDEBAR USER -->
 
                 <div class="sidebar-user">
-
-                    <div
-                        id="sidebar-user-avatar"
-                        class="sidebar-user-avatar"
-                        aria-hidden="true"
-                    >
-                        U
-                    </div>
 
                     <div class="sidebar-user-info">
 
@@ -3623,770 +3574,6 @@
 
 
                 <!-- =================================================
-                     SETTINGS PAGE
-                ================================================== -->
-
-                <section
-                    id="settings-page"
-                    class="app-page settings-page"
-                    data-page="settings"
-                >
-
-                    <div class="content-page-header">
-
-                        <div>
-
-                            <h2>
-                                Settings
-                            </h2>
-
-                            <p>
-                                Personalise your profile and how the app looks.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <section class="settings-section">
-
-                        <article class="settings-card">
-
-                            <div class="settings-card-heading">
-
-                                <div>
-
-                                    <p class="settings-eyebrow">
-                                        Profile
-                                    </p>
-
-                                    <h3>
-                                        Your account
-                                    </h3>
-
-                                    <p>
-                                        Update the name and avatar shown inside the app.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="settings-profile-preview">
-
-                                <div
-                                    id="settings-avatar-preview"
-                                    class="settings-avatar-preview"
-                                    aria-hidden="true"
-                                >
-                                    U
-                                </div>
-
-                                <div>
-
-                                    <strong id="settings-profile-preview-name">
-                                        User
-                                    </strong>
-
-                                    <span id="settings-profile-email">
-                                        Signed in
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="settings-form-grid">
-
-                                <label class="settings-field">
-
-                                    <span>
-                                        Display name
-                                    </span>
-
-                                    <input
-                                        type="text"
-                                        id="settings-display-name"
-                                        maxlength="40"
-                                        autocomplete="name"
-                                        placeholder="Your display name"
-                                    >
-
-                                </label>
-
-                            </div>
-
-
-                            <fieldset class="settings-avatar-fieldset">
-
-                                <legend>
-                                    Avatar
-                                </legend>
-
-                                <p class="settings-field-help">
-                                    Pick a simple avatar for your account.
-                                </p>
-
-                                <div
-                                    id="settings-avatar-options"
-                                    class="settings-avatar-options"
-                                >
-
-                                    <label class="settings-avatar-option">
-
-                                        <input
-                                            type="radio"
-                                            name="settings-avatar"
-                                            value="initials"
-                                        >
-
-                                        <span class="settings-avatar-choice settings-avatar-initials">
-                                            AB
-                                        </span>
-
-                                        <small>
-                                            Initials
-                                        </small>
-
-                                    </label>
-
-
-                                    <label class="settings-avatar-option">
-
-                                        <input
-                                            type="radio"
-                                            name="settings-avatar"
-                                            value="👤"
-                                        >
-
-                                        <span class="settings-avatar-choice">
-                                            👤
-                                        </span>
-
-                                        <small>
-                                            Profile
-                                        </small>
-
-                                    </label>
-
-
-                                    <label class="settings-avatar-option">
-
-                                        <input
-                                            type="radio"
-                                            name="settings-avatar"
-                                            value="🙂"
-                                        >
-
-                                        <span class="settings-avatar-choice">
-                                            🙂
-                                        </span>
-
-                                        <small>
-                                            Smile
-                                        </small>
-
-                                    </label>
-
-
-                                    <label class="settings-avatar-option">
-
-                                        <input
-                                            type="radio"
-                                            name="settings-avatar"
-                                            value="💼"
-                                        >
-
-                                        <span class="settings-avatar-choice">
-                                            💼
-                                        </span>
-
-                                        <small>
-                                            Work
-                                        </small>
-
-                                    </label>
-
-
-                                    <label class="settings-avatar-option">
-
-                                        <input
-                                            type="radio"
-                                            name="settings-avatar"
-                                            value="📊"
-                                        >
-
-                                        <span class="settings-avatar-choice">
-                                            📊
-                                        </span>
-
-                                        <small>
-                                            Finance
-                                        </small>
-
-                                    </label>
-
-
-                                    <label class="settings-avatar-option">
-
-                                        <input
-                                            type="radio"
-                                            name="settings-avatar"
-                                            value="💰"
-                                        >
-
-                                        <span class="settings-avatar-choice">
-                                            💰
-                                        </span>
-
-                                        <small>
-                                            Money
-                                        </small>
-
-                                    </label>
-
-                                </div>
-
-                            </fieldset>
-
-
-                            <div class="settings-card-actions">
-
-                                <button
-                                    type="button"
-                                    id="save-profile-settings-button"
-                                    class="primary-button settings-save-button"
-                                >
-                                    Save profile
-                                </button>
-
-                                <span
-                                    id="settings-profile-message"
-                                    class="settings-inline-message"
-                                    aria-live="polite"
-                                ></span>
-
-                            </div>
-
-                        </article>
-
-
-                        <article class="settings-card">
-
-                            <div class="settings-card-heading">
-
-                                <div>
-
-                                    <p class="settings-eyebrow">
-                                        Appearance
-                                    </p>
-
-                                    <h3>
-                                        Theme
-                                    </h3>
-
-                                    <p>
-                                        Choose how the app should look on this device.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-
-                            <div
-                                id="settings-theme-options"
-                                class="settings-theme-options"
-                            >
-
-                                <label class="settings-theme-option">
-
-                                    <input
-                                        type="radio"
-                                        name="settings-theme"
-                                        value="light"
-                                    >
-
-                                    <span class="settings-theme-preview settings-theme-preview-light">
-
-                                        <span></span>
-                                        <span></span>
-
-                                    </span>
-
-                                    <strong>
-                                        Light
-                                    </strong>
-
-                                    <small>
-                                        Always use the light theme.
-                                    </small>
-
-                                </label>
-
-
-                                <label class="settings-theme-option">
-
-                                    <input
-                                        type="radio"
-                                        name="settings-theme"
-                                        value="dark"
-                                    >
-
-                                    <span class="settings-theme-preview settings-theme-preview-dark">
-
-                                        <span></span>
-                                        <span></span>
-
-                                    </span>
-
-                                    <strong>
-                                        Dark
-                                    </strong>
-
-                                    <small>
-                                        Use a darker theme throughout the app.
-                                    </small>
-
-                                </label>
-
-
-                                <label class="settings-theme-option">
-
-                                    <input
-                                        type="radio"
-                                        name="settings-theme"
-                                        value="system"
-                                    >
-
-                                    <span class="settings-theme-preview settings-theme-preview-system">
-
-                                        <span></span>
-                                        <span></span>
-
-                                    </span>
-
-                                    <strong>
-                                        System
-                                    </strong>
-
-                                    <small>
-                                        Follow your phone or computer setting.
-                                    </small>
-
-                                </label>
-
-                            </div>
-
-
-                            <p
-                                id="settings-theme-message"
-                                class="settings-inline-message settings-theme-message"
-                                aria-live="polite"
-                            ></p>
-
-                        </article>
-
-
-                        <article class="settings-card">
-
-                            <div class="settings-card-heading">
-
-                                <div>
-
-                                    <p class="settings-eyebrow">
-                                        Account & Security
-                                    </p>
-
-                                    <h3>
-                                        Sign-in details
-                                    </h3>
-
-                                    <p>
-                                        Review your account, update your email or password, and manage sessions.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="account-security-summary">
-
-                                <div class="account-security-item">
-
-                                    <span>
-                                        Email
-                                    </span>
-
-                                    <strong id="settings-security-email">
-                                        —
-                                    </strong>
-
-                                </div>
-
-
-                                <div class="account-security-item">
-
-                                    <span>
-                                        Member since
-                                    </span>
-
-                                    <strong id="settings-member-since">
-                                        —
-                                    </strong>
-
-                                </div>
-
-
-                                <div class="account-security-item">
-
-                                    <span>
-                                        Last sign in
-                                    </span>
-
-                                    <strong id="settings-last-sign-in">
-                                        —
-                                    </strong>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="settings-subsection">
-
-                                <div class="settings-subsection-heading">
-
-                                    <h4>
-                                        Change email
-                                    </h4>
-
-                                    <p>
-                                        Supabase may ask you to confirm the new address before the change becomes active.
-                                    </p>
-
-                                </div>
-
-
-                                <label class="settings-field">
-
-                                    <span>
-                                        New email
-                                    </span>
-
-                                    <input
-                                        type="email"
-                                        id="settings-new-email"
-                                        autocomplete="email"
-                                        placeholder="new@example.com"
-                                    >
-
-                                </label>
-
-
-                                <div class="settings-card-actions">
-
-                                    <button
-                                        type="button"
-                                        id="update-email-button"
-                                        class="secondary-button settings-inline-button"
-                                    >
-                                        Update email
-                                    </button>
-
-                                    <span
-                                        id="settings-email-message"
-                                        class="settings-inline-message"
-                                        aria-live="polite"
-                                    ></span>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="settings-subsection">
-
-                                <div class="settings-subsection-heading">
-
-                                    <h4>
-                                        Password
-                                    </h4>
-
-                                    <p id="password-security-help">
-                                        Choose a new password with at least 8 characters.
-                                    </p>
-
-                                </div>
-
-
-                                <div
-                                    id="password-recovery-banner"
-                                    class="settings-security-banner hidden-button"
-                                >
-                                    Password recovery link verified. Set your new password below.
-                                </div>
-
-
-                                <div class="settings-form-grid">
-
-                                    <label class="settings-field">
-
-                                        <span>
-                                            New password
-                                        </span>
-
-                                        <input
-                                            type="password"
-                                            id="settings-new-password"
-                                            minlength="8"
-                                            autocomplete="new-password"
-                                            placeholder="At least 8 characters"
-                                        >
-
-                                    </label>
-
-
-                                    <label class="settings-field">
-
-                                        <span>
-                                            Confirm password
-                                        </span>
-
-                                        <input
-                                            type="password"
-                                            id="settings-confirm-password"
-                                            minlength="8"
-                                            autocomplete="new-password"
-                                            placeholder="Repeat new password"
-                                        >
-
-                                    </label>
-
-                                </div>
-
-
-                                <div class="settings-card-actions">
-
-                                    <button
-                                        type="button"
-                                        id="update-password-button"
-                                        class="primary-button settings-inline-button"
-                                    >
-                                        Update password
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        id="send-reset-email-button"
-                                        class="secondary-button settings-inline-button"
-                                    >
-                                        Email me a reset link
-                                    </button>
-
-                                    <span
-                                        id="settings-password-message"
-                                        class="settings-inline-message"
-                                        aria-live="polite"
-                                    ></span>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="settings-subsection">
-
-                                <div class="settings-subsection-heading">
-
-                                    <h4>
-                                        Sessions
-                                    </h4>
-
-                                    <p>
-                                        Sign out other browser or device sessions while keeping this one active.
-                                    </p>
-
-                                </div>
-
-
-                                <div class="settings-card-actions">
-
-                                    <button
-                                        type="button"
-                                        id="sign-out-other-sessions-button"
-                                        class="secondary-button settings-inline-button"
-                                    >
-                                        Sign out other sessions
-                                    </button>
-
-                                    <span
-                                        id="settings-session-message"
-                                        class="settings-inline-message"
-                                        aria-live="polite"
-                                    ></span>
-
-                                </div>
-
-                            </div>
-
-                        </article>
-
-
-                        <article class="settings-card">
-
-                            <div class="settings-card-heading">
-
-                                <div>
-
-                                    <p class="settings-eyebrow">
-                                        Data & Privacy
-                                    </p>
-
-                                    <h3>
-                                        Your Kira data
-                                    </h3>
-
-                                    <p>
-                                        Export a copy of your finance records or permanently delete your account.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="data-privacy-grid">
-
-                                <div class="data-privacy-panel">
-
-                                    <div>
-
-                                        <h4>
-                                            Export my data
-                                        </h4>
-
-                                        <p>
-                                            Download a JSON backup of your account profile, transactions, budgets, recurring records, goals, tags and report preferences. Receipt file paths are included, but receipt image/PDF files are not bundled.
-                                        </p>
-
-                                    </div>
-
-
-                                    <button
-                                        type="button"
-                                        id="export-my-data-button"
-                                        class="secondary-button settings-inline-button"
-                                    >
-                                        Export JSON backup
-                                    </button>
-
-
-                                    <span
-                                        id="settings-export-message"
-                                        class="settings-inline-message"
-                                        aria-live="polite"
-                                    ></span>
-
-                                </div>
-
-
-                                <div class="data-privacy-panel privacy-panel">
-
-                                    <div>
-
-                                        <h4>
-                                            Privacy
-                                        </h4>
-
-                                        <p>
-                                            Your finance tables use account-level access controls so signed-in users only query their own records.
-                                        </p>
-
-                                    </div>
-
-                                    <span class="privacy-status-badge">
-                                        User-isolated data
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-
-                            <div class="settings-danger-zone">
-
-                                <div class="settings-danger-heading">
-
-                                    <div>
-
-                                        <p class="settings-eyebrow settings-danger-eyebrow">
-                                            Danger Zone
-                                        </p>
-
-                                        <h4>
-                                            Delete Kira account
-                                        </h4>
-
-                                        <p>
-                                            Permanently deletes your finance records, receipt files and sign-in account. This action cannot be undone.
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-
-                                <label class="settings-field">
-
-                                    <span>
-                                        Type DELETE to confirm
-                                    </span>
-
-                                    <input
-                                        type="text"
-                                        id="delete-account-confirmation"
-                                        autocomplete="off"
-                                        placeholder="DELETE"
-                                    >
-
-                                </label>
-
-
-                                <div class="settings-card-actions">
-
-                                    <button
-                                        type="button"
-                                        id="delete-account-button"
-                                        class="danger-action-button settings-inline-button"
-                                        disabled
-                                    >
-                                        Delete my account
-                                    </button>
-
-                                    <span
-                                        id="settings-delete-message"
-                                        class="settings-inline-message settings-danger-message"
-                                        aria-live="polite"
-                                    ></span>
-
-                                </div>
-
-                            </div>
-
-                        </article>
-
-                    </section>
-
-                </section>
-
-
-
-                <!-- =================================================
                      MOBILE MORE HUB
                 ================================================== -->
 
@@ -4664,7 +3851,7 @@
                                     <div class="more-hub-title-row">
 
                                         <h3>
-                                            Install Kira
+                                            Install My Finance
                                         </h3>
 
                                         <span
@@ -4677,7 +3864,7 @@
                                     </div>
 
                                     <p id="install-app-description">
-                                        Add Kira to your Home Screen for faster access.
+                                        Add My Finance to your Home Screen for faster access.
                                     </p>
 
                                 </div>
@@ -4689,47 +3876,13 @@
                             </button>
 
 
-                            <button
-                                type="button"
-                                id="mobile-logout-button"
-                                class="more-hub-card more-hub-logout-card"
-                            >
-
-                                <div class="more-hub-icon more-hub-logout-icon">
-                                    ↪
-                                </div>
-
-                                <div class="more-hub-content">
-
-                                    <div class="more-hub-title-row">
-
-                                        <h3>
-                                            Log out
-                                        </h3>
-
-                                    </div>
-
-                                    <p>
-                                        Sign out of your account on this device.
-                                    </p>
-
-                                </div>
-
-                                <span class="more-hub-arrow" aria-hidden="true">
-                                    ›
-                                </span>
-
-                            </button>
-
-
-                            <a
-                                href="#settings"
-                                class="more-hub-card more-hub-link"
-                                data-page="settings"
+                            <div
+                                class="more-hub-card more-hub-card-disabled"
+                                aria-disabled="true"
                             >
 
                                 <div class="more-hub-icon">
-                                    ◐
+                                    ⚙
                                 </div>
 
                                 <div class="more-hub-content">
@@ -4740,19 +3893,19 @@
                                             Settings
                                         </h3>
 
+                                        <span class="more-hub-badge">
+                                            Coming soon
+                                        </span>
+
                                     </div>
 
                                     <p>
-                                        Profile, avatar and app appearance.
+                                        App preferences, security, export and account settings.
                                     </p>
 
                                 </div>
 
-                                <span class="more-hub-arrow" aria-hidden="true">
-                                    ›
-                                </span>
-
-                            </a>
+                            </div>
 
 
                         </div>
