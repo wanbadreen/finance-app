@@ -113,6 +113,12 @@ const settingsDeleteMessage =
 let passwordRecoveryMode =
     false;
 
+let passwordResetCooldownTimer =
+    null;
+
+let passwordResetCooldownSeconds =
+    0;
+
 const authMessage = document.getElementById("auth-message");
 const userEmail = document.getElementById("user-email");
 
@@ -1884,9 +1890,124 @@ function getPasswordResetRedirectUrl() {
 }
 
 
+function setPasswordResetButtonState(
+    button,
+    secondsRemaining
+) {
+
+    if (!button) {
+        return;
+    }
+
+    if (secondsRemaining > 0) {
+
+        button.disabled =
+            true;
+
+        button.textContent =
+            `Resend available in ${secondsRemaining}s`;
+
+        return;
+    }
+
+    button.disabled =
+        false;
+
+    button.textContent =
+        "Forgot password?";
+}
+
+
+function startPasswordResetCooldown(
+    button,
+    seconds = 60
+) {
+
+    if (passwordResetCooldownTimer) {
+
+        clearInterval(
+            passwordResetCooldownTimer
+        );
+    }
+
+    passwordResetCooldownSeconds =
+        seconds;
+
+    setPasswordResetButtonState(
+        button,
+        passwordResetCooldownSeconds
+    );
+
+    passwordResetCooldownTimer =
+        setInterval(
+            function () {
+
+                passwordResetCooldownSeconds =
+                    Math.max(
+                        0,
+                        passwordResetCooldownSeconds - 1
+                    );
+
+                setPasswordResetButtonState(
+                    button,
+                    passwordResetCooldownSeconds
+                );
+
+                if (
+                    passwordResetCooldownSeconds <= 0
+                ) {
+
+                    clearInterval(
+                        passwordResetCooldownTimer
+                    );
+
+                    passwordResetCooldownTimer =
+                        null;
+                }
+            },
+            1000
+        );
+}
+
+
+function getFriendlyAuthEmailError(
+    error
+) {
+
+    const message =
+        String(
+            error?.message
+            ||
+            ""
+        )
+            .trim();
+
+    const lower =
+        message.toLowerCase();
+
+    if (
+        lower.includes("rate limit")
+        ||
+        lower.includes("too many requests")
+        ||
+        lower.includes("email rate limit exceeded")
+    ) {
+
+        return "Please wait a moment before requesting another reset email.";
+    }
+
+    return (
+        message
+        ||
+        "Unable to send the reset email right now."
+    );
+}
+
+
 async function sendPasswordResetEmail(
     email,
-    messageElement
+    messageElement,
+    buttonElement = null
 ) {
 
     const safeEmail =
@@ -1898,62 +2019,91 @@ async function sendPasswordResetEmail(
             .trim()
             .toLowerCase();
 
-
     if (!safeEmail) {
 
         if (messageElement) {
 
-            messageElement
-                .textContent =
-                    "Enter your email address first.";
+            messageElement.textContent =
+                "Enter your email address first.";
         }
 
         return false;
     }
 
+    if (
+        buttonElement
+        &&
+        passwordResetCooldownSeconds > 0
+    ) {
+
+        if (messageElement) {
+
+            messageElement.textContent =
+                `Please wait ${passwordResetCooldownSeconds}s before requesting another reset email.`;
+        }
+
+        return false;
+    }
 
     if (messageElement) {
 
-        messageElement
-            .textContent =
-                "Sending reset link…";
+        messageElement.textContent =
+            "Sending reset link…";
     }
 
+    if (buttonElement) {
+
+        buttonElement.disabled =
+            true;
+    }
 
     const {
         error
     } =
-        await supabase
-            .auth
-            .resetPasswordForEmail(
-                safeEmail,
-                {
-                    redirectTo:
-                        getPasswordResetRedirectUrl()
-                }
-            );
-
+        await supabase.auth.resetPasswordForEmail(
+            safeEmail,
+            {
+                redirectTo:
+                    getPasswordResetRedirectUrl()
+            }
+        );
 
     if (error) {
 
+        if (
+            buttonElement
+            &&
+            passwordResetCooldownSeconds <= 0
+        ) {
+
+            buttonElement.disabled =
+                false;
+        }
+
         if (messageElement) {
 
-            messageElement
-                .textContent =
-                    error.message;
+            messageElement.textContent =
+                getFriendlyAuthEmailError(
+                    error
+                );
         }
 
         return false;
     }
 
-
     if (messageElement) {
 
-        messageElement
-            .textContent =
-                "Password reset email sent. Check your inbox.";
+        messageElement.textContent =
+            "Password reset email sent. Check your inbox.";
     }
 
+    if (buttonElement) {
+
+        startPasswordResetCooldown(
+            buttonElement,
+            60
+        );
+    }
 
     return true;
 }
@@ -1971,7 +2121,8 @@ forgotPasswordButton
 
             await sendPasswordResetEmail(
                 emailInput?.value,
-                authMessage
+                authMessage,
+                forgotPasswordButton
             );
         }
     );
