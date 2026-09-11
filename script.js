@@ -1892,7 +1892,9 @@ function getPasswordResetRedirectUrl() {
 
 function setPasswordResetButtonState(
     button,
-    secondsRemaining
+    secondsRemaining,
+    idleLabel =
+        "Forgot password?"
 ) {
 
     if (!button) {
@@ -1914,13 +1916,15 @@ function setPasswordResetButtonState(
         false;
 
     button.textContent =
-        "Forgot password?";
+        idleLabel;
 }
 
 
 function startPasswordResetCooldown(
     button,
-    seconds = 60
+    seconds = 60,
+    idleLabel =
+        "Forgot password?"
 ) {
 
     if (passwordResetCooldownTimer) {
@@ -1935,7 +1939,8 @@ function startPasswordResetCooldown(
 
     setPasswordResetButtonState(
         button,
-        passwordResetCooldownSeconds
+        passwordResetCooldownSeconds,
+        idleLabel
     );
 
     passwordResetCooldownTimer =
@@ -1950,7 +1955,8 @@ function startPasswordResetCooldown(
 
                 setPasswordResetButtonState(
                     button,
-                    passwordResetCooldownSeconds
+                    passwordResetCooldownSeconds,
+                    idleLabel
                 );
 
                 if (
@@ -2007,7 +2013,9 @@ function getFriendlyAuthEmailError(
 async function sendPasswordResetEmail(
     email,
     messageElement,
-    buttonElement = null
+    buttonElement = null,
+    idleLabel =
+        "Forgot password?"
 ) {
 
     const safeEmail =
@@ -2070,7 +2078,28 @@ async function sendPasswordResetEmail(
 
     if (error) {
 
+        const friendlyMessage =
+            getFriendlyAuthEmailError(
+                error
+            );
+
+        const isRateLimited =
+            friendlyMessage ===
+            "Please wait a moment before requesting another reset email.";
+
         if (
+            buttonElement
+            &&
+            isRateLimited
+        ) {
+
+            startPasswordResetCooldown(
+                buttonElement,
+                60,
+                idleLabel
+            );
+
+        } else if (
             buttonElement
             &&
             passwordResetCooldownSeconds <= 0
@@ -2083,9 +2112,7 @@ async function sendPasswordResetEmail(
         if (messageElement) {
 
             messageElement.textContent =
-                getFriendlyAuthEmailError(
-                    error
-                );
+                friendlyMessage;
         }
 
         return false;
@@ -2101,7 +2128,8 @@ async function sendPasswordResetEmail(
 
         startPasswordResetCooldown(
             buttonElement,
-            60
+            60,
+            idleLabel
         );
     }
 
@@ -2122,7 +2150,8 @@ forgotPasswordButton
             await sendPasswordResetEmail(
                 emailInput?.value,
                 authMessage,
-                forgotPasswordButton
+                forgotPasswordButton,
+                "Forgot password?"
             );
         }
     );
@@ -2325,7 +2354,9 @@ sendResetEmailButton
 
             await sendPasswordResetEmail(
                 currentUser?.email,
-                settingsPasswordMessage
+                settingsPasswordMessage,
+                sendResetEmailButton,
+                "Email me a reset link"
             );
         }
     );
@@ -2899,11 +2930,11 @@ registerButton.addEventListener(
 
         if (
             !email ||
-            password.length < 6
+            password.length < 8
         ) {
 
             authMessage.textContent =
-                "Enter a valid email and a password of at least 6 characters.";
+                "Enter a valid email and a password of at least 8 characters.";
 
             return;
         }
@@ -16495,13 +16526,6 @@ async function permanentlyDeleteTransaction(
         return;
     }
 
-    if (pendingDelete.receipt_path) {
-
-        await deleteReceipt(
-            pendingDelete.receipt_path
-        );
-    }
-
     const {
         error
     } =
@@ -16526,6 +16550,23 @@ async function permanentlyDeleteTransaction(
         );
 
         return;
+    }
+
+    if (
+        pendingDelete.receipt_path
+    ) {
+
+        const receiptRemoved =
+            await deleteReceipt(
+                pendingDelete.receipt_path
+            );
+
+        if (!receiptRemoved) {
+
+            console.warn(
+                "Transaction deleted, but its receipt file could not be removed."
+            );
+        }
     }
 }
 
@@ -16858,32 +16899,46 @@ async function cleanupStaleDeletedTransactions() {
             );
         }
 
+        const {
+            error: deleteError
+        } =
+            await supabase
+                .from("transactions")
+                .delete()
+                .eq(
+                    "id",
+                    item.id
+                )
+                .not(
+                    "deleted_at",
+                    "is",
+                    null
+                );
+
+        if (deleteError) {
+
+            console.warn(
+                "Stale transaction cleanup error:",
+                deleteError
+            );
+
+            continue;
+        }
+
         if (item.receipt_path) {
 
-            await deleteReceipt(
-                item.receipt_path
-            );
+            const receiptRemoved =
+                await deleteReceipt(
+                    item.receipt_path
+                );
+
+            if (!receiptRemoved) {
+
+                console.warn(
+                    "Stale transaction removed, but its receipt file could not be removed."
+                );
+            }
         }
-    }
-
-    const {
-        error: deleteError
-    } =
-        await supabase
-            .from("transactions")
-            .delete()
-            .not(
-                "deleted_at",
-                "is",
-                null
-            );
-
-    if (deleteError) {
-
-        console.warn(
-            "Stale transaction cleanup error:",
-            deleteError
-        );
     }
 }
 
@@ -22090,16 +22145,24 @@ function escapeCsvValue(
             ""
         );
 
+    const safeString =
+        /^[\t\r ]*[=+\-@]/
+            .test(
+                string
+            )
+            ? `'${string}`
+            : string;
+
     if (
-        string.includes(",") ||
-        string.includes('"') ||
-        string.includes("\n")
+        safeString.includes(",") ||
+        safeString.includes('"') ||
+        safeString.includes("\n")
     ) {
 
-        return `"${string.replaceAll('"', '""')}"`;
+        return `"${safeString.replaceAll('"', '""')}"`;
     }
 
-    return string;
+    return safeString;
 }
 
 
