@@ -5199,6 +5199,114 @@
 
     </div>
 
+    <!-- =====================================================
+         PHASE 14A — FIRST-TIME ONBOARDING
+    ====================================================== -->
+
+    <div
+        id="kira-onboarding"
+        class="kira-onboarding"
+        hidden
+    >
+        <div class="kira-onboarding-backdrop"></div>
+
+        <section
+            class="kira-onboarding-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="kira-onboarding-title"
+        >
+            <header class="kira-onboarding-header">
+
+                <div>
+                    <span class="kira-onboarding-brand">
+                        Kira
+                    </span>
+
+                    <h1 id="kira-onboarding-title">
+                        Set up Kira
+                    </h1>
+                </div>
+
+                <button
+                    type="button"
+                    id="kira-onboarding-skip-top"
+                    class="kira-onboarding-quiet-button"
+                >
+                    Skip for now
+                </button>
+
+            </header>
+
+
+            <div class="kira-onboarding-progress">
+
+                <div class="kira-onboarding-progress-copy">
+                    <span id="kira-onboarding-step-label">
+                        Step 1 of 6
+                    </span>
+
+                    <span id="kira-onboarding-step-name">
+                        Welcome
+                    </span>
+                </div>
+
+                <div class="kira-onboarding-progress-track">
+                    <span id="kira-onboarding-progress-bar"></span>
+                </div>
+
+            </div>
+
+
+            <div
+                id="kira-onboarding-content"
+                class="kira-onboarding-content"
+            ></div>
+
+
+            <footer class="kira-onboarding-footer">
+
+                <button
+                    type="button"
+                    id="kira-onboarding-back"
+                    class="kira-onboarding-secondary"
+                >
+                    Back
+                </button>
+
+
+                <div class="kira-onboarding-footer-actions">
+
+                    <button
+                        type="button"
+                        id="kira-onboarding-secondary-action"
+                        class="kira-onboarding-secondary"
+                    >
+                    </button>
+
+                    <button
+                        type="button"
+                        id="kira-onboarding-primary-action"
+                        class="kira-onboarding-primary"
+                    >
+                        Continue
+                    </button>
+
+                </div>
+
+            </footer>
+
+
+            <p
+                id="kira-onboarding-message"
+                class="kira-onboarding-message"
+                aria-live="polite"
+            ></p>
+
+        </section>
+
+    </div>
+
 
     <!-- =====================================================
          JAVASCRIPT
