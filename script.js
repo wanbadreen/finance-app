@@ -26131,6 +26131,18 @@ async function finishOnboarding(
     });
 
 
+    // Keep the main app UI in sync with data created inside onboarding.
+    // The underlying arrays are already refreshed by each onboarding step,
+    // but existing form <select> options still need to be rebuilt.
+    refreshTransactionDropdowns();
+
+    refreshRecurringFormOptions();
+
+    refreshGoalAccountOptions();
+
+    updateDashboard();
+
+
     closeOnboarding();
 
 
