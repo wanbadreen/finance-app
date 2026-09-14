@@ -2906,6 +2906,8 @@ async function showLoggedInState(user) {
     refreshGoalAccountOptions();
 
     renderPlanningTools();
+
+    await initializeFirstTimeOnboarding();
 }
 
 
@@ -23909,3 +23911,2705 @@ initializeAuth();
 
 initializeAppNavigation();
 
+
+
+// ======================================================
+// PHASE 14A — FIRST-TIME ONBOARDING
+// ======================================================
+
+const ONBOARDING_VERSION =
+    1;
+
+const ONBOARDING_MAX_STEP =
+    6;
+
+let onboardingState =
+    null;
+
+let onboardingCurrentStep =
+    1;
+
+let onboardingFirstAccountId =
+    null;
+
+let onboardingBusy =
+    false;
+
+
+const onboardingStarterCategories = [
+    {
+        name:
+            "Food & Dining",
+        type:
+            "expense"
+    },
+    {
+        name:
+            "Transportation",
+        type:
+            "expense"
+    },
+    {
+        name:
+            "Bills",
+        type:
+            "expense"
+    },
+    {
+        name:
+            "Shopping",
+        type:
+            "expense"
+    },
+    {
+        name:
+            "Entertainment",
+        type:
+            "expense"
+    },
+    {
+        name:
+            "Health",
+        type:
+            "expense"
+    },
+    {
+        name:
+            "Education",
+        type:
+            "expense"
+    },
+    {
+        name:
+            "Travel",
+        type:
+            "expense"
+    },
+    {
+        name:
+            "Other",
+        type:
+            "expense"
+    },
+    {
+        name:
+            "Salary",
+        type:
+            "income"
+    },
+    {
+        name:
+            "Side Income",
+        type:
+            "income"
+    },
+    {
+        name:
+            "Investment",
+        type:
+            "income"
+    }
+];
+
+
+function getOnboardingElement(
+    id
+) {
+
+    return document
+        .getElementById(
+            id
+        );
+}
+
+
+function setOnboardingMessage(
+    message = "",
+    type = ""
+) {
+
+    const element =
+        getOnboardingElement(
+            "kira-onboarding-message"
+        );
+
+    if (!element) {
+        return;
+    }
+
+
+    element.textContent =
+        message;
+
+    element.classList.toggle(
+        "error",
+        type === "error"
+    );
+}
+
+
+function setOnboardingBusy(
+    isBusy
+) {
+
+    onboardingBusy =
+        Boolean(
+            isBusy
+        );
+
+
+    document
+        .querySelectorAll(
+            "#kira-onboarding button"
+        )
+        .forEach(
+            function (
+                button
+            ) {
+
+                button.disabled =
+                    onboardingBusy;
+            }
+        );
+}
+
+
+async function loadOnboardingState() {
+
+    if (!currentUser) {
+        return null;
+    }
+
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from(
+                "user_onboarding"
+            )
+            .select(
+                "*"
+            )
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .maybeSingle();
+
+
+    if (error) {
+        throw error;
+    }
+
+
+    onboardingState =
+        data || null;
+
+
+    if (
+        onboardingState
+    ) {
+
+        onboardingCurrentStep =
+            Number(
+                onboardingState
+                    .current_step
+                ||
+                1
+            );
+
+        onboardingFirstAccountId =
+            onboardingState
+                .first_account_id
+            ||
+            null;
+    }
+
+
+    return onboardingState;
+}
+
+
+async function saveOnboardingState(
+    values
+) {
+
+    if (!currentUser) {
+        return null;
+    }
+
+
+    const payload = {
+        user_id:
+            currentUser.id,
+
+        version:
+            ONBOARDING_VERSION,
+
+        ...values
+    };
+
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from(
+                "user_onboarding"
+            )
+            .upsert(
+                payload,
+                {
+                    onConflict:
+                        "user_id"
+                }
+            )
+            .select(
+                "*"
+            )
+            .single();
+
+
+    if (error) {
+        throw error;
+    }
+
+
+    onboardingState =
+        data;
+
+    onboardingCurrentStep =
+        Number(
+            data.current_step
+            ||
+            onboardingCurrentStep
+            ||
+            1
+        );
+
+    onboardingFirstAccountId =
+        data.first_account_id
+        ||
+        onboardingFirstAccountId;
+
+
+    return data;
+}
+
+
+function hasMeaningfulExistingFinanceData() {
+
+    return (
+        accounts.length >
+            0
+        ||
+        transactions.length >
+            0
+        ||
+        budgets.length >
+            0
+        ||
+        recurringTransactions.length >
+            0
+        ||
+        savingsGoals.length >
+            0
+    );
+}
+
+
+async function ensureOnboardingState() {
+
+    if (
+        onboardingState
+    ) {
+        return;
+    }
+
+
+    if (
+        hasMeaningfulExistingFinanceData()
+    ) {
+
+        await saveOnboardingState({
+            status:
+                "completed",
+
+            current_step:
+                ONBOARDING_MAX_STEP,
+
+            account_completed:
+                accounts.length >
+                0,
+
+            categories_completed:
+                categories.length >
+                0,
+
+            income_source_completed:
+                incomeSources.length >
+                0,
+
+            budget_completed:
+                budgets.length >
+                0,
+
+            goal_completed:
+                savingsGoals.length >
+                0,
+
+            completed_at:
+                new Date()
+                    .toISOString()
+        });
+
+
+        return;
+    }
+
+
+    await saveOnboardingState({
+        status:
+            "not_started",
+
+        current_step:
+            1
+    });
+}
+
+
+function openOnboarding() {
+
+    const onboarding =
+        getOnboardingElement(
+            "kira-onboarding"
+        );
+
+    if (!onboarding) {
+        return;
+    }
+
+
+    onboarding.hidden =
+        false;
+
+    document.body
+        .classList
+        .add(
+            "kira-onboarding-open"
+        );
+
+
+    renderOnboardingStep();
+}
+
+
+function closeOnboarding() {
+
+    const onboarding =
+        getOnboardingElement(
+            "kira-onboarding"
+        );
+
+    if (!onboarding) {
+        return;
+    }
+
+
+    onboarding.hidden =
+        true;
+
+    document.body
+        .classList
+        .remove(
+            "kira-onboarding-open"
+        );
+}
+
+
+function getOnboardingDisplayName() {
+
+    const metadataName =
+        currentUser
+            ?.user_metadata
+            ?.display_name;
+
+
+    if (
+        typeof metadataName ===
+            "string"
+        &&
+        metadataName.trim()
+    ) {
+
+        return metadataName.trim();
+    }
+
+
+    return (
+        currentUser
+            ?.email
+            ?.split("@")[0]
+        ||
+        "there"
+    );
+}
+
+
+function setOnboardingActions(
+    primaryText,
+    secondaryText = ""
+) {
+
+    const primaryButton =
+        getOnboardingElement(
+            "kira-onboarding-primary-action"
+        );
+
+    const secondaryButton =
+        getOnboardingElement(
+            "kira-onboarding-secondary-action"
+        );
+
+
+    if (
+        primaryButton
+    ) {
+
+        primaryButton.textContent =
+            primaryText;
+    }
+
+
+    if (
+        secondaryButton
+    ) {
+
+        secondaryButton.textContent =
+            secondaryText;
+
+        secondaryButton.hidden =
+            !secondaryText;
+    }
+}
+
+
+function updateOnboardingChrome() {
+
+    const names = {
+        1:
+            "Welcome",
+
+        2:
+            "Your first account",
+
+        3:
+            "Categories",
+
+        4:
+            "Income source",
+
+        5:
+            "Planning",
+
+        6:
+            "Ready"
+    };
+
+
+    const stepLabel =
+        getOnboardingElement(
+            "kira-onboarding-step-label"
+        );
+
+    const stepName =
+        getOnboardingElement(
+            "kira-onboarding-step-name"
+        );
+
+    const progressBar =
+        getOnboardingElement(
+            "kira-onboarding-progress-bar"
+        );
+
+    const backButton =
+        getOnboardingElement(
+            "kira-onboarding-back"
+        );
+
+    const skipButton =
+        getOnboardingElement(
+            "kira-onboarding-skip-top"
+        );
+
+
+    if (
+        stepLabel
+    ) {
+
+        stepLabel.textContent =
+            `Step ${onboardingCurrentStep} of ${ONBOARDING_MAX_STEP}`;
+    }
+
+
+    if (
+        stepName
+    ) {
+
+        stepName.textContent =
+            names[
+                onboardingCurrentStep
+            ]
+            ||
+            "Setup";
+    }
+
+
+    if (
+        progressBar
+    ) {
+
+        progressBar.style.width =
+            `${(
+                onboardingCurrentStep
+                /
+                ONBOARDING_MAX_STEP
+            ) * 100}%`;
+    }
+
+
+    if (
+        backButton
+    ) {
+
+        backButton.hidden =
+            onboardingCurrentStep <=
+            1;
+    }
+
+
+    if (
+        skipButton
+    ) {
+
+        skipButton.hidden =
+            onboardingCurrentStep ===
+            ONBOARDING_MAX_STEP;
+    }
+}
+
+
+function renderOnboardingStep() {
+
+    updateOnboardingChrome();
+
+    setOnboardingMessage(
+        ""
+    );
+
+
+    if (
+        onboardingCurrentStep ===
+        1
+    ) {
+
+        renderOnboardingWelcome();
+
+        return;
+    }
+
+
+    if (
+        onboardingCurrentStep ===
+        2
+    ) {
+
+        renderOnboardingAccount();
+
+        return;
+    }
+
+
+    if (
+        onboardingCurrentStep ===
+        3
+    ) {
+
+        renderOnboardingCategories();
+
+        return;
+    }
+
+
+    if (
+        onboardingCurrentStep ===
+        4
+    ) {
+
+        renderOnboardingIncome();
+
+        return;
+    }
+
+
+    if (
+        onboardingCurrentStep ===
+        5
+    ) {
+
+        renderOnboardingPlanning();
+
+        return;
+    }
+
+
+    renderOnboardingFinish();
+}
+
+
+function renderOnboardingWelcome() {
+
+    const content =
+        getOnboardingElement(
+            "kira-onboarding-content"
+        );
+
+    if (!content) {
+        return;
+    }
+
+
+    content.innerHTML =
+        `
+            <div class="kira-onboarding-hero">
+
+                <div class="kira-onboarding-logo-mark">
+                    K
+                </div>
+
+                <span class="kira-onboarding-kicker">
+                    Welcome, ${escapeHtml(
+                        getOnboardingDisplayName()
+                    )}
+                </span>
+
+                <h2>
+                    Let's get your money setup ready.
+                </h2>
+
+                <p>
+                    We'll create the basics Kira needs so your first transaction, budget and goal make sense from day one.
+                </p>
+
+            </div>
+
+
+            <div class="kira-onboarding-benefits">
+
+                <article>
+                    <strong>1</strong>
+                    <span>
+                        Create where your money lives
+                    </span>
+                </article>
+
+                <article>
+                    <strong>2</strong>
+                    <span>
+                        Organise income and spending
+                    </span>
+                </article>
+
+                <article>
+                    <strong>3</strong>
+                    <span>
+                        Start planning without spreadsheets
+                    </span>
+                </article>
+
+            </div>
+
+
+            <p class="kira-onboarding-note">
+                Usually takes about 2–4 minutes. Optional steps can be skipped.
+            </p>
+        `;
+
+
+    setOnboardingActions(
+        "Start setup"
+    );
+}
+
+
+function renderOnboardingAccount() {
+
+    const content =
+        getOnboardingElement(
+            "kira-onboarding-content"
+        );
+
+    if (!content) {
+        return;
+    }
+
+
+    const existingAccount =
+        accounts.find(
+            account =>
+                account.id ===
+                onboardingFirstAccountId
+        );
+
+
+    content.innerHTML =
+        `
+            <div class="kira-onboarding-step-heading">
+
+                <span class="kira-onboarding-kicker">
+                    Required
+                </span>
+
+                <h2>
+                    Create your first account
+                </h2>
+
+                <p>
+                    Kira needs an account before it can record a transaction.
+                </p>
+
+            </div>
+
+
+            <div class="kira-onboarding-form-grid">
+
+                <label class="kira-onboarding-field kira-onboarding-field-wide">
+
+                    <span>
+                        Account name
+                    </span>
+
+                    <input
+                        type="text"
+                        id="kira-onboarding-account-name"
+                        placeholder="e.g. Maybank"
+                        value="${escapeHtml(
+                            existingAccount
+                                ?.name
+                            ||
+                            ""
+                        )}"
+                    >
+
+                </label>
+
+
+                <label class="kira-onboarding-field">
+
+                    <span>
+                        Account type
+                    </span>
+
+                    <select id="kira-onboarding-account-type">
+
+                        <option value="bank">
+                            Bank Account
+                        </option>
+
+                        <option value="cash">
+                            Cash
+                        </option>
+
+                        <option value="e_wallet">
+                            E-Wallet
+                        </option>
+
+                        <option value="savings">
+                            Savings
+                        </option>
+
+                        <option value="other">
+                            Other
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <label class="kira-onboarding-field">
+
+                    <span>
+                        Opening balance
+                    </span>
+
+                    <div class="kira-onboarding-money-input">
+
+                        <span>
+                            RM
+                        </span>
+
+                        <input
+                            type="number"
+                            id="kira-onboarding-opening-balance"
+                            step="0.01"
+                            value="${Number(
+                                existingAccount
+                                    ?.opening_balance
+                                ||
+                                0
+                            )}"
+                        >
+
+                    </div>
+
+                </label>
+
+            </div>
+        `;
+
+
+    const accountType =
+        getOnboardingElement(
+            "kira-onboarding-account-type"
+        );
+
+
+    if (
+        accountType
+        &&
+        existingAccount
+    ) {
+
+        accountType.value =
+            existingAccount
+                .account_type;
+    }
+
+
+    setOnboardingActions(
+        existingAccount
+            ?
+            "Continue"
+            :
+            "Create account"
+    );
+}
+
+
+function renderOnboardingCategories() {
+
+    const content =
+        getOnboardingElement(
+            "kira-onboarding-content"
+        );
+
+    if (!content) {
+        return;
+    }
+
+
+    const existingKeys =
+        new Set(
+            categories.map(
+                category =>
+                    `${category.name.toLowerCase()}::${category.type}`
+            )
+        );
+
+
+    content.innerHTML =
+        `
+            <div class="kira-onboarding-step-heading">
+
+                <span class="kira-onboarding-kicker">
+                    Recommended
+                </span>
+
+                <h2>
+                    Choose starter categories
+                </h2>
+
+                <p>
+                    Existing categories are kept and never duplicated.
+                </p>
+
+            </div>
+
+
+            <div class="kira-onboarding-category-grid">
+
+                ${onboardingStarterCategories
+                    .map(
+                        function (
+                            item,
+                            index
+                        ) {
+
+                            const exists =
+                                existingKeys.has(
+                                    `${item.name.toLowerCase()}::${item.type}`
+                                );
+
+                            const checked =
+                                (
+                                    index <
+                                    9
+                                )
+                                ||
+                                exists;
+
+                            return `
+                                <label class="kira-onboarding-choice ${checked ? "selected" : ""}">
+
+                                    <input
+                                        type="checkbox"
+                                        data-onboarding-category
+                                        data-name="${escapeHtml(
+                                            item.name
+                                        )}"
+                                        data-type="${item.type}"
+                                        ${checked ? "checked" : ""}
+                                    >
+
+                                    <span>
+
+                                        <strong>
+                                            ${escapeHtml(
+                                                item.name
+                                            )}
+                                        </strong>
+
+                                        <small>
+                                            ${item.type === "income" ? "Income" : "Expense"}${exists ? " • Already added" : ""}
+                                        </small>
+
+                                    </span>
+
+                                </label>
+                            `;
+                        }
+                    )
+                    .join(
+                        ""
+                    )}
+            </div>
+        `;
+
+
+    content
+        .querySelectorAll(
+            "[data-onboarding-category]"
+        )
+        .forEach(
+            function (
+                checkbox
+            ) {
+
+                checkbox.addEventListener(
+                    "change",
+                    function () {
+
+                        checkbox
+                            .closest(
+                                ".kira-onboarding-choice"
+                            )
+                            ?.classList
+                            .toggle(
+                                "selected",
+                                checkbox.checked
+                            );
+                    }
+                );
+            }
+        );
+
+
+    setOnboardingActions(
+        "Save categories",
+        "Use existing categories"
+    );
+}
+
+
+function renderOnboardingIncome() {
+
+    const content =
+        getOnboardingElement(
+            "kira-onboarding-content"
+        );
+
+    if (!content) {
+        return;
+    }
+
+
+    const existingSources =
+        incomeSources
+            .filter(
+                source =>
+                    source.is_active
+            )
+            .map(
+                source =>
+                    source.name
+            );
+
+
+    content.innerHTML =
+        `
+            <div class="kira-onboarding-step-heading">
+
+                <span class="kira-onboarding-kicker">
+                    Optional
+                </span>
+
+                <h2>
+                    Where does your income come from?
+                </h2>
+
+                <p>
+                    Add one income source now, or skip and manage it later.
+                </p>
+
+            </div>
+
+
+            ${existingSources.length
+                ?
+                `
+                    <div class="kira-onboarding-existing">
+
+                        <strong>
+                            Already available
+                        </strong>
+
+                        <div>
+
+                            ${existingSources
+                                .slice(
+                                    0,
+                                    8
+                                )
+                                .map(
+                                    source =>
+                                        `<span>${escapeHtml(source)}</span>`
+                                )
+                                .join(
+                                    ""
+                                )}
+
+                        </div>
+
+                    </div>
+                `
+                :
+                ""
+            }
+
+
+            <label class="kira-onboarding-field kira-onboarding-field-wide">
+
+                <span>
+                    Income source
+                </span>
+
+                <input
+                    type="text"
+                    id="kira-onboarding-income-source"
+                    placeholder="e.g. Salary, Grab, Freelance"
+                >
+
+            </label>
+
+
+            <div class="kira-onboarding-chips">
+
+                ${[
+                    "Salary",
+                    "Grab",
+                    "Freelance",
+                    "Business",
+                    "Investment",
+                    "Bonus"
+                ]
+                    .map(
+                        source =>
+                            `
+                                <button
+                                    type="button"
+                                    data-onboarding-income-chip="${escapeHtml(source)}"
+                                >
+                                    ${escapeHtml(source)}
+                                </button>
+                            `
+                    )
+                    .join(
+                        ""
+                    )}
+
+            </div>
+        `;
+
+
+    content
+        .querySelectorAll(
+            "[data-onboarding-income-chip]"
+        )
+        .forEach(
+            function (
+                button
+            ) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        const input =
+                            getOnboardingElement(
+                                "kira-onboarding-income-source"
+                            );
+
+                        if (
+                            input
+                        ) {
+
+                            input.value =
+                                button.dataset
+                                    .onboardingIncomeChip
+                                ||
+                                "";
+                        }
+                    }
+                );
+            }
+        );
+
+
+    setOnboardingActions(
+        "Add & continue",
+        "Skip for now"
+    );
+}
+
+
+function renderOnboardingPlanning() {
+
+    const content =
+        getOnboardingElement(
+            "kira-onboarding-content"
+        );
+
+    if (!content) {
+        return;
+    }
+
+
+    const expenseCategories =
+        categories.filter(
+            function (
+                category
+            ) {
+
+                return (
+                    category.is_active
+                    &&
+                    (
+                        category.type ===
+                            "expense"
+                        ||
+                        category.type ===
+                            "both"
+                    )
+                );
+            }
+        );
+
+
+    content.innerHTML =
+        `
+            <div class="kira-onboarding-step-heading">
+
+                <span class="kira-onboarding-kicker">
+                    Optional
+                </span>
+
+                <h2>
+                    Add a little planning
+                </h2>
+
+                <p>
+                    Create a budget, a savings goal, both, or skip this step.
+                </p>
+
+            </div>
+
+
+            <div class="kira-onboarding-planning-grid">
+
+                <article class="kira-onboarding-plan-card">
+
+                    <strong>
+                        Monthly budget
+                    </strong>
+
+                    <small>
+                        Set a spending limit for one category.
+                    </small>
+
+
+                    <label class="kira-onboarding-field">
+
+                        <span>
+                            Category
+                        </span>
+
+                        <select id="kira-onboarding-budget-category">
+
+                            <option value="">
+                                Don't create a budget
+                            </option>
+
+                            ${expenseCategories
+                                .map(
+                                    category =>
+                                        `
+                                            <option value="${category.id}">
+                                                ${escapeHtml(category.name)}
+                                            </option>
+                                        `
+                                )
+                                .join(
+                                    ""
+                                )}
+
+                        </select>
+
+                    </label>
+
+
+                    <label class="kira-onboarding-field">
+
+                        <span>
+                            Monthly amount
+                        </span>
+
+                        <div class="kira-onboarding-money-input">
+
+                            <span>
+                                RM
+                            </span>
+
+                            <input
+                                type="number"
+                                id="kira-onboarding-budget-amount"
+                                min="0.01"
+                                step="0.01"
+                                placeholder="500"
+                            >
+
+                        </div>
+
+                    </label>
+
+                </article>
+
+
+                <article class="kira-onboarding-plan-card">
+
+                    <strong>
+                        Savings goal
+                    </strong>
+
+                    <small>
+                        Start with one target you care about.
+                    </small>
+
+
+                    <label class="kira-onboarding-field">
+
+                        <span>
+                            Goal name
+                        </span>
+
+                        <input
+                            type="text"
+                            id="kira-onboarding-goal-name"
+                            placeholder="e.g. Emergency Fund"
+                        >
+
+                    </label>
+
+
+                    <label class="kira-onboarding-field">
+
+                        <span>
+                            Target amount
+                        </span>
+
+                        <div class="kira-onboarding-money-input">
+
+                            <span>
+                                RM
+                            </span>
+
+                            <input
+                                type="number"
+                                id="kira-onboarding-goal-target"
+                                min="0.01"
+                                step="0.01"
+                                placeholder="5000"
+                            >
+
+                        </div>
+
+                    </label>
+
+
+                    <label class="kira-onboarding-field">
+
+                        <span>
+                            Already saved
+                        </span>
+
+                        <div class="kira-onboarding-money-input">
+
+                            <span>
+                                RM
+                            </span>
+
+                            <input
+                                type="number"
+                                id="kira-onboarding-goal-current"
+                                min="0"
+                                step="0.01"
+                                value="0"
+                            >
+
+                        </div>
+
+                    </label>
+
+
+                    <label class="kira-onboarding-field">
+
+                        <span>
+                            Target date
+                        </span>
+
+                        <input
+                            type="date"
+                            id="kira-onboarding-goal-date"
+                        >
+
+                    </label>
+
+                </article>
+
+            </div>
+        `;
+
+
+    setOnboardingActions(
+        "Save planning",
+        "Skip planning"
+    );
+}
+
+
+function renderOnboardingFinish() {
+
+    const content =
+        getOnboardingElement(
+            "kira-onboarding-content"
+        );
+
+    if (!content) {
+        return;
+    }
+
+
+    const account =
+        accounts.find(
+            item =>
+                item.id ===
+                onboardingFirstAccountId
+        )
+        ||
+        accounts[0];
+
+
+    const summaryItems = [
+        {
+            name:
+                "Account",
+
+            done:
+                Boolean(
+                    onboardingState
+                        ?.account_completed
+                ),
+
+            detail:
+                account?.name
+                ||
+                "Not set"
+        },
+        {
+            name:
+                "Categories",
+
+            done:
+                Boolean(
+                    onboardingState
+                        ?.categories_completed
+                ),
+
+            detail:
+                `${categories.length} available`
+        },
+        {
+            name:
+                "Income source",
+
+            done:
+                Boolean(
+                    onboardingState
+                        ?.income_source_completed
+                ),
+
+            detail:
+                onboardingState
+                    ?.income_source_completed
+                ?
+                "Ready"
+                :
+                "Later"
+        },
+        {
+            name:
+                "Monthly budget",
+
+            done:
+                Boolean(
+                    onboardingState
+                        ?.budget_completed
+                ),
+
+            detail:
+                onboardingState
+                    ?.budget_completed
+                ?
+                "Created"
+                :
+                "Later"
+        },
+        {
+            name:
+                "Savings goal",
+
+            done:
+                Boolean(
+                    onboardingState
+                        ?.goal_completed
+                ),
+
+            detail:
+                onboardingState
+                    ?.goal_completed
+                ?
+                "Created"
+                :
+                "Later"
+        }
+    ];
+
+
+    content.innerHTML =
+        `
+            <div class="kira-onboarding-hero">
+
+                <div class="kira-onboarding-success-mark">
+                    ✓
+                </div>
+
+                <span class="kira-onboarding-kicker">
+                    Setup complete
+                </span>
+
+                <h2>
+                    Kira is ready.
+                </h2>
+
+                <p>
+                    Your essentials are in place. The best next step is recording your first transaction.
+                </p>
+
+            </div>
+
+
+            <div class="kira-onboarding-summary">
+
+                ${summaryItems
+                    .map(
+                        item =>
+                            `
+                                <div>
+
+                                    <span class="${item.done ? "done" : "later"}">
+                                        ${item.done ? "✓" : "○"}
+                                    </span>
+
+                                    <strong>
+                                        ${escapeHtml(item.name)}
+                                    </strong>
+
+                                    <small>
+                                        ${escapeHtml(item.detail)}
+                                    </small>
+
+                                </div>
+                            `
+                    )
+                    .join(
+                        ""
+                    )}
+
+            </div>
+        `;
+
+
+    setOnboardingActions(
+        "Add my first transaction",
+        "Go to Dashboard"
+    );
+}
+
+
+async function moveOnboardingToStep(
+    step,
+    values = {}
+) {
+
+    onboardingCurrentStep =
+        Math.max(
+            1,
+            Math.min(
+                ONBOARDING_MAX_STEP,
+                step
+            )
+        );
+
+
+    await saveOnboardingState({
+        status:
+            "in_progress",
+
+        current_step:
+            onboardingCurrentStep,
+
+        ...values
+    });
+
+
+    renderOnboardingStep();
+}
+
+
+async function saveOnboardingAccountStep() {
+
+    const name =
+        getOnboardingElement(
+            "kira-onboarding-account-name"
+        )
+            ?.value
+            .trim();
+
+    const accountType =
+        getOnboardingElement(
+            "kira-onboarding-account-type"
+        )
+            ?.value;
+
+    const openingBalance =
+        Number(
+            getOnboardingElement(
+                "kira-onboarding-opening-balance"
+            )
+                ?.value
+            ||
+            0
+        );
+
+
+    if (!name) {
+        throw new Error(
+            "Enter an account name."
+        );
+    }
+
+
+    if (
+        ![
+            "bank",
+            "cash",
+            "e_wallet",
+            "savings",
+            "other"
+        ].includes(
+            accountType
+        )
+    ) {
+
+        throw new Error(
+            "Choose a valid account type."
+        );
+    }
+
+
+    if (
+        !Number.isFinite(
+            openingBalance
+        )
+    ) {
+
+        throw new Error(
+            "Enter a valid opening balance."
+        );
+    }
+
+
+    let account =
+        accounts.find(
+            item =>
+                item.id ===
+                onboardingFirstAccountId
+        );
+
+
+    if (!account) {
+
+        account =
+            accounts.find(
+                item =>
+                    item.name
+                        .trim()
+                        .toLowerCase()
+                    ===
+                    name.toLowerCase()
+            );
+    }
+
+
+    if (!account) {
+
+        const {
+            data,
+            error
+        } =
+            await supabase
+                .from(
+                    "accounts"
+                )
+                .insert({
+                    user_id:
+                        currentUser.id,
+
+                    name:
+                        name,
+
+                    account_type:
+                        accountType,
+
+                    opening_balance:
+                        openingBalance
+                })
+                .select(
+                    "*"
+                )
+                .single();
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        account =
+            data;
+    }
+
+
+    onboardingFirstAccountId =
+        account.id;
+
+
+    await loadAccounts();
+
+
+    await moveOnboardingToStep(
+        3,
+        {
+            account_completed:
+                true,
+
+            first_account_id:
+                account.id
+        }
+    );
+}
+
+
+async function saveOnboardingCategoriesStep() {
+
+    const selected =
+        Array.from(
+            document.querySelectorAll(
+                "#kira-onboarding [data-onboarding-category]:checked"
+            )
+        )
+            .map(
+                input => ({
+                    name:
+                        input.dataset
+                            .name,
+
+                    type:
+                        input.dataset
+                            .type
+                })
+            );
+
+
+    if (
+        selected.length ===
+            0
+        &&
+        categories.length ===
+            0
+    ) {
+
+        throw new Error(
+            "Choose at least one category."
+        );
+    }
+
+
+    const existingKeys =
+        new Set(
+            categories.map(
+                category =>
+                    `${category.name.trim().toLowerCase()}::${category.type}`
+            )
+        );
+
+
+    const missing =
+        selected.filter(
+            item =>
+                !existingKeys.has(
+                    `${item.name.trim().toLowerCase()}::${item.type}`
+                )
+        );
+
+
+    if (
+        missing.length >
+        0
+    ) {
+
+        const {
+            error
+        } =
+            await supabase
+                .from(
+                    "categories"
+                )
+                .insert(
+                    missing.map(
+                        item => ({
+                            user_id:
+                                currentUser.id,
+
+                            name:
+                                item.name,
+
+                            type:
+                                item.type
+                        })
+                    )
+                );
+
+
+        if (
+            error
+            &&
+            error.code !==
+                "23505"
+        ) {
+
+            throw error;
+        }
+    }
+
+
+    await loadCategories();
+
+
+    await moveOnboardingToStep(
+        4,
+        {
+            categories_completed:
+                categories.length >
+                0
+        }
+    );
+}
+
+
+async function saveOnboardingIncomeStep() {
+
+    const name =
+        getOnboardingElement(
+            "kira-onboarding-income-source"
+        )
+            ?.value
+            .trim();
+
+
+    if (!name) {
+
+        await moveOnboardingToStep(
+            5,
+            {
+                income_source_completed:
+                    false
+            }
+        );
+
+        return;
+    }
+
+
+    const exists =
+        incomeSources.some(
+            source =>
+                source.name
+                    .trim()
+                    .toLowerCase()
+                ===
+                name.toLowerCase()
+        );
+
+
+    if (!exists) {
+
+        const {
+            error
+        } =
+            await supabase
+                .from(
+                    "income_sources"
+                )
+                .insert({
+                    user_id:
+                        currentUser.id,
+
+                    name:
+                        name
+                });
+
+
+        if (
+            error
+            &&
+            error.code !==
+                "23505"
+        ) {
+
+            throw error;
+        }
+    }
+
+
+    await loadIncomeSources();
+
+
+    await moveOnboardingToStep(
+        5,
+        {
+            income_source_completed:
+                true
+        }
+    );
+}
+
+
+async function saveOnboardingPlanningStep() {
+
+    let budgetCompleted =
+        budgets.length >
+        0;
+
+    let goalCompleted =
+        savingsGoals.length >
+        0;
+
+
+    const categoryId =
+        getOnboardingElement(
+            "kira-onboarding-budget-category"
+        )
+            ?.value
+        ||
+        "";
+
+    const budgetAmount =
+        Number(
+            getOnboardingElement(
+                "kira-onboarding-budget-amount"
+            )
+                ?.value
+            ||
+            0
+        );
+
+
+    if (
+        categoryId
+    ) {
+
+        if (
+            !(budgetAmount > 0)
+        ) {
+
+            throw new Error(
+                "Enter a monthly budget amount greater than RM0."
+            );
+        }
+
+
+        const monthStart =
+            `${getCurrentMonthValue()}-01`;
+
+
+        const alreadyExists =
+            budgets.some(
+                budget =>
+                    budget.category_id ===
+                        categoryId
+                    &&
+                    budget.month_start ===
+                        monthStart
+            );
+
+
+        if (!alreadyExists) {
+
+            const {
+                error
+            } =
+                await supabase
+                    .from(
+                        "budgets"
+                    )
+                    .insert({
+                        user_id:
+                            currentUser.id,
+
+                        category_id:
+                            categoryId,
+
+                        month_start:
+                            monthStart,
+
+                        amount:
+                            budgetAmount
+                    });
+
+
+            if (
+                error
+                &&
+                error.code !==
+                    "23505"
+            ) {
+
+                throw error;
+            }
+        }
+
+
+        budgetCompleted =
+            true;
+    }
+
+
+    const goalName =
+        getOnboardingElement(
+            "kira-onboarding-goal-name"
+        )
+            ?.value
+            .trim()
+        ||
+        "";
+
+    const goalTarget =
+        Number(
+            getOnboardingElement(
+                "kira-onboarding-goal-target"
+            )
+                ?.value
+            ||
+            0
+        );
+
+    const goalCurrent =
+        Number(
+            getOnboardingElement(
+                "kira-onboarding-goal-current"
+            )
+                ?.value
+            ||
+            0
+        );
+
+    const goalDate =
+        getOnboardingElement(
+            "kira-onboarding-goal-date"
+        )
+            ?.value
+        ||
+        null;
+
+
+    if (
+        goalName
+        ||
+        goalTarget >
+            0
+    ) {
+
+        if (!goalName) {
+
+            throw new Error(
+                "Enter a savings goal name."
+            );
+        }
+
+
+        if (
+            !(goalTarget > 0)
+        ) {
+
+            throw new Error(
+                "Enter a savings goal target greater than RM0."
+            );
+        }
+
+
+        if (
+            goalCurrent <
+            0
+        ) {
+
+            throw new Error(
+                "Current saved amount cannot be negative."
+            );
+        }
+
+
+        const {
+            error
+        } =
+            await supabase
+                .from(
+                    "savings_goals"
+                )
+                .insert({
+                    user_id:
+                        currentUser.id,
+
+                    name:
+                        goalName,
+
+                    target_amount:
+                        goalTarget,
+
+                    current_amount:
+                        goalCurrent,
+
+                    target_date:
+                        goalDate,
+
+                    account_id:
+                        onboardingFirstAccountId
+                        ||
+                        null,
+
+                    status:
+                        goalCurrent >=
+                            goalTarget
+                        ?
+                        "completed"
+                        :
+                        "active"
+                });
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        goalCompleted =
+            true;
+    }
+
+
+    await loadBudgets();
+
+    await loadSavingsGoals();
+
+
+    await moveOnboardingToStep(
+        6,
+        {
+            budget_completed:
+                budgetCompleted,
+
+            goal_completed:
+                goalCompleted
+        }
+    );
+}
+
+
+async function finishOnboarding(
+    destination
+) {
+
+    await saveOnboardingState({
+        status:
+            "completed",
+
+        current_step:
+            ONBOARDING_MAX_STEP,
+
+        completed_at:
+            onboardingState
+                ?.completed_at
+            ||
+            new Date()
+                .toISOString(),
+
+        skipped_at:
+            null
+    });
+
+
+    closeOnboarding();
+
+
+    if (
+        destination ===
+        "transaction"
+    ) {
+
+        navigateToPage(
+            "transactions",
+            {
+                scrollToTop:
+                    false
+            }
+        );
+
+
+        requestAnimationFrame(
+            function () {
+
+                transactionForm
+                    ?.scrollIntoView({
+                        behavior:
+                            "smooth",
+
+                        block:
+                            "start"
+                    });
+
+
+                setTimeout(
+                    function () {
+
+                        document
+                            .getElementById(
+                                "description"
+                            )
+                            ?.focus();
+
+                    },
+                    350
+                );
+            }
+        );
+
+
+        return;
+    }
+
+
+    navigateToPage(
+        "dashboard"
+    );
+}
+
+
+async function skipOnboarding() {
+
+    if (
+        onboardingBusy
+    ) {
+        return;
+    }
+
+
+    try {
+
+        setOnboardingBusy(
+            true
+        );
+
+
+        await saveOnboardingState({
+            status:
+                "skipped",
+
+            current_step:
+                onboardingCurrentStep,
+
+            skipped_at:
+                new Date()
+                    .toISOString()
+        });
+
+
+        closeOnboarding();
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Skip onboarding error:",
+            error
+        );
+
+
+        setOnboardingMessage(
+            error.message
+            ||
+            "Unable to skip setup right now.",
+            "error"
+        );
+
+    } finally {
+
+        setOnboardingBusy(
+            false
+        );
+    }
+}
+
+
+async function handleOnboardingPrimaryAction() {
+
+    if (
+        onboardingBusy
+    ) {
+        return;
+    }
+
+
+    try {
+
+        setOnboardingBusy(
+            true
+        );
+
+        setOnboardingMessage(
+            ""
+        );
+
+
+        if (
+            onboardingCurrentStep ===
+            1
+        ) {
+
+            await saveOnboardingState({
+                status:
+                    "in_progress",
+
+                current_step:
+                    2,
+
+                started_at:
+                    onboardingState
+                        ?.started_at
+                    ||
+                    new Date()
+                        .toISOString(),
+
+                skipped_at:
+                    null
+            });
+
+
+            onboardingCurrentStep =
+                2;
+
+            renderOnboardingStep();
+
+            return;
+        }
+
+
+        if (
+            onboardingCurrentStep ===
+            2
+        ) {
+
+            await saveOnboardingAccountStep();
+
+            return;
+        }
+
+
+        if (
+            onboardingCurrentStep ===
+            3
+        ) {
+
+            await saveOnboardingCategoriesStep();
+
+            return;
+        }
+
+
+        if (
+            onboardingCurrentStep ===
+            4
+        ) {
+
+            await saveOnboardingIncomeStep();
+
+            return;
+        }
+
+
+        if (
+            onboardingCurrentStep ===
+            5
+        ) {
+
+            await saveOnboardingPlanningStep();
+
+            return;
+        }
+
+
+        await finishOnboarding(
+            "transaction"
+        );
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Onboarding error:",
+            error
+        );
+
+
+        setOnboardingMessage(
+            error.message
+            ||
+            "Something went wrong. Please try again.",
+            "error"
+        );
+
+    } finally {
+
+        setOnboardingBusy(
+            false
+        );
+    }
+}
+
+
+async function handleOnboardingSecondaryAction() {
+
+    if (
+        onboardingBusy
+    ) {
+        return;
+    }
+
+
+    try {
+
+        setOnboardingBusy(
+            true
+        );
+
+        setOnboardingMessage(
+            ""
+        );
+
+
+        if (
+            onboardingCurrentStep ===
+            3
+        ) {
+
+            await moveOnboardingToStep(
+                4,
+                {
+                    categories_completed:
+                        categories.length >
+                        0
+                }
+            );
+
+            return;
+        }
+
+
+        if (
+            onboardingCurrentStep ===
+            4
+        ) {
+
+            await moveOnboardingToStep(
+                5,
+                {
+                    income_source_completed:
+                        false
+                }
+            );
+
+            return;
+        }
+
+
+        if (
+            onboardingCurrentStep ===
+            5
+        ) {
+
+            await moveOnboardingToStep(
+                6,
+                {
+                    budget_completed:
+                        budgets.length >
+                        0,
+
+                    goal_completed:
+                        savingsGoals.length >
+                        0
+                }
+            );
+
+            return;
+        }
+
+
+        if (
+            onboardingCurrentStep ===
+            6
+        ) {
+
+            await finishOnboarding(
+                "dashboard"
+            );
+        }
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Onboarding secondary action error:",
+            error
+        );
+
+
+        setOnboardingMessage(
+            error.message
+            ||
+            "Something went wrong. Please try again.",
+            "error"
+        );
+
+    } finally {
+
+        setOnboardingBusy(
+            false
+        );
+    }
+}
+
+
+async function handleOnboardingBack() {
+
+    if (
+        onboardingBusy
+        ||
+        onboardingCurrentStep <=
+            1
+    ) {
+
+        return;
+    }
+
+
+    try {
+
+        setOnboardingBusy(
+            true
+        );
+
+
+        await moveOnboardingToStep(
+            onboardingCurrentStep -
+            1
+        );
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Onboarding back error:",
+            error
+        );
+
+
+        setOnboardingMessage(
+            error.message
+            ||
+            "Unable to go back right now.",
+            "error"
+        );
+
+    } finally {
+
+        setOnboardingBusy(
+            false
+        );
+    }
+}
+
+
+function bindOnboardingEvents() {
+
+    getOnboardingElement(
+        "kira-onboarding-primary-action"
+    )
+        ?.addEventListener(
+            "click",
+            handleOnboardingPrimaryAction
+        );
+
+
+    getOnboardingElement(
+        "kira-onboarding-secondary-action"
+    )
+        ?.addEventListener(
+            "click",
+            handleOnboardingSecondaryAction
+        );
+
+
+    getOnboardingElement(
+        "kira-onboarding-back"
+    )
+        ?.addEventListener(
+            "click",
+            handleOnboardingBack
+        );
+
+
+    getOnboardingElement(
+        "kira-onboarding-skip-top"
+    )
+        ?.addEventListener(
+            "click",
+            skipOnboarding
+        );
+}
+
+
+async function initializeFirstTimeOnboarding() {
+
+    if (
+        !currentUser
+    ) {
+        return;
+    }
+
+
+    try {
+
+        await loadOnboardingState();
+
+        await ensureOnboardingState();
+
+
+        if (
+            onboardingState
+            &&
+            (
+                onboardingState.status ===
+                    "not_started"
+                ||
+                onboardingState.status ===
+                    "in_progress"
+            )
+        ) {
+
+            onboardingCurrentStep =
+                Number(
+                    onboardingState
+                        .current_step
+                    ||
+                    1
+                );
+
+            onboardingFirstAccountId =
+                onboardingState
+                    .first_account_id
+                ||
+                null;
+
+
+            openOnboarding();
+        }
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Initialize onboarding error:",
+            error
+        );
+    }
+}
+
+
+bindOnboardingEvents();
