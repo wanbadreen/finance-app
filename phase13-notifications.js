@@ -15,7 +15,9 @@ const state = {
     notifications: [],
     refreshTimer: null,
     initialized: false,
-    busy: false
+    busy: false,
+    currentPushSubscription: null,
+    devicePushSupported: null
 };
 
 const els = {};
@@ -370,7 +372,12 @@ function renderPreferences() {
     if (els.prefBudget) els.prefBudget.checked = Boolean(pref.budget_enabled);
     if (els.prefGoal) els.prefGoal.checked = Boolean(pref.goal_enabled);
     if (els.prefCashflow) els.prefCashflow.checked = Boolean(pref.cashflow_enabled);
-    if (els.prefPush) els.prefPush.checked = Boolean(pref.push_enabled);
+
+    if (els.prefPush) {
+        els.prefPush.disabled = state.devicePushSupported === false;
+        els.prefPush.checked = Boolean(state.currentPushSubscription);
+    }
+
     updatePushStatus();
 }
 
@@ -378,19 +385,25 @@ async function savePreferences() {
     if (!state.user || !els.savePreferences) return;
 
     els.savePreferences.disabled = true;
+    if (els.testNotification) els.testNotification.disabled = true;
     if (els.settingsMessage) els.settingsMessage.textContent = "Saving notification settings…";
 
     try {
-        let pushEnabled = Boolean(els.prefPush?.checked);
+        const enablePushOnThisDevice = Boolean(els.prefPush?.checked);
+        let accountPushEnabled = Boolean(state.preferences?.push_enabled);
 
-        if (pushEnabled) {
-            const subscriptionOk = await ensurePushSubscription();
-            if (!subscriptionOk) {
-                pushEnabled = false;
-                if (els.prefPush) els.prefPush.checked = false;
+        if (enablePushOnThisDevice) {
+            const subscription = await ensurePushSubscription();
+
+            if (!subscription) {
+                throw new Error(
+                    "This device could not finish push setup. Please close and reopen Kira, then try again."
+                );
             }
+
+            accountPushEnabled = true;
         } else {
-            await deactivatePushSubscriptions();
+            accountPushEnabled = await deactivateCurrentPushSubscription();
         }
 
         const payload = {
@@ -399,7 +412,7 @@ async function savePreferences() {
             budget_enabled: Boolean(els.prefBudget?.checked),
             goal_enabled: Boolean(els.prefGoal?.checked),
             cashflow_enabled: Boolean(els.prefCashflow?.checked),
-            push_enabled: pushEnabled
+            push_enabled: accountPushEnabled
         };
 
         const { data, error } = await supabase
@@ -409,17 +422,34 @@ async function savePreferences() {
             .single();
 
         if (error) throw error;
+
         state.preferences = data;
+        await refreshCurrentDevicePushState({ registerIfMissing: false });
         renderPreferences();
-        if (els.settingsMessage) els.settingsMessage.textContent = "Notification settings saved.";
+
+        if (els.settingsMessage) {
+            els.settingsMessage.textContent = state.currentPushSubscription
+                ? "Notification settings saved. Push is active on this device."
+                : accountPushEnabled
+                    ? "Notification settings saved. Push remains active on another device."
+                    : "Notification settings saved.";
+        }
+
         await refreshNotifications({ generate: true });
     } catch (error) {
         console.error("Save notification preferences error:", error);
+
+        await refreshCurrentDevicePushState({ registerIfMissing: false });
+        renderPreferences();
+
         if (els.settingsMessage) {
-            els.settingsMessage.textContent = error?.message || "Unable to save notification settings.";
+            els.settingsMessage.textContent =
+                error?.message ||
+                "Unable to save notification settings.";
         }
     } finally {
         els.savePreferences.disabled = false;
+        if (els.testNotification) els.testNotification.disabled = false;
     }
 }
 
@@ -775,124 +805,421 @@ function urlBase64ToUint8Array(base64String) {
     return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
 }
 
-async function getServiceWorkerRegistration() {
-    if (!("serviceWorker" in navigator)) return null;
-    let registration = await navigator.serviceWorker.getRegistration();
-    if (!registration) {
-        registration = await navigator.serviceWorker.register("/service-worker.js");
-    }
-    return navigator.serviceWorker.ready;
+function withTimeout(promise, timeoutMs, message) {
+    let timeoutId;
+
+    const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = window.setTimeout(() => {
+            reject(new Error(message));
+        }, timeoutMs);
+    });
+
+    return Promise.race([
+        Promise.resolve(promise).finally(() => window.clearTimeout(timeoutId)),
+        timeoutPromise
+    ]);
 }
 
-async function ensurePushSubscription() {
-    if (!("Notification" in window) || !("PushManager" in window)) {
-        if (els.settingsMessage) els.settingsMessage.textContent = "Push notifications are not supported on this browser.";
-        return false;
+function canUsePushApi() {
+    return (
+        "serviceWorker" in navigator &&
+        "Notification" in window &&
+        "PushManager" in window
+    );
+}
+
+async function getServiceWorkerRegistration({ registerIfMissing = false } = {}) {
+    if (!("serviceWorker" in navigator)) {
+        return null;
     }
 
-    const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-    if (!vapidPublicKey) {
-        if (els.settingsMessage) els.settingsMessage.textContent = "Push is not configured yet. Add VITE_VAPID_PUBLIC_KEY to your environment.";
-        return false;
+    let registration = null;
+
+    try {
+        registration = await withTimeout(
+            navigator.serviceWorker.getRegistration("/"),
+            5000,
+            "Kira could not check the service worker in time."
+        );
+    } catch (error) {
+        console.warn("Service worker lookup warning:", error);
     }
 
-    const permission = Notification.permission === "granted"
-        ? "granted"
-        : await Notification.requestPermission();
+    if (!registration && registerIfMissing) {
+        registration = await withTimeout(
+            navigator.serviceWorker.register("/service-worker.js", {
+                scope: "/"
+            }),
+            10000,
+            "Kira could not register its push service worker in time."
+        );
+    }
 
-    if (permission !== "granted") {
-        if (els.settingsMessage) els.settingsMessage.textContent = "Notification permission was not granted.";
+    if (!registration) {
+        return null;
+    }
+
+    try {
+        await withTimeout(
+            registration.update(),
+            5000,
+            "Service worker update timed out."
+        );
+    } catch (error) {
+        console.warn("Service worker update warning:", error);
+    }
+
+    if (!registration.active && registerIfMissing) {
+        try {
+            registration = await withTimeout(
+                navigator.serviceWorker.ready,
+                10000,
+                "Kira's service worker is not active yet. Close and reopen Kira, then try again."
+            );
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    return registration;
+}
+
+async function refreshCurrentDevicePushState({ registerIfMissing = false } = {}) {
+    if (!canUsePushApi()) {
+        state.devicePushSupported = false;
+        state.currentPushSubscription = null;
         updatePushStatus();
-        return false;
+        return null;
     }
 
-    const registration = await getServiceWorkerRegistration();
-    if (!registration) return false;
+    state.devicePushSupported = true;
 
-    let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+    try {
+        const registration = await getServiceWorkerRegistration({
+            registerIfMissing
         });
+
+        if (!registration?.pushManager) {
+            state.currentPushSubscription = null;
+            updatePushStatus();
+            return null;
+        }
+
+        state.currentPushSubscription = await withTimeout(
+            registration.pushManager.getSubscription(),
+            8000,
+            "Kira could not check this device's push subscription in time."
+        );
+
+        updatePushStatus();
+        return state.currentPushSubscription;
+    } catch (error) {
+        console.warn("Current device push check warning:", error);
+        state.currentPushSubscription = null;
+        updatePushStatus();
+        return null;
+    }
+}
+
+async function savePushSubscription(subscription) {
+    if (!state.user || !subscription) {
+        return false;
     }
 
     const json = subscription.toJSON();
+    const endpoint = json.endpoint || subscription.endpoint;
+
+    if (!endpoint) {
+        throw new Error("The browser did not return a valid push endpoint.");
+    }
+
     const { error } = await supabase
         .from("push_subscriptions")
         .upsert({
             user_id: state.user.id,
-            endpoint: json.endpoint,
+            endpoint,
             p256dh: json.keys?.p256dh || "",
             auth: json.keys?.auth || "",
             user_agent: navigator.userAgent,
             is_active: true,
             updated_at: new Date().toISOString()
-        }, { onConflict: "user_id,endpoint" });
+        }, {
+            onConflict: "user_id,endpoint"
+        });
 
     if (error) {
-        console.warn("Push subscription save failed:", error);
-        if (els.settingsMessage) els.settingsMessage.textContent = error.message;
-        return false;
+        throw error;
     }
 
-    updatePushStatus();
     return true;
 }
 
-async function deactivatePushSubscriptions() {
-    if (!state.user) return;
-    await supabase
-        .from("push_subscriptions")
-        .update({ is_active: false, updated_at: new Date().toISOString() })
-        .eq("user_id", state.user.id);
+async function ensurePushSubscription() {
+    if (!canUsePushApi()) {
+        state.devicePushSupported = false;
+        updatePushStatus();
 
-    try {
-        const registration = await navigator.serviceWorker?.getRegistration();
-        const subscription = await registration?.pushManager?.getSubscription();
-        await subscription?.unsubscribe();
-    } catch (error) {
-        console.warn("Push unsubscribe warning:", error);
+        if (els.settingsMessage) {
+            els.settingsMessage.textContent =
+                "Push notifications are not supported on this device.";
+        }
+
+        return null;
     }
+
+    state.devicePushSupported = true;
+
+    const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+
+    if (!vapidPublicKey) {
+        throw new Error(
+            "Push is not configured yet. VITE_VAPID_PUBLIC_KEY is missing."
+        );
+    }
+
+    const permission =
+        Notification.permission === "granted"
+            ? "granted"
+            : await withTimeout(
+                Notification.requestPermission(),
+                15000,
+                "The notification permission request timed out."
+            );
+
+    if (permission !== "granted") {
+        updatePushStatus();
+
+        throw new Error(
+            permission === "denied"
+                ? "Notifications are blocked for Kira. Enable them in your device settings and try again."
+                : "Notification permission was not granted."
+        );
+    }
+
+    if (els.settingsMessage) {
+        els.settingsMessage.textContent =
+            "Permission granted. Registering this device for push…";
+    }
+
+    const registration = await getServiceWorkerRegistration({
+        registerIfMissing: true
+    });
+
+    if (!registration?.pushManager) {
+        throw new Error(
+            "Kira could not access PushManager on this device."
+        );
+    }
+
+    let subscription = await withTimeout(
+        registration.pushManager.getSubscription(),
+        8000,
+        "Kira could not check the existing push subscription in time."
+    );
+
+    if (!subscription) {
+        subscription = await withTimeout(
+            registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(
+                    vapidPublicKey
+                )
+            }),
+            20000,
+            "Push registration took too long. Close and reopen Kira, then try again."
+        );
+    }
+
+    if (els.settingsMessage) {
+        els.settingsMessage.textContent =
+            "Push subscription created. Saving this device…";
+    }
+
+    await savePushSubscription(subscription);
+
+    state.currentPushSubscription = subscription;
     updatePushStatus();
+
+    return subscription;
+}
+
+async function hasAnyActivePushSubscription() {
+    if (!state.user) {
+        return false;
+    }
+
+    const { data, error } = await supabase
+        .from("push_subscriptions")
+        .select("id")
+        .eq("user_id", state.user.id)
+        .eq("is_active", true)
+        .limit(1);
+
+    if (error) {
+        throw error;
+    }
+
+    return Boolean(data?.length);
+}
+
+async function deactivateCurrentPushSubscription() {
+    if (!state.user) {
+        state.currentPushSubscription = null;
+        updatePushStatus();
+        return false;
+    }
+
+    let subscription = state.currentPushSubscription;
+
+    if (!subscription && canUsePushApi()) {
+        try {
+            const registration = await getServiceWorkerRegistration({
+                registerIfMissing: false
+            });
+
+            if (registration?.pushManager) {
+                subscription = await withTimeout(
+                    registration.pushManager.getSubscription(),
+                    8000,
+                    "Kira could not check this device's push subscription in time."
+                );
+            }
+        } catch (error) {
+            console.warn("Push unsubscribe lookup warning:", error);
+        }
+    }
+
+    const endpoint = subscription?.endpoint;
+
+    if (endpoint) {
+        const { error } = await supabase
+            .from("push_subscriptions")
+            .update({
+                is_active: false,
+                updated_at: new Date().toISOString()
+            })
+            .eq("user_id", state.user.id)
+            .eq("endpoint", endpoint);
+
+        if (error) {
+            throw error;
+        }
+
+        try {
+            await withTimeout(
+                subscription.unsubscribe(),
+                8000,
+                "Kira could not finish disabling push on this device in time."
+            );
+        } catch (error) {
+            console.warn("Push unsubscribe warning:", error);
+        }
+    }
+
+    state.currentPushSubscription = null;
+    updatePushStatus();
+
+    return hasAnyActivePushSubscription();
 }
 
 function updatePushStatus() {
     if (!els.pushStatus) return;
-    if (!("Notification" in window) || !("PushManager" in window)) {
-        els.pushStatus.textContent = "Push is not supported on this browser.";
+
+    if (state.devicePushSupported === false || !canUsePushApi()) {
+        els.pushStatus.textContent =
+            "Push is not supported on this device.";
         return;
     }
+
     if (Notification.permission === "denied") {
-        els.pushStatus.textContent = "Notifications are blocked in browser settings.";
+        els.pushStatus.textContent =
+            "Notifications are blocked in this device's settings.";
         return;
     }
-    if (state.preferences?.push_enabled && Notification.permission === "granted") {
-        els.pushStatus.textContent = "Push notifications are enabled on this device.";
+
+    if (state.currentPushSubscription) {
+        els.pushStatus.textContent =
+            "Push notifications are enabled on this device.";
         return;
     }
-    els.pushStatus.textContent = "Browser notifications are off.";
+
+    if (
+        state.preferences?.push_enabled &&
+        Notification.permission === "granted"
+    ) {
+        els.pushStatus.textContent =
+            "Permission is allowed, but this device is not subscribed yet.";
+        return;
+    }
+
+    if (state.preferences?.push_enabled) {
+        els.pushStatus.textContent =
+            "Push is active on another device. Enable it here to receive alerts on this device.";
+        return;
+    }
+
+    els.pushStatus.textContent =
+        "Push notifications are off on this device.";
 }
 
 async function sendTestNotification() {
     if (!state.user || !els.testNotification) return;
+
     els.testNotification.disabled = true;
-    if (els.settingsMessage) els.settingsMessage.textContent = "Sending test notification…";
+
+    if (els.settingsMessage) {
+        els.settingsMessage.textContent =
+            "Checking this device before sending a test…";
+    }
 
     try {
-        const { data, error } = await supabase.functions.invoke("notification-dispatch", {
-            body: { mode: "test" }
-        });
+        const subscription =
+            state.currentPushSubscription ||
+            await refreshCurrentDevicePushState({
+                registerIfMissing: false
+            });
+
+        if (!subscription) {
+            throw new Error(
+                "This device is not subscribed to push yet. Turn on Push notifications and save the settings first."
+            );
+        }
+
+        if (els.settingsMessage) {
+            els.settingsMessage.textContent =
+                "Sending test notification…";
+        }
+
+        const { data, error } = await supabase.functions.invoke(
+            "notification-dispatch",
+            {
+                body: {
+                    mode: "test"
+                }
+            }
+        );
+
         if (error) throw error;
-        if (data?.ok === false) throw new Error(data.error || "Test notification failed.");
+        if (data?.ok === false) {
+            throw new Error(
+                data.error ||
+                "Test notification failed."
+            );
+        }
+
         if (els.settingsMessage) {
             els.settingsMessage.textContent = data?.pushed
-                ? "Test notification sent."
-                : "Test alert created. Enable push to receive it outside Kira.";
+                ? "Test notification sent to your active push devices."
+                : "Test alert created, but no push delivery was confirmed.";
         }
+
         await loadNotifications();
     } catch (error) {
-        if (els.settingsMessage) els.settingsMessage.textContent = error?.message || "Unable to send test notification.";
+        if (els.settingsMessage) {
+            els.settingsMessage.textContent =
+                error?.message ||
+                "Unable to send test notification.";
+        }
     } finally {
         els.testNotification.disabled = false;
     }
@@ -913,6 +1240,7 @@ async function refreshNotifications({ generate = false } = {}) {
 
         state.user = user;
         await ensurePreferenceRow();
+        await refreshCurrentDevicePushState({ registerIfMissing: false });
         renderPreferences();
         if (generate) await generateLocalNotifications();
         await loadNotifications();
@@ -942,7 +1270,10 @@ async function boot() {
             state.user = null;
             state.preferences = null;
             state.notifications = [];
+            state.currentPushSubscription = null;
+            state.devicePushSupported = null;
             renderNotifications();
+            renderPreferences();
         }
     });
 }
