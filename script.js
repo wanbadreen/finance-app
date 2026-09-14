@@ -24012,6 +24012,26 @@ const onboardingStarterCategories = [
 ];
 
 
+function escapeOnboardingHtml(
+    value
+) {
+
+    const element =
+        document.createElement(
+            "div"
+        );
+
+    element.textContent =
+        String(
+            value
+            ??
+            ""
+        );
+
+    return element.innerHTML;
+}
+
+
 function getOnboardingElement(
     id
 ) {
@@ -24591,7 +24611,7 @@ function renderOnboardingWelcome() {
                 </div>
 
                 <span class="kira-onboarding-kicker">
-                    Welcome, ${escapeHtml(
+                    Welcome, ${escapeOnboardingHtml(
                         getOnboardingDisplayName()
                     )}
                 </span>
@@ -24696,7 +24716,7 @@ function renderOnboardingAccount() {
                         type="text"
                         id="kira-onboarding-account-name"
                         placeholder="e.g. Maybank"
-                        value="${escapeHtml(
+                        value="${escapeOnboardingHtml(
                             existingAccount
                                 ?.name
                             ||
@@ -24868,7 +24888,7 @@ function renderOnboardingCategories() {
                                     <input
                                         type="checkbox"
                                         data-onboarding-category
-                                        data-name="${escapeHtml(
+                                        data-name="${escapeOnboardingHtml(
                                             item.name
                                         )}"
                                         data-type="${item.type}"
@@ -24878,7 +24898,7 @@ function renderOnboardingCategories() {
                                     <span>
 
                                         <strong>
-                                            ${escapeHtml(
+                                            ${escapeOnboardingHtml(
                                                 item.name
                                             )}
                                         </strong>
@@ -24996,7 +25016,7 @@ function renderOnboardingIncome() {
                                 )
                                 .map(
                                     source =>
-                                        `<span>${escapeHtml(source)}</span>`
+                                        `<span>${escapeOnboardingHtml(source)}</span>`
                                 )
                                 .join(
                                     ""
@@ -25041,9 +25061,9 @@ function renderOnboardingIncome() {
                             `
                                 <button
                                     type="button"
-                                    data-onboarding-income-chip="${escapeHtml(source)}"
+                                    data-onboarding-income-chip="${escapeOnboardingHtml(source)}"
                                 >
-                                    ${escapeHtml(source)}
+                                    ${escapeOnboardingHtml(source)}
                                 </button>
                             `
                     )
@@ -25178,7 +25198,7 @@ function renderOnboardingPlanning() {
                                     category =>
                                         `
                                             <option value="${category.id}">
-                                                ${escapeHtml(category.name)}
+                                                ${escapeOnboardingHtml(category.name)}
                                             </option>
                                         `
                                 )
@@ -25464,11 +25484,11 @@ function renderOnboardingFinish() {
                                     </span>
 
                                     <strong>
-                                        ${escapeHtml(item.name)}
+                                        ${escapeOnboardingHtml(item.name)}
                                     </strong>
 
                                     <small>
-                                        ${escapeHtml(item.detail)}
+                                        ${escapeOnboardingHtml(item.detail)}
                                     </small>
 
                                 </div>
