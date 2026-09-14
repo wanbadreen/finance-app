@@ -1,4 +1,5 @@
-const CACHE_NAME = "kira-shell-v2-phase13";
+const CACHE_NAME = "kira-shell-v3-phase13-ios-push";
+
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -15,24 +16,58 @@ const APP_SHELL = [
   "/kira-logo.png"
 ];
 
+async function cacheAppShellBestEffort() {
+  const cache = await caches.open(CACHE_NAME);
+
+  await Promise.allSettled(
+    APP_SHELL.map(async path => {
+      try {
+        const request = new Request(path, { cache: "reload" });
+        const response = await fetch(request);
+
+        if (response.ok) {
+          await cache.put(request, response.clone());
+        } else {
+          console.warn("Kira service worker skipped cache entry:", path, response.status);
+        }
+      } catch (error) {
+        console.warn("Kira service worker cache warning:", path, error);
+      }
+    })
+  );
+}
+
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))
+    (async () => {
+      // A single unavailable app-shell asset must not make the entire
+      // service worker installation fail, especially on iOS.
+      await cacheAppShellBestEffort();
+      await self.skipWaiting();
+    })()
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
+    (async () => {
+      const keys = await caches.keys();
+
+      await Promise.all(
         keys
           .filter(key => key !== CACHE_NAME)
           .map(key => caches.delete(key))
-      )
-    )
+      );
+
+      await self.clients.claim();
+    })()
   );
-  self.clients.claim();
+});
+
+self.addEventListener("message", event => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("fetch", event => {
@@ -60,8 +95,11 @@ self.addEventListener("fetch", event => {
   event.respondWith(
     fetch(request)
       .then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        }
+
         return response;
       })
       .catch(() =>
@@ -99,20 +137,26 @@ self.addEventListener("push", event => {
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();
-  const targetUrl = new URL(event.notification?.data?.url || "/#dashboard", self.location.origin).href;
+
+  const targetUrl = new URL(
+    event.notification?.data?.url || "/#dashboard",
+    self.location.origin
+  ).href;
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(clients => {
-      for (const client of clients) {
-        if ("focus" in client) {
-          client.navigate(targetUrl);
-          return client.focus();
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then(clients => {
+        for (const client of clients) {
+          if ("focus" in client) {
+            client.navigate(targetUrl);
+            return client.focus();
+          }
         }
-      }
 
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl);
-      }
-    })
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      })
   );
 });

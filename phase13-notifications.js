@@ -828,7 +828,81 @@ function canUsePushApi() {
     );
 }
 
-async function getServiceWorkerRegistration({ registerIfMissing = false } = {}) {
+async function waitForActiveServiceWorker(registration, timeoutMs = 20000) {
+    if (!registration) {
+        return null;
+    }
+
+    if (registration.active) {
+        return registration;
+    }
+
+    const worker = registration.installing || registration.waiting;
+
+    if (!worker) {
+        try {
+            const readyRegistration = await withTimeout(
+                navigator.serviceWorker.ready,
+                timeoutMs,
+                "Kira could not activate its service worker in time."
+            );
+            return readyRegistration?.active ? readyRegistration : registration;
+        } catch {
+            throw new Error(
+                "Kira could not activate its service worker. Remove Kira from the Home Screen, add it again, then retry push setup."
+            );
+        }
+    }
+
+    if (registration.waiting) {
+        try {
+            registration.waiting.postMessage({ type: "SKIP_WAITING" });
+        } catch (error) {
+            console.warn("Service worker skip-waiting message warning:", error);
+        }
+    }
+
+    await withTimeout(
+        new Promise((resolve, reject) => {
+            const finish = () => {
+                if (registration.active || worker.state === "activated") {
+                    resolve(true);
+                    return true;
+                }
+
+                if (worker.state === "redundant") {
+                    reject(
+                        new Error(
+                            "Kira's service worker installation failed. Please reload Kira and try again."
+                        )
+                    );
+                    return true;
+                }
+
+                return false;
+            };
+
+            if (finish()) return;
+
+            const onStateChange = () => {
+                if (finish()) {
+                    worker.removeEventListener("statechange", onStateChange);
+                }
+            };
+
+            worker.addEventListener("statechange", onStateChange);
+        }),
+        timeoutMs,
+        "Kira's service worker is taking too long to activate."
+    );
+
+    return registration;
+}
+
+async function getServiceWorkerRegistration({
+    registerIfMissing = false,
+    waitForActive = registerIfMissing
+} = {}) {
     if (!("serviceWorker" in navigator)) {
         return null;
     }
@@ -837,7 +911,7 @@ async function getServiceWorkerRegistration({ registerIfMissing = false } = {}) 
 
     try {
         registration = await withTimeout(
-            navigator.serviceWorker.getRegistration("/"),
+            navigator.serviceWorker.getRegistration(),
             5000,
             "Kira could not check the service worker in time."
         );
@@ -859,29 +933,44 @@ async function getServiceWorkerRegistration({ registerIfMissing = false } = {}) 
         return null;
     }
 
-    try {
-        await withTimeout(
-            registration.update(),
-            5000,
-            "Service worker update timed out."
-        );
-    } catch (error) {
-        console.warn("Service worker update warning:", error);
-    }
-
-    if (!registration.active && registerIfMissing) {
+    if (registration.active) {
         try {
-            registration = await withTimeout(
-                navigator.serviceWorker.ready,
-                10000,
-                "Kira's service worker is not active yet. Close and reopen Kira, then try again."
+            await withTimeout(
+                registration.update(),
+                5000,
+                "Service worker update timed out."
             );
         } catch (error) {
-            throw error;
+            console.warn("Service worker update warning:", error);
         }
     }
 
+    if (waitForActive && !registration.active) {
+        registration = await waitForActiveServiceWorker(registration);
+    }
+
     return registration;
+}
+
+async function primeServiceWorker() {
+    if (!("serviceWorker" in navigator)) {
+        return;
+    }
+
+    try {
+        const registration = await getServiceWorkerRegistration({
+            registerIfMissing: true,
+            waitForActive: false
+        });
+
+        if (registration && !registration.active) {
+            waitForActiveServiceWorker(registration, 30000).catch(error => {
+                console.warn("Background service worker activation warning:", error);
+            });
+        }
+    } catch (error) {
+        console.warn("Service worker bootstrap warning:", error);
+    }
 }
 
 async function refreshCurrentDevicePushState({ registerIfMissing = false } = {}) {
@@ -1260,6 +1349,11 @@ function startRefreshTimer() {
 
 async function boot() {
     ensureUi();
+
+    // Start service-worker installation as early as possible so iOS
+    // Home Screen apps have an active worker before push is enabled.
+    primeServiceWorker();
+
     await refreshNotifications({ generate: true });
     startRefreshTimer();
 
