@@ -1,0 +1,2 @@
+# Add this to your existing .env.local (do not replace your Supabase variables)
+VITE_VAPID_PUBLIC_KEY=
