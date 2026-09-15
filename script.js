@@ -1149,9 +1149,23 @@ function getStoredAppearance(user) {
                     + "guest"
         );
 
-    return normaliseAppearance(
-        localAppearance
-    );
+
+    if (
+        [
+            "light",
+            "dark",
+            "system"
+        ].includes(
+            localAppearance
+        )
+    ) {
+
+        return localAppearance;
+    }
+
+
+    // New users start with Kira's light appearance.
+    return "light";
 }
 
 
