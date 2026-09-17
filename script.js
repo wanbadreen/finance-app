@@ -129,6 +129,21 @@ const balanceElement = document.getElementById("balance");
 const incomeElement = document.getElementById("income");
 const expensesElement = document.getElementById("expenses");
 
+const setupChecklist =
+    document.getElementById("setup-checklist");
+
+const setupChecklistSummary =
+    document.getElementById("setup-checklist-summary");
+
+const setupChecklistProgressLabel =
+    document.getElementById("setup-checklist-progress-label");
+
+const setupChecklistProgressBar =
+    document.getElementById("setup-checklist-progress-bar");
+
+const setupChecklistItems =
+    document.getElementById("setup-checklist-items");
+
 const dashboardGoalsSummary =
     document.getElementById("dashboard-goals-summary");
 
@@ -3343,11 +3358,31 @@ function renderAccounts() {
 
     accountList.innerHTML = "";
 
+    renderSetupChecklist();
+
     if (!accounts.length) {
 
         renderEmptyState(
             accountList,
-            "No accounts yet."
+            {
+                title:
+                    "No accounts yet",
+
+                description:
+                    "Add where you keep money so Kira can track balances and transactions accurately.",
+
+                actionLabel:
+                    "Add account",
+
+                actionPage:
+                    "accounts",
+
+                actionTargetId:
+                    "account-form",
+
+                focusId:
+                    "account-name"
+            }
         );
 
         return;
@@ -5072,6 +5107,8 @@ function renderBudgets() {
     budgetList.innerHTML =
         "";
 
+    renderSetupChecklist();
+
     budgetMonthLabel.textContent =
         formatBudgetMonth(
             budgetMonthInput.value
@@ -5085,7 +5122,25 @@ function renderBudgets() {
 
         renderEmptyState(
             budgetList,
-            "No budgets set for this month."
+            {
+                title:
+                    "No budget for this month",
+
+                description:
+                    "Set a spending limit for one category and Kira will track your progress automatically.",
+
+                actionLabel:
+                    "Create budget",
+
+                actionPage:
+                    "budgets",
+
+                actionTargetId:
+                    "budget-form",
+
+                focusId:
+                    "budget-category"
+            }
         );
 
         budgetInsight.textContent =
@@ -9045,21 +9100,31 @@ function renderRecurringTransactions() {
     recurringList.innerHTML =
         "";
 
+    renderSetupChecklist();
+
     if (!recurringTransactions.length) {
 
-        const empty =
-            document.createElement(
-                "div"
-            );
+        renderEmptyState(
+            recurringList,
+            {
+                title:
+                    "No recurring items yet",
 
-        empty.className =
-            "empty-state";
+                description:
+                    "Add bills, subscriptions or regular income so upcoming commitments are easier to plan for.",
 
-        empty.textContent =
-            "No recurring items yet.";
+                actionLabel:
+                    "Add recurring item",
 
-        recurringList.appendChild(
-            empty
+                actionPage:
+                    "recurring",
+
+                actionTargetId:
+                    "recurring-form",
+
+                focusId:
+                    "recurring-name"
+            }
         );
 
         return;
@@ -15487,6 +15552,8 @@ function renderTransactions() {
     transactionList.innerHTML =
         "";
 
+    renderSetupChecklist();
+
     populateTransactionFilterOptions();
 
 
@@ -15504,7 +15571,25 @@ function renderTransactions() {
 
         renderEmptyState(
             transactionList,
-            "No transactions yet."
+            {
+                title:
+                    "No transactions yet",
+
+                description:
+                    "Record your first income or expense to start building your financial picture.",
+
+                actionLabel:
+                    "Add transaction",
+
+                actionPage:
+                    "transactions",
+
+                actionTargetId:
+                    "transaction-form",
+
+                focusId:
+                    "description"
+            }
         );
 
         return;
@@ -17117,6 +17202,8 @@ function updateDashboard() {
         formatMoney(
             totalBalance
         );
+
+    renderSetupChecklist();
 }
 
 
@@ -18206,10 +18293,70 @@ function createTextButton(
 // EMPTY STATE
 // ======================================================
 
+function openSetupTarget(
+    pageName,
+    targetId,
+    focusId
+) {
+
+    navigateToPage(
+        pageName,
+        {
+            scrollToTop:
+                false
+        }
+    );
+
+    requestAnimationFrame(
+        function () {
+
+            const target =
+                document.getElementById(
+                    targetId
+                );
+
+            target
+                ?.scrollIntoView({
+                    behavior:
+                        "smooth",
+
+                    block:
+                        "start"
+                });
+
+            if (focusId) {
+
+                setTimeout(
+                    function () {
+
+                        document
+                            .getElementById(
+                                focusId
+                            )
+                            ?.focus();
+                    },
+                    300
+                );
+            }
+        }
+    );
+}
+
+
 function renderEmptyState(
     element,
-    text
+    content
 ) {
+
+    const options =
+        typeof content ===
+            "string"
+            ? {
+                title:
+                    content
+            }
+            : content
+            || {};
 
     const empty =
         document.createElement(
@@ -18219,11 +18366,461 @@ function renderEmptyState(
     empty.className =
         "empty-state";
 
-    empty.textContent =
-        text;
+    const title =
+        document.createElement(
+            "strong"
+        );
+
+    title.className =
+        "empty-state-title";
+
+    title.textContent =
+        options.title
+        ||
+        "Nothing here yet";
+
+    empty.appendChild(
+        title
+    );
+
+    if (
+        options.description
+    ) {
+
+        const description =
+            document.createElement(
+                "p"
+            );
+
+        description.className =
+            "empty-state-description";
+
+        description.textContent =
+            options.description;
+
+        empty.appendChild(
+            description
+        );
+    }
+
+    if (
+        options.actionLabel
+        &&
+        options.actionPage
+        &&
+        options.actionTargetId
+    ) {
+
+        const action =
+            document.createElement(
+                "button"
+            );
+
+        action.type =
+            "button";
+
+        action.className =
+            "empty-state-action";
+
+        action.textContent =
+            options.actionLabel;
+
+        action.addEventListener(
+            "click",
+            function () {
+
+                openSetupTarget(
+                    options.actionPage,
+                    options.actionTargetId,
+                    options.focusId
+                );
+            }
+        );
+
+        empty.appendChild(
+            action
+        );
+    }
 
     element.appendChild(
         empty
+    );
+}
+
+
+let setupChecklistCompletionPersisting =
+    false;
+
+
+async function persistSetupChecklistCompletion() {
+
+    if (
+        !currentUser
+        ||
+        !onboardingState
+        ||
+        onboardingState.user_id !==
+            currentUser.id
+        ||
+        onboardingState
+            .checklist_dismissed_at
+        ||
+        setupChecklistCompletionPersisting
+    ) {
+        return;
+    }
+
+
+    setupChecklistCompletionPersisting =
+        true;
+
+
+    try {
+
+        await saveOnboardingState({
+            checklist_dismissed_at:
+                new Date()
+                    .toISOString()
+        });
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Persist setup checklist completion error:",
+            error
+        );
+
+    } finally {
+
+        setupChecklistCompletionPersisting =
+            false;
+    }
+}
+
+
+function renderSetupChecklist() {
+
+    if (
+        !setupChecklist
+        ||
+        !setupChecklistItems
+        ||
+        !setupChecklistProgressLabel
+        ||
+        !setupChecklistProgressBar
+    ) {
+        return;
+    }
+
+    const steps = [
+        {
+            key:
+                "account",
+
+            title:
+                "Add your first account",
+
+            description:
+                "Tell Kira where your money lives.",
+
+            done:
+                accounts.length > 0,
+
+            actionLabel:
+                "Add account",
+
+            page:
+                "accounts",
+
+            targetId:
+                "account-form",
+
+            focusId:
+                "account-name"
+        },
+        {
+            key:
+                "transaction",
+
+            title:
+                "Record your first transaction",
+
+            description:
+                "Add an income or expense to start your money history.",
+
+            done:
+                transactions.length > 0,
+
+            actionLabel:
+                "Add transaction",
+
+            page:
+                "transactions",
+
+            targetId:
+                "transaction-form",
+
+            focusId:
+                "description"
+        },
+        {
+            key:
+                "budget",
+
+            title:
+                "Set your first budget",
+
+            description:
+                "Give one spending category a monthly limit.",
+
+            done:
+                budgets.length > 0,
+
+            actionLabel:
+                "Create budget",
+
+            page:
+                "budgets",
+
+            targetId:
+                "budget-form",
+
+            focusId:
+                "budget-category"
+        },
+        {
+            key:
+                "recurring",
+
+            title:
+                "Add a recurring item",
+
+            description:
+                "Track a bill, subscription or regular income.",
+
+            done:
+                recurringTransactions.length > 0,
+
+            actionLabel:
+                "Add recurring",
+
+            page:
+                "recurring",
+
+            targetId:
+                "recurring-form",
+
+            focusId:
+                "recurring-name"
+        },
+        {
+            key:
+                "goal",
+
+            title:
+                "Create a savings goal",
+
+            description:
+                "Turn something you want to save for into a visible target.",
+
+            done:
+                savingsGoals.length > 0,
+
+            actionLabel:
+                "Create goal",
+
+            page:
+                "goals",
+
+            targetId:
+                "goal-form",
+
+            focusId:
+                "goal-name"
+        }
+    ];
+
+    const completedCount =
+        steps.filter(
+            step =>
+                step.done
+        ).length;
+
+
+    if (
+        onboardingState
+            ?.user_id ===
+            currentUser?.id
+        &&
+        onboardingState
+            ?.checklist_dismissed_at
+    ) {
+
+        setupChecklist.hidden =
+            true;
+
+        setupChecklistItems.innerHTML =
+            "";
+
+        return;
+    }
+
+
+    if (
+        completedCount ===
+        steps.length
+    ) {
+
+        setupChecklist.hidden =
+            true;
+
+        setupChecklistItems.innerHTML =
+            "";
+
+        void persistSetupChecklistCompletion();
+
+        return;
+    }
+
+    setupChecklist.hidden =
+        false;
+
+    setupChecklistProgressLabel.textContent =
+        `${completedCount} / ${steps.length}`;
+
+    setupChecklistProgressBar.style.width =
+        `${(
+            completedCount
+            /
+            steps.length
+        ) * 100}%`;
+
+    if (
+        setupChecklistSummary
+    ) {
+
+        const remaining =
+            steps.length -
+            completedCount;
+
+        setupChecklistSummary.textContent =
+            remaining === 1
+                ? "One step left and your core Kira setup is complete."
+                : `${remaining} steps left to complete your core Kira setup.`;
+    }
+
+    setupChecklistItems.innerHTML =
+        "";
+
+    steps.forEach(
+        function (step) {
+
+            const row =
+                document.createElement(
+                    "article"
+                );
+
+            row.className =
+                "setup-checklist-item";
+
+            row.classList.toggle(
+                "is-complete",
+                step.done
+            );
+
+            const status =
+                document.createElement(
+                    "span"
+                );
+
+            status.className =
+                "setup-checklist-status";
+
+            status.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+            status.textContent =
+                step.done
+                    ? "✓"
+                    : "";
+
+            const copy =
+                document.createElement(
+                    "div"
+                );
+
+            copy.className =
+                "setup-checklist-copy";
+
+            const title =
+                document.createElement(
+                    "strong"
+                );
+
+            title.textContent =
+                step.title;
+
+            const description =
+                document.createElement(
+                    "span"
+                );
+
+            description.textContent =
+                step.done
+                    ? "Done"
+                    : step.description;
+
+            copy.append(
+                title,
+                description
+            );
+
+            row.append(
+                status,
+                copy
+            );
+
+            if (!step.done) {
+
+                const action =
+                    document.createElement(
+                        "button"
+                    );
+
+                action.type =
+                    "button";
+
+                action.className =
+                    "setup-checklist-action";
+
+                action.textContent =
+                    step.actionLabel;
+
+                action.addEventListener(
+                    "click",
+                    function () {
+
+                        openSetupTarget(
+                            step.page,
+                            step.targetId,
+                            step.focusId
+                        );
+                    }
+                );
+
+                row.appendChild(
+                    action
+                );
+            }
+
+            setupChecklistItems.appendChild(
+                row
+            );
+        }
     );
 }
 
@@ -19141,11 +19738,31 @@ function renderSavingsGoals() {
     goalsList.innerHTML =
         "";
 
+    renderSetupChecklist();
+
     if (!savingsGoals.length) {
 
         renderEmptyState(
             goalsList,
-            "No savings goals yet."
+            {
+                title:
+                    "No savings goals yet",
+
+                description:
+                    "Create a target to turn saving into something visible and measurable.",
+
+                actionLabel:
+                    "Create savings goal",
+
+                actionPage:
+                    "goals",
+
+                actionTargetId:
+                    "goal-form",
+
+                focusId:
+                    "goal-name"
+            }
         );
 
         return;
@@ -26614,6 +27231,8 @@ async function initializeFirstTimeOnboarding() {
         await loadOnboardingState();
 
         await ensureOnboardingState();
+
+        renderSetupChecklist();
 
 
         if (
