@@ -3315,7 +3315,7 @@ async function getReferenceCount(
 // ACCOUNTS
 // ======================================================
 
-async function loadAccounts() {
+async function loadAccounts(throwOnError = false) {
 
     if (!currentUser) {
         return;
@@ -3336,9 +3336,10 @@ async function loadAccounts() {
             );
 
     if (error) {
+        if (throwOnError) throw error;
 
         accountMessage.textContent =
-            error.message;
+            "Unable to load account entries. Please refresh and try again.";
 
         console.error(error);
 
@@ -3508,115 +3509,149 @@ function renderAccounts() {
 }
 
 
-accountForm.addEventListener(
-    "submit",
-    async function (event) {
+// Phase 14C-1A: interaction state is scoped to these three management forms.
+const managementSaveStates = new WeakMap();
 
+function clearManagementFeedback(form, message) {
+    message.textContent = "";
+    form.querySelectorAll('[aria-invalid="true"]').forEach(field => {
+        field.removeAttribute("aria-invalid");
+        const ids = (field.getAttribute("aria-describedby") || "")
+            .split(" ").filter(id => id && id !== message.id);
+        if (ids.length) field.setAttribute("aria-describedby", ids.join(" "));
+        else field.removeAttribute("aria-describedby");
+    });
+}
+
+function managementSaveError(error, label) {
+    if (error?.code === "23505") {
+        return "An entry with these details already exists. Check your " + label.toLowerCase() + " entries or use a different name.";
+    }
+    if (["42501", "PGRST301", "PGRST302", "PGRST303"].includes(error?.code)) {
+        return "Your session may have expired or you do not have permission to save. Sign in again and try once more.";
+    }
+    return "We couldn't confirm whether your " + label.toLowerCase() + " was saved. Check your connection and refresh the list before trying again. Your entries have been kept.";
+}
+
+function configureManagementSave({ form, button, cancel, message, list, label,
+    getEditId, reset, validate, save, refresh }) {
+    const state = { pending: false };
+    managementSaveStates.set(form, state);
+    form.noValidate = true;
+    button.textContent = "Add " + label;
+    cancel.textContent = "Cancel";
+    message.setAttribute("role", "status");
+    message.setAttribute("aria-live", "polite");
+    message.setAttribute("aria-atomic", "true");
+    form.addEventListener("input", () => {
+        if (!state.pending) clearManagementFeedback(form, message);
+    });
+    // Also covers newly rendered list buttons while a save is in progress.
+    list.addEventListener("click", event => {
+        if (state.pending) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+
+    form.addEventListener("submit", async event => {
         event.preventDefault();
-
-        if (!currentUser) {
-            return;
+        if (state.pending) return;
+        state.pending = true;
+        const editId = getEditId();
+        const disabledStates = new Map();
+        const disable = element => {
+            if (!disabledStates.has(element)) disabledStates.set(element, element.disabled);
+            element.disabled = true;
+        };
+        // Lock synchronously, before validation and before the first request.
+        form.querySelectorAll("button").forEach(disable);
+        list.querySelectorAll("button").forEach(disable);
+        button.textContent = "Saving...";
+        form.setAttribute("aria-busy", "true");
+        clearManagementFeedback(form, message);
+        let invalid;
+        let saved = false;
+        try {
+            if (!currentUser) {
+                message.textContent = "Please sign in again before saving.";
+                return;
+            }
+            invalid = validate();
+            if (invalid) {
+                message.textContent = invalid.message;
+                invalid.field.setAttribute("aria-invalid", "true");
+                const ids = new Set((invalid.field.getAttribute("aria-describedby") || "").split(" ").filter(Boolean));
+                ids.add(message.id);
+                invalid.field.setAttribute("aria-describedby", [...ids].join(" "));
+                return;
+            }
+            form.querySelectorAll("input, select, textarea").forEach(disable);
+            const result = await save(editId);
+            if (result.error) throw result.error;
+            saved = true;
+            reset();
+            button.textContent = "Saving...";
+            showTransactionSuccessSnackbar({
+                title: label + (editId === null ? " added" : " updated"),
+                message: "Your " + label.toLowerCase() + " has been saved successfully."
+            });
+            await refresh();
+        } catch (error) {
+            console.error(label + (saved ? " refresh error:" : " save error:"), error);
+            message.textContent = saved
+                ? "Your " + label.toLowerCase() + " was saved, but the list could not refresh. Refresh the page to see it."
+                : managementSaveError(error, label);
+        } finally {
+            disabledStates.forEach((disabled, element) => { element.disabled = disabled; });
+            state.pending = false;
+            form.removeAttribute("aria-busy");
+            button.textContent = getEditId() === null ? "Add " + label : "Save Changes";
+            if (invalid) invalid.field.focus();
         }
+    });
+}
 
-        const name =
-            document
-                .getElementById("account-name")
-                .value
-                .trim();
+function validateManagementField(id, message, isValid) {
+    const field = document.getElementById(id);
+    return isValid(field) ? null : { field, message };
+}
 
-        const accountType =
-            document
-                .getElementById("account-type")
-                .value;
-
-        const openingBalance =
-            parseFloat(
-                document
-                    .getElementById("opening-balance")
-                    .value
-            );
-
-        if (
-            !name ||
-            Number.isNaN(
-                openingBalance
-            )
-        ) {
-
-            accountMessage.textContent =
-                "Enter valid account details.";
-
-            return;
-        }
-
-        let result;
-
-        if (
-            editingAccountId === null
-        ) {
-
-            result =
-                await supabase
-                    .from("accounts")
-                    .insert({
-
-                        user_id:
-                            currentUser.id,
-
-                        name,
-
-                        account_type:
-                            accountType,
-
-                        opening_balance:
-                            openingBalance
-                    });
-
-        } else {
-
-            result =
-                await supabase
-                    .from("accounts")
-                    .update({
-
-                        name,
-
-                        account_type:
-                            accountType,
-
-                        opening_balance:
-                            openingBalance
-                    })
-                    .eq(
-                        "id",
-                        editingAccountId
-                    );
-        }
-
-        if (result.error) {
-
-            accountMessage.textContent =
-                result.error.message;
-
-            return;
-        }
-
-        resetAccountForm();
-
-        await loadAccounts();
-
+configureManagementSave({
+    form: accountForm,
+    button: saveAccountButton,
+    cancel: cancelAccountEditButton,
+    message: accountMessage,
+    list: accountList,
+    label: "Account",
+    getEditId: () => editingAccountId,
+    reset: resetAccountForm,
+    validate: () => validateManagementField("account-name", "Enter an account name.", field => !!field.value.trim())
+            || validateManagementField("account-type", "Choose an account type.", field => ["bank", "cash", "e_wallet", "savings", "other"].includes(field.value))
+            || validateManagementField("opening-balance", "Enter a valid opening balance with no more than two decimal places (for example, 0.00).", field => field.value.trim() !== "" && Number.isFinite(Number(field.value)) && field.validity.valid),
+    save: async editId => {
+        const payload = {
+            name: document.getElementById("account-name").value.trim(),
+            account_type: document.getElementById("account-type").value,
+            opening_balance: Number(document.getElementById("opening-balance").value)
+        };
+        return editId === null
+            ? await supabase.from("accounts").insert({ user_id: currentUser.id, ...payload })
+            : await supabase.from("accounts").update(payload).eq("id", editId);
+    },
+    refresh: async () => {
+        await loadAccounts(true);
         updateDashboard();
-
         refreshTransactionDropdowns();
-
         refreshGoalAccountOptions();
-
         renderPlanningTools();
     }
-);
+});
 
 
 function editAccount(id) {
+    if (managementSaveStates.get(accountForm)?.pending) return;
+    clearManagementFeedback(accountForm, accountMessage);
 
     const account =
         accounts.find(
@@ -3665,6 +3700,7 @@ function editAccount(id) {
 
 
 async function toggleAccountStatus(id) {
+    if (managementSaveStates.get(accountForm)?.pending) return;
 
     const account =
         accounts.find(
@@ -3715,6 +3751,7 @@ async function toggleAccountStatus(id) {
 async function deleteAccountPermanently(
     account
 ) {
+    if (managementSaveStates.get(accountForm)?.pending) return;
 
     if (
         !account ||
@@ -3802,6 +3839,7 @@ async function deleteAccountPermanently(
 
 
 function resetAccountForm() {
+    clearManagementFeedback(accountForm, accountMessage);
 
     editingAccountId =
         null;
@@ -3817,7 +3855,7 @@ function resetAccountForm() {
         "Add Account";
 
     saveAccountButton.textContent =
-        "+ Add Account";
+        "Add Account";
 
     cancelAccountEditButton.style.display =
         "none";
@@ -3829,7 +3867,9 @@ function resetAccountForm() {
 
 cancelAccountEditButton.addEventListener(
     "click",
-    resetAccountForm
+    () => {
+        if (!managementSaveStates.get(accountForm)?.pending) resetAccountForm();
+    }
 );
 
 
@@ -3837,7 +3877,7 @@ cancelAccountEditButton.addEventListener(
 // CATEGORIES
 // ======================================================
 
-async function loadCategories() {
+async function loadCategories(throwOnError = false) {
 
     if (!currentUser) {
         return;
@@ -3858,9 +3898,10 @@ async function loadCategories() {
             );
 
     if (error) {
+        if (throwOnError) throw error;
 
         categoryMessage.textContent =
-            error.message;
+            "Unable to load category entries. Please refresh and try again.";
 
         console.error(error);
 
@@ -3942,83 +3983,38 @@ function renderCategories() {
 }
 
 
-categoryForm.addEventListener(
-    "submit",
-    async function (event) {
-
-        event.preventDefault();
-
-        const name =
-            document
-                .getElementById("category-name")
-                .value
-                .trim();
-
-        const type =
-            document
-                .getElementById("category-type")
-                .value;
-
-        if (!name) {
-            return;
-        }
-
-        let result;
-
-        if (
-            editingCategoryId === null
-        ) {
-
-            result =
-                await supabase
-                    .from("categories")
-                    .insert({
-
-                        user_id:
-                            currentUser.id,
-
-                        name,
-                        type
-                    });
-
-        } else {
-
-            result =
-                await supabase
-                    .from("categories")
-                    .update({
-
-                        name,
-                        type
-                    })
-                    .eq(
-                        "id",
-                        editingCategoryId
-                    );
-        }
-
-        if (result.error) {
-
-            categoryMessage.textContent =
-                result.error.message;
-
-            return;
-        }
-
-        resetCategoryForm();
-
-        await loadCategories();
-
+configureManagementSave({
+    form: categoryForm,
+    button: saveCategoryButton,
+    cancel: cancelCategoryEditButton,
+    message: categoryMessage,
+    list: categoryList,
+    label: "Category",
+    getEditId: () => editingCategoryId,
+    reset: resetCategoryForm,
+    validate: () => validateManagementField("category-name", "Enter a category name.", field => !!field.value.trim())
+            || validateManagementField("category-type", "Choose a category type.", field => ["expense", "income", "both"].includes(field.value)),
+    save: async editId => {
+        const payload = {
+            name: document.getElementById("category-name").value.trim(),
+            type: document.getElementById("category-type").value
+        };
+        return editId === null
+            ? await supabase.from("categories").insert({ user_id: currentUser.id, ...payload })
+            : await supabase.from("categories").update(payload).eq("id", editId);
+    },
+    refresh: async () => {
+        await loadCategories(true);
         populateBudgetCategorySelect();
-
         refreshTransactionDropdowns();
-
         renderBudgets();
     }
-);
+});
 
 
 function editCategory(id) {
+    if (managementSaveStates.get(categoryForm)?.pending) return;
+    clearManagementFeedback(categoryForm, categoryMessage);
 
     const category =
         categories.find(
@@ -4062,6 +4058,7 @@ function editCategory(id) {
 
 
 async function toggleCategoryStatus(id) {
+    if (managementSaveStates.get(categoryForm)?.pending) return;
 
     const category =
         categories.find(
@@ -4115,6 +4112,7 @@ async function toggleCategoryStatus(id) {
 async function deleteCategoryPermanently(
     category
 ) {
+    if (managementSaveStates.get(categoryForm)?.pending) return;
 
     if (
         !category ||
@@ -4213,6 +4211,7 @@ async function deleteCategoryPermanently(
 
 
 function resetCategoryForm() {
+    clearManagementFeedback(categoryForm, categoryMessage);
 
     editingCategoryId =
         null;
@@ -4223,7 +4222,7 @@ function resetCategoryForm() {
         "Add Category";
 
     saveCategoryButton.textContent =
-        "+ Add Category";
+        "Add Category";
 
     cancelCategoryEditButton.style.display =
         "none";
@@ -4235,7 +4234,9 @@ function resetCategoryForm() {
 
 cancelCategoryEditButton.addEventListener(
     "click",
-    resetCategoryForm
+    () => {
+        if (!managementSaveStates.get(categoryForm)?.pending) resetCategoryForm();
+    }
 );
 
 
@@ -4243,7 +4244,7 @@ cancelCategoryEditButton.addEventListener(
 // INCOME SOURCES
 // ======================================================
 
-async function loadIncomeSources() {
+async function loadIncomeSources(throwOnError = false) {
 
     if (!currentUser) {
         return;
@@ -4264,9 +4265,10 @@ async function loadIncomeSources() {
             );
 
     if (error) {
+        if (throwOnError) throw error;
 
         incomeSourceMessage.textContent =
-            error.message;
+            "Unable to load income source entries. Please refresh and try again.";
 
         console.error(error);
 
@@ -4346,71 +4348,34 @@ function renderIncomeSources() {
 }
 
 
-incomeSourceForm.addEventListener(
-    "submit",
-    async function (event) {
-
-        event.preventDefault();
-
-        const name =
-            document
-                .getElementById("income-source-name")
-                .value
-                .trim();
-
-        if (!name) {
-            return;
-        }
-
-        let result;
-
-        if (
-            editingIncomeSourceId === null
-        ) {
-
-            result =
-                await supabase
-                    .from("income_sources")
-                    .insert({
-
-                        user_id:
-                            currentUser.id,
-
-                        name
-                    });
-
-        } else {
-
-            result =
-                await supabase
-                    .from("income_sources")
-                    .update({
-                        name
-                    })
-                    .eq(
-                        "id",
-                        editingIncomeSourceId
-                    );
-        }
-
-        if (result.error) {
-
-            incomeSourceMessage.textContent =
-                result.error.message;
-
-            return;
-        }
-
-        resetIncomeSourceForm();
-
-        await loadIncomeSources();
-
+configureManagementSave({
+    form: incomeSourceForm,
+    button: saveIncomeSourceButton,
+    cancel: cancelIncomeSourceEditButton,
+    message: incomeSourceMessage,
+    list: incomeSourceList,
+    label: "Income Source",
+    getEditId: () => editingIncomeSourceId,
+    reset: resetIncomeSourceForm,
+    validate: () => validateManagementField("income-source-name", "Enter an income source name.", field => !!field.value.trim()),
+    save: async editId => {
+        const payload = {
+            name: document.getElementById("income-source-name").value.trim()
+        };
+        return editId === null
+            ? await supabase.from("income_sources").insert({ user_id: currentUser.id, ...payload })
+            : await supabase.from("income_sources").update(payload).eq("id", editId);
+    },
+    refresh: async () => {
+        await loadIncomeSources(true);
         refreshTransactionDropdowns();
     }
-);
+});
 
 
 function editIncomeSource(id) {
+    if (managementSaveStates.get(incomeSourceForm)?.pending) return;
+    clearManagementFeedback(incomeSourceForm, incomeSourceMessage);
 
     const source =
         incomeSources.find(
@@ -4449,6 +4414,7 @@ function editIncomeSource(id) {
 
 
 async function toggleIncomeSourceStatus(id) {
+    if (managementSaveStates.get(incomeSourceForm)?.pending) return;
 
     const source =
         incomeSources.find(
@@ -4494,6 +4460,7 @@ async function toggleIncomeSourceStatus(id) {
 async function deleteIncomeSourcePermanently(
     source
 ) {
+    if (managementSaveStates.get(incomeSourceForm)?.pending) return;
 
     if (
         !source ||
@@ -4581,6 +4548,7 @@ async function deleteIncomeSourcePermanently(
 
 
 function resetIncomeSourceForm() {
+    clearManagementFeedback(incomeSourceForm, incomeSourceMessage);
 
     editingIncomeSourceId =
         null;
@@ -4591,7 +4559,7 @@ function resetIncomeSourceForm() {
         "Add Income Source";
 
     saveIncomeSourceButton.textContent =
-        "+ Add Income Source";
+        "Add Income Source";
 
     cancelIncomeSourceEditButton.style.display =
         "none";
@@ -4603,7 +4571,9 @@ function resetIncomeSourceForm() {
 
 cancelIncomeSourceEditButton.addEventListener(
     "click",
-    resetIncomeSourceForm
+    () => {
+        if (!managementSaveStates.get(incomeSourceForm)?.pending) resetIncomeSourceForm();
+    }
 );
 
 
