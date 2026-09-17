@@ -3512,9 +3512,9 @@ function renderAccounts() {
 // Phase 14C-1A: interaction state is scoped to these three management forms.
 const managementSaveStates = new WeakMap();
 
-function clearManagementFeedback(form, message) {
+function clearManagementFeedback(form, message, extraFields = []) {
     message.textContent = "";
-    form.querySelectorAll('[aria-invalid="true"]').forEach(field => {
+    [...form.querySelectorAll('[aria-invalid="true"]'), ...extraFields].forEach(field => {
         field.removeAttribute("aria-invalid");
         const ids = (field.getAttribute("aria-describedby") || "")
             .split(" ").filter(id => id && id !== message.id);
@@ -3615,6 +3615,148 @@ function configureManagementSave({ form, button, cancel, message, list, label,
 function validateManagementField(id, message, isValid) {
     const field = document.getElementById(id);
     return isValid(field) ? null : { field, message };
+}
+
+// Phase 14C-1B through 1D: one synchronous guard covers preparation and saving.
+const financeSaveStates = new WeakMap();
+
+function financeSavePending(form) {
+    return financeSaveStates.get(form)?.pending === true;
+}
+
+function financeField(field, message, valid = !!field.value.trim()) {
+    return valid ? null : { field, message };
+}
+
+function financeAmount(field, allowZero = false) {
+    const value = Number(field.value);
+    return financeField(field, allowZero
+        ? "Enter a saved amount of zero or more, with no more than two decimal places."
+        : "Enter an amount greater than zero, with no more than two decimal places.",
+        field.value.trim() !== "" && Number.isFinite(value)
+        && (allowZero ? value >= 0 : value > 0) && field.validity.valid);
+}
+
+function financeDate(field, label, optional = false) {
+    return financeField(field, "Enter a valid " + label + ".",
+        (optional && !field.value && !field.validity.badInput)
+        || (!!field.value && field.validity.valid));
+}
+
+function configureFinanceSubmit({ form, button, cancel, message, label,
+    getEditId, validate, extraControls = [], afterUnlock = () => {} }, submit) {
+    if (!form) return;
+    const state = { pending: false, extraControls };
+    financeSaveStates.set(form, state);
+    form.noValidate = true;
+    if (!message) {
+        message = document.createElement("p");
+        message.id = form.id + "-message";
+        message.className = "form-message";
+        form.appendChild(message);
+    }
+    message.setAttribute("role", "status");
+    message.setAttribute("aria-live", "polite");
+    message.setAttribute("aria-atomic", "true");
+    button.textContent = "Add " + label;
+    cancel.textContent = "Cancel";
+    state.message = message;
+    form.addEventListener("input", () => {
+        if (!state.pending) clearFinanceFeedback(form);
+    });
+    extraControls.forEach(field => field.addEventListener("input", () => {
+        if (!state.pending) clearFinanceFeedback(form);
+    }));
+    form.addEventListener("click", event => {
+        if (state.pending) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        if (state.pending) return;
+        state.pending = true;
+        const disabledStates = new Map();
+        const disable = element => {
+            if (!element) return;
+            if (!disabledStates.has(element)) disabledStates.set(element, element.disabled);
+            element.disabled = true;
+        };
+        form.querySelectorAll("button").forEach(disable);
+        button.textContent = "Saving...";
+        form.setAttribute("aria-busy", "true");
+        clearFinanceFeedback(form);
+        let invalid;
+        let saved = false;
+        try {
+            if (!currentUser) {
+                message.textContent = "Please sign in again before saving.";
+                return;
+            }
+            invalid = validate();
+            if (invalid) {
+                message.textContent = invalid.message;
+                invalid.field.setAttribute("aria-invalid", "true");
+                const ids = new Set((invalid.field.getAttribute("aria-describedby") || "").split(" ").filter(Boolean));
+                ids.add(message.id);
+                invalid.field.setAttribute("aria-describedby", [...ids].join(" "));
+                return;
+            }
+            form.querySelectorAll("input, select, textarea").forEach(disable);
+            extraControls.forEach(disable);
+            await submit(event, () => { saved = true; });
+        } catch (error) {
+            console.error(label + (saved ? " post-save error:" : " save error:"), error);
+            message.textContent = saved
+                ? "Your " + label.toLowerCase() + " was saved, but a follow-up step failed. Refresh the page to check it before making further changes."
+                : managementSaveError(error, label);
+        } finally {
+            disabledStates.forEach((disabled, element) => { element.disabled = disabled; });
+            state.pending = false;
+            form.removeAttribute("aria-busy");
+            button.textContent = getEditId() === null ? "Add " + label : "Save Changes";
+            afterUnlock();
+            if (invalid) invalid.field.focus();
+        }
+    });
+}
+
+function clearFinanceFeedback(form) {
+    const state = financeSaveStates.get(form);
+    if (state?.message) clearManagementFeedback(form, state.message, state.extraControls);
+}
+
+function validateRecurringSubmit() {
+    return financeField(recurringNameInput, "Enter a recurring item name.")
+        || financeField(recurringKindSelect, "Choose a recurring item kind.", ["recurring", "subscription"].includes(recurringKindSelect.value))
+        || financeField(recurringTypeSelect, "Choose an income or expense type.", ["income", "expense"].includes(recurringTypeSelect.value))
+        || financeField(recurringAccountSelect, "Choose an account.")
+        || financeField(recurringCategorySelect, "Choose a category.")
+        || (recurringCategorySelect.value === "__create_new__" && financeField(recurringCustomCategoryInput, "Enter a new category name."))
+        || (recurringTypeSelect.value === "income" && financeField(recurringIncomeSourceSelect, "Choose an income source."))
+        || financeAmount(recurringAmountInput)
+        || financeField(recurringFrequencySelect, "Choose a frequency.", ["weekly", "monthly", "yearly"].includes(recurringFrequencySelect.value))
+        || financeDate(recurringNextDueDateInput, "next due date")
+        || (recurringReminderEnabled?.checked && financeField(recurringReminderDays,
+            "Enter a whole number of reminder days from 0 to 30.",
+            recurringReminderDays.value.trim() !== "" && Number.isInteger(Number(recurringReminderDays.value))
+            && Number(recurringReminderDays.value) >= 0 && Number(recurringReminderDays.value) <= 30));
+}
+
+function validateTransactionSubmit() {
+    return financeField(transactionDescriptionInput, "Enter a transaction description.")
+        || financeField(transactionAccountSelect, "Choose an account.")
+        || financeField(transactionTypeSelect, "Choose an income or expense type.", ["income", "expense"].includes(transactionTypeSelect.value))
+        || financeField(transactionCategorySelect, "Choose a category.")
+        || (transactionCategorySelect.value === "__other__" && financeField(customCategoryInput, "Enter a new category name."))
+        || (transactionTypeSelect.value === "income" && financeField(transactionIncomeSourceSelect, "Choose an income source."))
+        || (transactionTypeSelect.value === "income" && transactionIncomeSourceSelect.value === "__other__"
+            && financeField(customIncomeSourceInput, "Enter a new income source name."))
+        || financeAmount(document.getElementById("amount"))
+        || financeDate(dateInput, "transaction date")
+        || (receiptOcrRunning && { field: transactionDescriptionInput,
+            message: "Wait for receipt scanning to finish, then review the details and save." });
 }
 
 configureManagementSave({
@@ -4681,7 +4823,7 @@ budgetMonthInput.addEventListener(
 // LOAD BUDGETS
 // ======================================================
 
-async function loadBudgets() {
+async function loadBudgets(throwOnError = false) {
 
     if (
         !currentUser ||
@@ -4715,6 +4857,7 @@ async function loadBudgets() {
             );
 
     if (error) {
+        if (throwOnError) throw error;
 
         console.error(
             "Load budget error:",
@@ -4812,9 +4955,14 @@ function populateBudgetCategorySelect(
 // CREATE / UPDATE BUDGET
 // ======================================================
 
-budgetForm.addEventListener(
-    "submit",
-    async function (event) {
+configureFinanceSubmit({
+    form: budgetForm, button: saveBudgetButton, cancel: cancelBudgetEditButton,
+    message: budgetMessage, label: "Budget", getEditId: () => editingBudgetId,
+    extraControls: [budgetMonthInput],
+    validate: () => financeField(budgetCategorySelect, "Choose a budget category.")
+        || financeAmount(budgetAmountInput)
+        || financeDate(budgetMonthInput, "budget month")
+}, async function (event, markSaved) {
 
         event.preventDefault();
 
@@ -4833,27 +4981,8 @@ budgetForm.addEventListener(
         const selectedMonth =
             budgetMonthInput.value;
 
-        if (
-            !categoryId ||
-            !selectedMonth ||
-            Number.isNaN(amount) ||
-            amount <= 0
-        ) {
-
-            budgetMessage.textContent =
-                "Enter a valid category and budget amount.";
-
-            return;
-        }
-
         const monthStart =
             `${selectedMonth}-01`;
-
-        saveBudgetButton.disabled =
-            true;
-
-        saveBudgetButton.textContent =
-            "Saving...";
 
         let result;
 
@@ -4900,31 +5029,17 @@ budgetForm.addEventListener(
                         editingBudgetId
                     );
         }
+        if (result.error) throw result.error;
+        markSaved();
 
-        saveBudgetButton.disabled =
-            false;
+        const wasEditing = editingBudgetId !== null;
+        resetBudgetForm(true);
+        showTransactionSuccessSnackbar({
+            title: "Budget" + (wasEditing ? " updated" : " added"),
+            message: "Your budget was saved successfully."
+        });
 
-        if (result.error) {
-
-            console.error(
-                "Save budget error:",
-                result.error
-            );
-
-            budgetMessage.textContent =
-                result.error.message;
-
-            saveBudgetButton.textContent =
-                editingBudgetId
-                    ? "Save Changes"
-                    : "+ Add Budget";
-
-            return;
-        }
-
-        resetBudgetForm();
-
-        await loadBudgets();
+        await loadBudgets(true);
     }
 );
 
@@ -4934,6 +5049,8 @@ budgetForm.addEventListener(
 // ======================================================
 
 function editBudget(id) {
+    if (financeSavePending(budgetForm)) return;
+    clearFinanceFeedback(budgetForm);
 
     const budget =
         budgets.find(
@@ -4980,6 +5097,7 @@ function editBudget(id) {
 // ======================================================
 
 async function deleteBudget(id) {
+    if (financeSavePending(budgetForm)) return;
 
     const budget =
         budgets.find(
@@ -5036,7 +5154,9 @@ async function deleteBudget(id) {
 // RESET BUDGET FORM
 // ======================================================
 
-function resetBudgetForm() {
+function resetBudgetForm(force = false) {
+    if (financeSavePending(budgetForm) && force !== true) return;
+    clearFinanceFeedback(budgetForm);
 
     editingBudgetId =
         null;
@@ -5046,11 +5166,9 @@ function resetBudgetForm() {
     budgetFormTitle.textContent =
         "Add Budget";
 
-    saveBudgetButton.textContent =
-        "+ Add Budget";
+    saveBudgetButton.textContent = financeSavePending(budgetForm) ? "Saving..." : "Add Budget";
 
-    saveBudgetButton.disabled =
-        false;
+    saveBudgetButton.disabled = financeSavePending(budgetForm);
 
     cancelBudgetEditButton.style.display =
         "none";
@@ -5911,7 +6029,7 @@ function attachTagIdsToTransactions(
 // ======================================================
 
 
-async function loadTransactions() {
+async function loadTransactions(throwOnError = false) {
 
     if (!currentUser) {
         return;
@@ -5942,6 +6060,7 @@ async function loadTransactions() {
             );
 
     if (error) {
+        if (throwOnError) throw error;
 
         console.error(
             "Load transactions error:",
@@ -5968,6 +6087,7 @@ async function loadTransactions() {
             );
 
     if (tagLinkError) {
+        if (throwOnError) throw tagLinkError;
 
         console.error(
             "Load transaction tags error:",
@@ -6234,7 +6354,7 @@ function updateIncomeSourceVisibility(
 // RECURRING & SUBSCRIPTIONS
 // ======================================================
 
-async function loadRecurringTransactions() {
+async function loadRecurringTransactions(throwOnError = false) {
 
     if (!currentUser) {
         return;
@@ -6255,6 +6375,7 @@ async function loadRecurringTransactions() {
             );
 
     if (error) {
+        if (throwOnError) throw error;
 
         console.error(
             "Load recurring transactions error:",
@@ -7480,7 +7601,9 @@ function refreshRecurringFormOptions(
 }
 
 
-function resetRecurringForm() {
+function resetRecurringForm(force = false) {
+    if (financeSavePending(recurringForm) && force !== true) return;
+    clearFinanceFeedback(recurringForm);
 
     editingRecurringId =
         null;
@@ -7532,11 +7655,9 @@ function resetRecurringForm() {
     recurringFormTitle.textContent =
         "Add Recurring Item";
 
-    saveRecurringButton.textContent =
-        "Save Recurring Item";
+    saveRecurringButton.textContent = financeSavePending(recurringForm) ? "Saving..." : "Add Recurring Item";
 
-    saveRecurringButton.disabled =
-        false;
+    saveRecurringButton.disabled = financeSavePending(recurringForm);
 
     cancelRecurringEditButton.style.display =
         "none";
@@ -9424,6 +9545,8 @@ function renderRecurringTransactions() {
 
 
 function editRecurringItem(item) {
+    if (financeSavePending(recurringForm)) return;
+    clearFinanceFeedback(recurringForm);
 
     editingRecurringId =
         item.id;
@@ -9491,6 +9614,7 @@ function editRecurringItem(item) {
 
 
 async function toggleRecurringItem(item) {
+    if (financeSavePending(recurringForm)) return;
 
     const {
         error
@@ -9524,6 +9648,7 @@ async function toggleRecurringItem(item) {
 async function deleteRecurringItemPermanently(
     item
 ) {
+    if (financeSavePending(recurringForm)) return;
 
     if (
         !item ||
@@ -9748,6 +9873,7 @@ async function advanceRecurringSchedule(
 
 
 function useRecurringItem(item) {
+    if (financeSavePending(transactionForm)) return;
 
     resetTransactionForm();
 
@@ -9797,7 +9923,7 @@ function useRecurringItem(item) {
                 : "Log Recurring Expense";
 
     cancelEditButton.textContent =
-        "Cancel Log";
+        "Cancel";
 
     cancelEditButton.style.display =
         "inline-flex";
@@ -9997,9 +10123,11 @@ async function resolveRecurringCategoryId(
 
 if (recurringForm) {
 
-    recurringForm.addEventListener(
-        "submit",
-        async function (event) {
+    configureFinanceSubmit({
+    form: recurringForm, button: saveRecurringButton, cancel: cancelRecurringEditButton,
+    message: recurringMessage, label: "Recurring Item", getEditId: () => editingRecurringId,
+    validate: validateRecurringSubmit, afterUnlock: updateRecurringReminderControls
+}, async function (event, markSaved) {
 
             event.preventDefault();
 
@@ -10060,79 +10188,8 @@ if (recurringForm) {
             let incomeSourceId =
                 null;
 
-            if (
-                type ===
-                "income"
-            ) {
-
-                incomeSourceId =
-                    recurringIncomeSourceSelect
-                        .value;
-
-                if (!incomeSourceId) {
-
-                    alert(
-                        "Please select an income source."
-                    );
-
-                    return;
-                }
-            }
-
-            if (
-                !name ||
-                !accountId ||
-                !categoryId ||
-                !nextDueDate ||
-                !Number.isFinite(
-                    amount
-                ) ||
-                amount <= 0
-            ) {
-
-                alert(
-                    "Please complete all required recurring fields."
-                );
-
-                return;
-            }
-
-            try {
-
-                categoryId =
-                    await resolveRecurringCategoryId(
-                        categoryId,
-                        type
-                    );
-
-            } catch (error) {
-
-                recurringMessage.textContent =
-                    error.message ||
-                    "Unable to create the category.";
-
-                return;
-            }
-
-            if (
-                reminderEnabled &&
-                (
-                    !Number.isInteger(
-                        reminderDaysBefore
-                    )
-                    ||
-                    reminderDaysBefore < 0
-                    ||
-                    reminderDaysBefore > 30
-                )
-            ) {
-
-                alert(
-                    "Reminder days must be between 0 and 30."
-                );
-
-                return;
-            }
+            if (type === "income") incomeSourceId = recurringIncomeSourceSelect.value;
+            categoryId = await resolveRecurringCategoryId(categoryId, type);
 
             const payload = {
                 user_id:
@@ -10160,12 +10217,6 @@ if (recurringForm) {
                     notes || null
             };
 
-            saveRecurringButton.disabled =
-                true;
-
-            saveRecurringButton.textContent =
-                "Saving...";
-
             const result =
                 editingRecurringId ===
                 null
@@ -10183,26 +10234,17 @@ if (recurringForm) {
                             "id",
                             editingRecurringId
                         );
+        if (result.error) throw result.error;
+        markSaved();
 
-            saveRecurringButton.disabled =
-                false;
+            const wasEditing = editingRecurringId !== null;
+        resetRecurringForm(true);
+        showTransactionSuccessSnackbar({
+            title: "Recurring Item" + (wasEditing ? " updated" : " added"),
+            message: "Your recurring item was saved successfully."
+        });
 
-            if (result.error) {
-
-                saveRecurringButton.textContent =
-                    editingRecurringId
-                        ? "Save Changes"
-                        : "Save Recurring Item";
-
-                recurringMessage.textContent =
-                    result.error.message;
-
-                return;
-            }
-
-            resetRecurringForm();
-
-            await loadRecurringTransactions();
+            await loadRecurringTransactions(true);
         }
     );
 }
@@ -10717,14 +10759,7 @@ async function createCategoryFromTransaction(
             .select()
             .single();
 
-    if (error) {
-
-        alert(
-            error.message
-        );
-
-        return null;
-    }
+    if (error) throw error;
 
     categories.push(
         data
@@ -10787,14 +10822,7 @@ async function createIncomeSourceFromTransaction() {
             .select()
             .single();
 
-    if (error) {
-
-        alert(
-            error.message
-        );
-
-        return null;
-    }
+    if (error) throw error;
 
     incomeSources.push(
         data
@@ -14592,9 +14620,11 @@ if (removeSavedReceiptButton) {
 // CREATE / UPDATE TRANSACTION
 // ======================================================
 
-transactionForm.addEventListener(
-    "submit",
-    async function (event) {
+configureFinanceSubmit({
+    form: transactionForm, button: submitButton, cancel: cancelEditButton,
+    label: "Transaction", getEditId: () => editingTransactionId,
+    validate: validateTransactionSubmit, afterUnlock: updateReceiptScanButton
+}, async function (event, markSaved) {
 
         event.preventDefault();
 
@@ -14660,23 +14690,6 @@ transactionForm.addEventListener(
                     ?.value
             );
 
-        if (
-            !description ||
-            !accountId ||
-            !categoryId ||
-            !transactionDate ||
-            Number.isNaN(amount) ||
-            amount <= 0
-        ) {
-
-            alert(
-                "Please complete all required transaction fields."
-            );
-
-            return;
-        }
-
-
         // CUSTOM CATEGORY
 
         if (
@@ -14733,33 +14746,7 @@ transactionForm.addEventListener(
             }
         }
 
-        let desiredTagIds;
-
-        try {
-
-            desiredTagIds =
-                await ensureTagsForNames(
-                    tagNames
-                );
-
-        } catch (error) {
-
-            alert(
-                error?.message
-                ||
-                "Unable to prepare transaction tags."
-            );
-
-            return;
-        }
-
-
-        submitButton.disabled =
-            true;
-
-        submitButton.textContent =
-            "Saving...";
-
+        const desiredTagIds = await ensureTagsForNames(tagNames);
 
         const originalReceiptPath =
             editingTransactionId === null
@@ -14773,12 +14760,9 @@ transactionForm.addEventListener(
             originalReceiptPath;
 
 
-        try {
+        {
 
             if (selectedReceiptFile) {
-
-                submitButton.textContent =
-                    "Uploading receipt...";
 
                 uploadedReceiptPath =
                     await uploadReceipt(
@@ -14881,10 +14865,6 @@ transactionForm.addEventListener(
             };
 
 
-            submitButton.textContent =
-                "Saving...";
-
-
             let result;
 
             if (
@@ -14928,6 +14908,8 @@ transactionForm.addEventListener(
                 throw result.error;
             }
 
+
+            markSaved();
 
             const savedTransactionId =
                 result.data?.id ||
@@ -14981,19 +14963,16 @@ transactionForm.addEventListener(
                     );
 
                 } catch (error) {
+                    console.error("Recurring schedule advance error:", error);
 
                     recurringAdvanceWarning =
                         "Transaction saved, but the recurring schedule could not be advanced.";
                 }
             }
 
+            resetTransactionForm(true);
 
-            submitButton.disabled =
-                false;
 
-            resetTransactionForm();
-
-            await loadTransactions();
 
             if (wasRecurringLog) {
 
@@ -15001,7 +14980,7 @@ transactionForm.addEventListener(
                     title:
                         "Recurring transaction logged",
                     message:
-                        "The transaction was saved and the recurring schedule was updated."
+                        recurringAdvanceWarning || "The transaction was saved and the recurring schedule was updated."
                 });
 
             } else if (wasEditingTransaction) {
@@ -15035,26 +15014,8 @@ transactionForm.addEventListener(
                 );
             }
 
-        } catch (error) {
+            await loadTransactions(true);
 
-            submitButton.disabled =
-                false;
-
-            submitButton.textContent =
-                editingTransactionId
-                    ? "Save Changes"
-                    : "+ Add Transaction";
-
-            console.error(
-                "Transaction save error:",
-                error
-            );
-
-            alert(
-                error?.message
-                ||
-                "Unable to save this transaction."
-            );
         }
     }
 );
@@ -16208,6 +16169,8 @@ function renderDeletedTransactions() {
 // ======================================================
 
 function editTransaction(id) {
+    if (financeSavePending(transactionForm)) return;
+    clearFinanceFeedback(transactionForm);
 
     const transaction =
         transactions.find(
@@ -16283,7 +16246,7 @@ function editTransaction(id) {
         "Save Changes";
 
     cancelEditButton.textContent =
-        "Cancel Edit";
+        "Cancel";
 
     cancelEditButton.style.display =
         "inline-flex";
@@ -17025,7 +16988,9 @@ transactionUndoButton
 // RESET TRANSACTION FORM
 // ======================================================
 
-function resetTransactionForm() {
+function resetTransactionForm(force = false) {
+    if (financeSavePending(transactionForm) && force !== true) return;
+    clearFinanceFeedback(transactionForm);
 
     editingTransactionId =
         null;
@@ -17049,14 +17014,12 @@ function resetTransactionForm() {
     formTitle.textContent =
         "Add Transaction";
 
-    submitButton.textContent =
-        "+ Add Transaction";
+    submitButton.textContent = financeSavePending(transactionForm) ? "Saving..." : "Add Transaction";
 
-    submitButton.disabled =
-        false;
+    submitButton.disabled = financeSavePending(transactionForm);
 
     cancelEditButton.textContent =
-        "Cancel Edit";
+        "Cancel";
 
     cancelEditButton.style.display =
         "none";
@@ -19444,7 +19407,7 @@ function renderSmartInsights() {
 // GOALS & PLANNING
 // ======================================================
 
-async function loadSavingsGoals() {
+async function loadSavingsGoals(throwOnError = false) {
 
     if (!currentUser) {
 
@@ -19468,6 +19431,7 @@ async function loadSavingsGoals() {
             );
 
     if (error) {
+        if (throwOnError) throw error;
 
         console.error(
             "Load savings goals error:",
@@ -20154,7 +20118,9 @@ function renderSavingsGoals() {
 }
 
 
-function resetGoalForm() {
+function resetGoalForm(force = false) {
+    if (financeSavePending(goalForm) && force !== true) return;
+    clearFinanceFeedback(goalForm);
 
     if (!goalForm) {
         return;
@@ -20171,8 +20137,7 @@ function resetGoalForm() {
     goalFormTitle.textContent =
         "Add Savings Goal";
 
-    saveGoalButton.textContent =
-        "+ Add Goal";
+    saveGoalButton.textContent = financeSavePending(goalForm) ? "Saving..." : "Add Goal";
 
     cancelGoalEditButton.style.display =
         "none";
@@ -20189,6 +20154,8 @@ function resetGoalForm() {
 function editSavingsGoal(
     goal
 ) {
+    if (financeSavePending(goalForm)) return;
+    clearFinanceFeedback(goalForm);
 
     if (!goal) {
         return;
@@ -20239,6 +20206,7 @@ async function updateGoalStatus(
     goal,
     status
 ) {
+    if (financeSavePending(goalForm)) return;
 
     if (!goal) {
         return;
@@ -20280,6 +20248,7 @@ async function updateGoalStatus(
 async function deleteSavingsGoal(
     goal
 ) {
+    if (financeSavePending(goalForm)) return;
 
     if (
         !goal ||
@@ -20329,10 +20298,13 @@ async function deleteSavingsGoal(
 }
 
 
-goalForm
-    ?.addEventListener(
-        "submit",
-        async function (event) {
+configureFinanceSubmit({
+    form: goalForm, button: saveGoalButton, cancel: cancelGoalEditButton,
+    message: goalMessage, label: "Goal", getEditId: () => editingGoalId,
+    validate: () => financeField(goalNameInput, "Enter a goal name.")
+        || financeAmount(goalTargetAmountInput) || financeAmount(goalCurrentAmountInput, true)
+        || financeDate(goalTargetDateInput, "target date", true)
+}, async function (event, markSaved) {
 
             event.preventDefault();
 
@@ -20368,25 +20340,6 @@ goalForm
                 null;
 
 
-            if (
-                !name ||
-                !Number.isFinite(
-                    targetAmount
-                ) ||
-                targetAmount <= 0 ||
-                !Number.isFinite(
-                    currentAmount
-                ) ||
-                currentAmount < 0
-            ) {
-
-                goalMessage.textContent =
-                    "Enter a valid goal name, target amount and saved amount.";
-
-                return;
-            }
-
-
             const status =
                 currentAmount >=
                     targetAmount
@@ -20401,15 +20354,6 @@ goalForm
                             ? "paused"
                             : "active"
                     );
-
-
-            saveGoalButton.disabled =
-                true;
-
-            goalMessage.textContent =
-                editingGoalId
-                    ? "Saving changes..."
-                    : "Adding goal...";
 
 
             let result;
@@ -20462,19 +20406,8 @@ goalForm
                             editingGoalId
                         );
             }
-
-
-            saveGoalButton.disabled =
-                false;
-
-
-            if (result.error) {
-
-                goalMessage.textContent =
-                    result.error.message;
-
-                return;
-            }
+        if (result.error) throw result.error;
+        markSaved();
 
 
             const wasEditing =
@@ -20482,9 +20415,9 @@ goalForm
                 null;
 
 
-            resetGoalForm();
+            resetGoalForm(true);
 
-            await loadSavingsGoals();
+
 
 
             showTransactionSuccessSnackbar({
@@ -20503,6 +20436,8 @@ goalForm
                         ? "Your savings target has been reached."
                         : "Your savings goal was saved successfully."
             });
+            await loadSavingsGoals(true);
+
         }
     );
 
