@@ -7,16 +7,22 @@
     "test": "npm run build",
     "dev": "vite --port 5173 --strictPort",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "android:sync": "npm run build && cap sync android",
+    "android:debug": "npm run android:sync && cd android && gradlew.bat assembleDebug",
+    "android:release:unsigned": "npm run android:sync && cd android && gradlew.bat assembleRelease bundleRelease"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@capacitor/cli": "8.5.2",
     "vite": "^8.2.2"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2",
     "@supabase/supabase-js": "^2.116.0",
     "tesseract.js": "^7.0.0"
   }

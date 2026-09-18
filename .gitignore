@@ -8,3 +8,9 @@ dist/
 
 # Database dumps, receipts, and backup manifests
 Kira-Backups/
+
+# Android signing material must never enter source control
+*.jks
+*.keystore
+key.properties
+keystore.properties

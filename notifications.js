@@ -1,3 +1,4 @@
+import { isNativeApp } from "./native-platform.js";
 import { supabase } from "./supabase.js";
 
 const KIRA_NOTIFICATION_REFRESH_MS = 60_000;
@@ -822,6 +823,7 @@ function withTimeout(promise, timeoutMs, message) {
 
 function canUsePushApi() {
     return (
+        !isNativeApp &&
         "serviceWorker" in navigator &&
         "Notification" in window &&
         "PushManager" in window
@@ -903,7 +905,7 @@ async function getServiceWorkerRegistration({
     registerIfMissing = false,
     waitForActive = registerIfMissing
 } = {}) {
-    if (!("serviceWorker" in navigator)) {
+    if (isNativeApp || !("serviceWorker" in navigator)) {
         return null;
     }
 
@@ -953,7 +955,7 @@ async function getServiceWorkerRegistration({
 }
 
 async function primeServiceWorker() {
-    if (!("serviceWorker" in navigator)) {
+    if (isNativeApp || !("serviceWorker" in navigator)) {
         return;
     }
 
@@ -1216,7 +1218,9 @@ function updatePushStatus() {
 
     if (state.devicePushSupported === false || !canUsePushApi()) {
         els.pushStatus.textContent =
-            "Push is not supported on this device.";
+            isNativeApp
+                ? "Android push is not configured yet. In-app notifications remain available."
+                : "Push is not supported on this device.";
         return;
     }
 

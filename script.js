@@ -1,3 +1,4 @@
+import { isNativeApp } from "./native-platform.js";
 import { supabase } from "./supabase.js";
 import { createWorker } from "tesseract.js";
 
@@ -1911,6 +1912,10 @@ function renderAccountSecurityDetails(
 
 function getPasswordResetRedirectUrl() {
 
+    // Use the existing Supabase Site URL for native email recovery.
+    // localhost belongs to the bundled WebView and is not an email callback.
+    if (isNativeApp) return undefined;
+
     return (
         window.location.origin
         +
@@ -2986,7 +2991,7 @@ registerButton.addEventListener(
 
                 options: {
                     emailRedirectTo:
-                        window.location.origin
+                        isNativeApp ? undefined : window.location.origin
                 }
 
             });
@@ -14464,7 +14469,7 @@ async function openReceipt(path) {
     }
 
     const previewWindow =
-        window.open(
+        isNativeApp ? null : window.open(
             "about:blank",
             "_blank"
         );
@@ -23572,6 +23577,8 @@ function isIosDevice() {
 
 function isStandaloneMode() {
 
+    if (isNativeApp) return true;
+
     return (
         window.matchMedia(
             "(display-mode: standalone)"
@@ -23750,6 +23757,7 @@ updateInstallAppUi();
 
 
 if (
+    !isNativeApp &&
     "serviceWorker" in
     navigator
 ) {
