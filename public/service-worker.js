@@ -1,12 +1,8 @@
-const CACHE_NAME = "kira-shell-v3-phase13-ios-push";
+const CACHE_NAME = "kira-shell-v4-phase16-vite-assets";
 
-const APP_SHELL = [
+const STATIC_APP_SHELL = [
   "/",
   "/index.html",
-  "/style.css",
-  "/script.js",
-  "/phase13-notifications.css",
-  "/phase13-notifications.js",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
@@ -16,32 +12,92 @@ const APP_SHELL = [
   "/kira-logo.png"
 ];
 
+function extractBuiltAssetPaths(html) {
+  const paths = new Set();
+  const assetPattern = /(?:src|href)=["']([^"']+)["']/g;
+  let match;
+
+  while ((match = assetPattern.exec(html)) !== null) {
+    try {
+      const url = new URL(match[1], self.location.origin);
+
+      if (
+        url.origin === self.location.origin &&
+        url.pathname.startsWith("/assets/")
+      ) {
+        paths.add(`${url.pathname}${url.search}`);
+      }
+    } catch {
+      // Ignore malformed or unsupported asset URLs.
+    }
+  }
+
+  return [...paths];
+}
+
+async function cachePath(cache, path) {
+  try {
+    const request = new Request(path, { cache: "reload" });
+    const response = await fetch(request);
+
+    if (response.ok) {
+      await cache.put(request, response.clone());
+      return;
+    }
+
+    console.warn(
+      "Kira service worker skipped cache entry:",
+      path,
+      response.status
+    );
+  } catch (error) {
+    console.warn(
+      "Kira service worker cache warning:",
+      path,
+      error
+    );
+  }
+}
+
 async function cacheAppShellBestEffort() {
   const cache = await caches.open(CACHE_NAME);
+  let builtAssets = [];
+
+  try {
+    const rootRequest = new Request("/", { cache: "reload" });
+    const rootResponse = await fetch(rootRequest);
+
+    if (rootResponse.ok) {
+      await cache.put(rootRequest, rootResponse.clone());
+      builtAssets = extractBuiltAssetPaths(await rootResponse.text());
+    } else {
+      console.warn(
+        "Kira service worker could not inspect the built app shell:",
+        rootResponse.status
+      );
+    }
+  } catch (error) {
+    console.warn(
+      "Kira service worker could not inspect the built app shell:",
+      error
+    );
+  }
+
+  const paths = [
+    ...STATIC_APP_SHELL.filter(path => path !== "/"),
+    ...builtAssets
+  ];
 
   await Promise.allSettled(
-    APP_SHELL.map(async path => {
-      try {
-        const request = new Request(path, { cache: "reload" });
-        const response = await fetch(request);
-
-        if (response.ok) {
-          await cache.put(request, response.clone());
-        } else {
-          console.warn("Kira service worker skipped cache entry:", path, response.status);
-        }
-      } catch (error) {
-        console.warn("Kira service worker cache warning:", path, error);
-      }
-    })
+    [...new Set(paths)].map(path => cachePath(cache, path))
   );
 }
 
 self.addEventListener("install", event => {
   event.waitUntil(
     (async () => {
-      // A single unavailable app-shell asset must not make the entire
-      // service worker installation fail, especially on iOS.
+      // Cache the deployed Vite shell and its hashed /assets/* files.
+      // A single unavailable asset must not make installation fail.
       await cacheAppShellBestEffort();
       await self.skipWaiting();
     })()
@@ -77,14 +133,13 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
   if (url.origin !== self.location.origin) return;
 
+  const isNavigation = request.mode === "navigate";
   const isAppShell =
+    isNavigation ||
     url.pathname === "/" ||
     url.pathname === "/index.html" ||
-    url.pathname === "/style.css" ||
-    url.pathname === "/script.js" ||
-    url.pathname === "/phase13-notifications.css" ||
-    url.pathname === "/phase13-notifications.js" ||
     url.pathname === "/manifest.webmanifest" ||
+    url.pathname.startsWith("/assets/") ||
     url.pathname.startsWith("/icon-") ||
     url.pathname === "/apple-touch-icon.png" ||
     url.pathname === "/favicon-64.png" ||
@@ -93,18 +148,36 @@ self.addEventListener("fetch", event => {
   if (!isAppShell) return;
 
   event.respondWith(
-    fetch(request)
-      .then(response => {
+    (async () => {
+      try {
+        const response = await fetch(request);
+
         if (response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, copy);
         }
 
         return response;
-      })
-      .catch(() =>
-        caches.match(request).then(cached => cached || caches.match("/"))
-      )
+      } catch {
+        const cached = await caches.match(request);
+
+        if (cached) {
+          return cached;
+        }
+
+        if (isNavigation) {
+          const root = await caches.match("/");
+
+          if (root) {
+            return root;
+          }
+        }
+
+        // Never return cached HTML for a missing JS/CSS asset.
+        return Response.error();
+      }
+    })()
   );
 });
 

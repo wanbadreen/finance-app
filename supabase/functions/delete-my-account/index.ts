@@ -23,177 +23,180 @@ function chunk<T>(items: T[], size = 100) {
   const result: T[][] = [];
 
   for (let index = 0; index < items.length; index += size) {
-    result.push(
-      items.slice(index, index + size),
-    );
+    result.push(items.slice(index, index + size));
   }
 
   return result;
 }
 
+async function listAllReceiptPaths(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+) {
+  const paths: string[] = [];
+  const folders = [userId];
+
+  while (folders.length) {
+    const folder = folders.shift();
+    if (!folder) continue;
+
+    let offset = 0;
+
+    while (true) {
+      const { data, error } = await admin.storage
+        .from("receipts")
+        .list(folder, {
+          limit: 100,
+          offset,
+          sortBy: {
+            column: "name",
+            order: "asc",
+          },
+        });
+
+      if (error) throw error;
+
+      const entries = data ?? [];
+
+      for (const entry of entries) {
+        const fullPath = `${folder}/${entry.name}`;
+
+        // Storage folders are virtual list entries without an object id.
+        // Real files have an id and must be explicitly removed.
+        if (entry.id) {
+          paths.push(fullPath);
+        } else {
+          folders.push(fullPath);
+        }
+      }
+
+      if (entries.length < 100) {
+        break;
+      }
+
+      offset += entries.length;
+    }
+  }
+
+  return paths;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
-    return json(
-      {
-        ok: false,
-        error: "Method not allowed.",
-      },
-      405,
-    );
+    return json({ ok: false, error: "Method not allowed." }, 405);
   }
 
   try {
     const body = await req.json().catch(() => ({}));
 
     if (body?.confirmation !== "DELETE") {
-      return json(
-        {
-          ok: false,
-          error: "Deletion confirmation is required.",
-        },
-        400,
-      );
+      return json({ ok: false, error: "Deletion confirmation is required." }, 400);
     }
 
-    const authHeader =
-      req.headers.get("Authorization") ?? "";
-
-    const accessToken =
-      authHeader.startsWith("Bearer ")
-        ? authHeader.slice(7).trim()
-        : "";
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const accessToken = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : "";
 
     if (!accessToken) {
-      return json(
-        {
-          ok: false,
-          error: "Missing authenticated session.",
-        },
-        401,
-      );
+      return json({ ok: false, error: "Missing authenticated session." }, 401);
     }
 
-    const supabaseUrl =
-      Deno.env.get("SUPABASE_URL");
-
-    const serviceRoleKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!supabaseUrl || !serviceRoleKey) {
-      return json(
-        {
-          ok: false,
-          error: "Server configuration is incomplete.",
-        },
-        500,
-      );
+      return json({ ok: false, error: "Server configuration is incomplete." }, 500);
     }
 
-    const admin =
-      createClient(
-        supabaseUrl,
-        serviceRoleKey,
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
+    const admin = createClient(
+      supabaseUrl,
+      serviceRoleKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
         },
-      );
+      },
+    );
 
     const {
       data: userData,
       error: userError,
-    } =
-      await admin.auth.getUser(
-        accessToken,
-      );
+    } = await admin.auth.getUser(accessToken);
 
-    const user =
-      userData?.user;
+    const user = userData?.user;
 
     if (userError || !user) {
-      return json(
-        {
-          ok: false,
-          error: "Invalid or expired session.",
-        },
-        401,
-      );
+      return json({ ok: false, error: "Invalid or expired session." }, 401);
     }
 
-    const userId =
-      user.id;
+    const userId = user.id;
 
-    // Get transaction IDs and receipt paths before deleting rows.
-    const {
-      data: transactionRows,
-      error: transactionReadError,
-    } =
-      await admin
+    // Preflight the destructive work before revoking sessions so a read/list
+    // failure does not unexpectedly sign the user out.
+    const [receiptPaths, transactionResult] = await Promise.all([
+      listAllReceiptPaths(admin, userId),
+      admin
         .from("transactions")
-        .select("id, receipt_path")
-        .eq("user_id", userId);
+        .select("id")
+        .eq("user_id", userId),
+    ]);
 
-    if (transactionReadError) {
-      throw transactionReadError;
+    if (transactionResult.error) {
+      throw transactionResult.error;
     }
 
-    const transactionIds =
-      (transactionRows ?? [])
-        .map((row: any) => row.id)
-        .filter(Boolean);
+    const transactionIds = (transactionResult.data ?? [])
+      .map((row: any) => row.id)
+      .filter(Boolean);
 
-    const receiptPaths =
-      (transactionRows ?? [])
-        .map((row: any) => row.receipt_path)
-        .filter(Boolean);
+    // Revoke refresh tokens for every active session before deleting the
+    // account. Supabase access-token JWTs remain valid until their normal
+    // expiry, so the client also clears its local session after success.
+    const { error: signOutError } = await admin.auth.admin.signOut(
+      accessToken,
+      "global",
+    );
 
-    // Remove receipt files owned by the user.
+    if (signOutError) {
+      throw signOutError;
+    }
+
+    // Remove every object under the user's receipt folder, not only receipt
+    // paths currently referenced by transaction rows. This also clears any
+    // orphan created by an interrupted historical save.
     for (const paths of chunk(receiptPaths, 100)) {
-      if (!paths.length) {
-        continue;
-      }
+      if (!paths.length) continue;
 
-      const {
-        error,
-      } =
-        await admin.storage
-          .from("receipts")
-          .remove(paths);
+      const { error } = await admin.storage
+        .from("receipts")
+        .remove(paths);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     }
 
-    // transaction_tags does not have user_id, so delete by transaction IDs.
     for (const ids of chunk(transactionIds, 100)) {
-      if (!ids.length) {
-        continue;
-      }
+      if (!ids.length) continue;
 
-      const {
-        error,
-      } =
-        await admin
-          .from("transaction_tags")
-          .delete()
-          .in("transaction_id", ids);
+      const { error } = await admin
+        .from("transaction_tags")
+        .delete()
+        .in("transaction_id", ids);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     }
 
     const userOwnedTables = [
       "recurring_occurrence_statuses",
+      "notifications",
+      "push_subscriptions",
+      "notification_preferences",
+      "user_onboarding",
       "transactions",
       "budgets",
       "savings_goals",
@@ -206,25 +209,17 @@ Deno.serve(async (req: Request) => {
     ];
 
     for (const table of userOwnedTables) {
-      const {
-        error,
-      } =
-        await admin
-          .from(table)
-          .delete()
-          .eq("user_id", userId);
+      const { error } = await admin
+        .from(table)
+        .delete()
+        .eq("user_id", userId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     }
 
     const {
       error: deleteUserError,
-    } =
-      await admin.auth.admin.deleteUser(
-        userId,
-      );
+    } = await admin.auth.admin.deleteUser(userId);
 
     if (deleteUserError) {
       throw deleteUserError;
@@ -232,12 +227,10 @@ Deno.serve(async (req: Request) => {
 
     return json({
       ok: true,
+      deleted_receipts: receiptPaths.length,
     });
   } catch (error) {
-    console.error(
-      "delete-my-account failed",
-      error,
-    );
+    console.error("delete-my-account failed", error);
 
     return json(
       {
