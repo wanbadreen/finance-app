@@ -3143,6 +3143,12 @@ async function initializeAuth() {
 
         showLoggedOutState();
     }
+
+    // Resolve the initial route only after authentication and finance
+    // data have finished loading. This prevents direct/deep-link
+    // refreshes (for example #recurring) from rendering empty state
+    // before recurring data is available.
+    initializeAppNavigation();
 }
 
 
@@ -6107,6 +6113,12 @@ async function loadTransactions(throwOnError = false) {
         attachTagIdsToTransactions(
             data || []
         );
+
+
+    // Recurring activity depends on the latest transaction list.
+    // Re-render after transactions are refreshed so newly logged
+    // recurring occurrences can resolve their linked transaction.
+    renderRecentRecurringActivity();
 
     updateDashboard();
 
@@ -20152,7 +20164,8 @@ function resetGoalForm(force = false) {
 
 
 function editSavingsGoal(
-    goal
+    goal,
+    focusElement = goalNameInput
 ) {
     if (financeSavePending(goalForm)) return;
     clearFinanceFeedback(goalForm);
@@ -20197,7 +20210,7 @@ function editSavingsGoal(
 
     scrollToFormAndFocus(
         goalForm,
-        goalNameInput
+        focusElement
     );
 }
 
@@ -20206,9 +20219,41 @@ async function updateGoalStatus(
     goal,
     status
 ) {
-    if (financeSavePending(goalForm)) return;
+    if (financeSavePending(goalForm)) {
+        return;
+    }
 
     if (!goal) {
+        return;
+    }
+
+    const currentAmount =
+        Number(
+            goal.current_amount
+        );
+
+    const targetAmount =
+        Number(
+            goal.target_amount
+        );
+
+    // A fully funded goal cannot return directly to Active.
+    // Reopen it in edit mode so the user can reduce the
+    // current saved amount below the target first.
+    if (
+        status === "active" &&
+        Number.isFinite(currentAmount) &&
+        Number.isFinite(targetAmount) &&
+        currentAmount >= targetAmount
+    ) {
+        editSavingsGoal(
+            goal,
+            goalCurrentAmountInput
+        );
+
+        goalMessage.textContent =
+            "Reduce the current saved amount below the target to reopen this goal.";
+
         return;
     }
 
@@ -20226,10 +20271,13 @@ async function updateGoalStatus(
             );
 
     if (error) {
-
-        alert(
-            error.message
+        console.error(
+            "Update goal status error:",
+            error
         );
+
+        goalMessage.textContent =
+            "Unable to update this goal right now. Please try again.";
 
         return;
     }
@@ -23274,6 +23322,8 @@ function navigateToPage(
 
         renderRecurringReminderCenter();
 
+        renderRecentRecurringActivity();
+
         renderFinancialCalendar();
 
         refreshRecurringFormOptions();
@@ -24444,8 +24494,6 @@ if (recurringReminderDays) {
 updateRecurringReminderControls();
 
 initializeAuth();
-
-initializeAppNavigation();
 
 
 
