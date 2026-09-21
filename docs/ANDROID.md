@@ -10,7 +10,7 @@ Local preparation only. Phase 1–16 finance features and backend configuration 
 - Android local origin: `https://localhost`; cleartext disabled.
 - Minimum SDK **24** (Android 7); compile/target SDK **36** (Android 16).
 - Android Gradle Plugin **8.13.0**, wrapper **8.14.3**; Java 21.
-- `versionCode 1`, `versionName 1.0`: placeholders requiring confirmation before first release.
+- `versionCode 1`, `versionName 1.0.0`: locked for the first Android release.
 - SystemBars native insets with viewport `auto`; keep the existing web viewport unchanged. `adjustResize` requests keyboard resizing. Physical-device verification is mandatory.
 - Android backup disabled; Android 12+ cloud-backup and device-transfer rules exclude all storage domains to reduce copying of WebView sessions. Some OEM device-transfer behavior can differ; verify before release.
 - Template launcher/splash images remain placeholders. Existing Kira artwork is available under `public/`, but approved Android adaptive/monochrome icon and splash exports are still pending. No new branding was invented.
