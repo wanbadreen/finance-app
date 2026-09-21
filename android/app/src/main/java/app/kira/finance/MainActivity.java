@@ -1,4 +1,4 @@
-package com.kira.finance;
+package app.kira.finance;
 
 import android.os.Bundle;
 import androidx.activity.OnBackPressedCallback;

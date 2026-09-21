@@ -5,7 +5,7 @@ Local preparation only. Phase 1–16 finance features and backend configuration 
 ## Configuration
 
 - Capacitor core/CLI/Android: pinned to **8.5.2**, with npm lockfile.
-- App label: **Kira**. App ID/namespace: **com.kira.finance**, provisional; confirm ownership and final value before signing or Play registration.
+- App label: **Kira**. Permanent App ID/namespace: **app.kira.finance**.
 - Web assets: Vite `dist`, bundled locally; no remote `server.url` or `allowNavigation` wildcard.
 - Android local origin: `https://localhost`; cleartext disabled.
 - Minimum SDK **24** (Android 7); compile/target SDK **36** (Android 16).
@@ -14,7 +14,7 @@ Local preparation only. Phase 1–16 finance features and backend configuration 
 - SystemBars native insets with viewport `auto`; keep the existing web viewport unchanged. `adjustResize` requests keyboard resizing. Physical-device verification is mandatory.
 - Android backup disabled; Android 12+ cloud-backup and device-transfer rules exclude all storage domains to reduce copying of WebView sessions. Some OEM device-transfer behavior can differ; verify before release.
 - Template launcher/splash images remain placeholders. Existing Kira artwork is available under `public/`, but approved Android adaptive/monochrome icon and splash exports are still pending. No new branding was invented.
-- App manifest requests only INTERNET. The merged manifest also contains AndroidX's app-scoped signature permission `com.kira.finance.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`; this is not a user/runtime permission. No camera, broad storage, location, microphone, contacts, or notification permissions were added.
+- App manifest requests only INTERNET. The merged manifest also contains AndroidX's app-scoped signature permission `app.kira.finance.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`; this is not a user/runtime permission. No camera, broad storage, location, microphone, contacts, or notification permissions were added.
 
 ## Detected prerequisites on this Windows machine
 

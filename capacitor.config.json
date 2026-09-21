@@ -1,5 +1,5 @@
 {
-  "appId": "com.kira.finance",
+  "appId": "app.kira.finance",
   "appName": "Kira",
   "webDir": "dist",
   "server": {

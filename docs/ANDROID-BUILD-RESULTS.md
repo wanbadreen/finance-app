@@ -11,7 +11,7 @@ Starting state: clean master, 682e138. Work branch: phase17-android-prep. Local-
 | 17A | Source readiness audit complete, with release blockers and device-test warnings recorded in ANDROID-AUDIT.md. |
 | 17B | Capacitor 8.5.2 integrated; native project generated; Vite build and cap sync pass. |
 | 17C | Debug APK built and signature verified using the existing local debug keystore. No runtime/device test. |
-| 17E | Non-secret prep complete: Kira label, provisional ID/version, SDK levels, permission review, HTTPS, backup exclusions, native insets and keyboard setting. Final artwork/version/app ID and runtime validation pending. |
+| 17E | Non-secret prep complete: Kira label, permanent app.kira.finance ID, provisional release version, SDK levels, permission review, HTTPS, backup exclusions, native insets and keyboard setting. Final artwork/version/app ID and runtime validation pending. |
 | 17F | Unsigned release APK and AAB generated; release signing remains unconfigured. Signing/release readiness is not complete. |
 
 ## Artifacts
@@ -55,6 +55,6 @@ Phone next week: install/cold start, auth persistence and resume, web-email reco
 
 Before Android distribution: implement/test native export save/share; resolve Back navigation; verify native CSP; decide/implement native push or explicitly accept its absence; finish device regression. These are not automatically solved by connecting a phone. No background push or native auth deep-link support is claimed.
 
-User decisions: final com.kira.finance ID, versionCode/versionName, adaptive/monochrome icon and splash exports, release/upload keystore ownership and backup, Play App Signing, developer account, privacy/data-safety/listing/reviewer details and submission approval. Never provide passwords in chat or commit keys.
+User decisions: final app.kira.finance ID, versionCode/versionName, adaptive/monochrome icon and splash exports, release/upload keystore ownership and backup, Play App Signing, developer account, privacy/data-safety/listing/reviewer details and submission approval. Never provide passwords in chat or commit keys.
 
 See ANDROID.md for exact commands and the physical-phone checklist. Signing secrets were neither created nor requested.
