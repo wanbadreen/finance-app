@@ -2891,6 +2891,13 @@ function showLoggedOutState() {
 }
 
 
+async function waitForNativeConnection() {
+    if (!isNativeApp || window.navigator.onLine) return;
+    await new Promise(resolve => {
+        window.addEventListener("online", resolve, { once: true });
+    });
+}
+
 async function showLoggedInState(user) {
 
     currentUser = user;
@@ -2906,6 +2913,11 @@ async function showLoggedInState(user) {
     );
 
     authMessage.textContent = "";
+
+    // A bundled Android shell can open offline before any finance data is loaded.
+    // Wait instead of treating failed reads as an empty account and seeding defaults.
+    await waitForNativeConnection();
+    if (currentUser?.id !== user.id) return;
 
     await loadAccounts();
 
@@ -3363,6 +3375,13 @@ async function loadAccounts(throwOnError = false) {
     accountMessage.textContent = "";
 
     renderAccounts();
+
+    // Keep native dashboard totals current after account edits or deletion.
+    if (isNativeApp) {
+        updateDashboard();
+        renderPlanningTools();
+    }
+
 }
 
 
@@ -23146,6 +23165,29 @@ const pageTitles = {
 };
 
 
+// Native Back keeps drafts intact and dismisses overlays before leaving a page.
+const nativePageHistory = [];
+
+function handleNativeBack() {
+    if (!isNativeApp) return false;
+    if (document.body.classList.contains("kira-notification-open")) {
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        return true;
+    }
+    if (document.body.classList.contains("kira-onboarding-open")) {
+        closeOnboarding();
+        return true;
+    }
+    const currentPage = document.querySelector(".app-page.active-page")?.dataset.page;
+    if (!currentPage || currentPage === "dashboard") return false;
+    const previousPage = nativePageHistory.pop() || "dashboard";
+    navigateToPage(previousPage, { updateHistory: false });
+    history.replaceState({ page: previousPage }, "", "#" + previousPage);
+    return true;
+}
+
+if (isNativeApp) window.kiraHandleNativeBack = handleNativeBack;
+
 function navigateToPage(
     pageName,
     options = {}
@@ -23176,6 +23218,14 @@ function navigateToPage(
     // ----------------------------------------------
     // HIDE ALL PAGES
     // ----------------------------------------------
+
+    if (isNativeApp && updateHistory) {
+        const previousPage = document.querySelector(".app-page.active-page")?.dataset.page;
+        if (previousPage && previousPage !== pageName) {
+            if (pageName === "dashboard") nativePageHistory.length = 0;
+            else nativePageHistory.push(previousPage);
+        }
+    }
 
     appPages.forEach(
         function (page) {

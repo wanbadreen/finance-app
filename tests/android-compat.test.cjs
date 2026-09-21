@@ -62,3 +62,18 @@ test('web receipt keeps popup flow; failures close it and report error', async (
   assert.equal(closed, true);
   assert.equal(message, 'Expired');
 });
+
+test('native cold start waits for reconnection; web and online native do not wait', async () => {
+  let reconnect;
+  const window = { navigator: { onLine: false }, addEventListener: (name, callback, options) => {
+    assert.equal(name, 'online'); assert.equal(options.once, true); reconnect = callback;
+  } };
+  let completed = false;
+  const waiting = load('script.js', 'waitForNativeConnection', { isNativeApp: true, window })().then(() => { completed = true; });
+  await Promise.resolve(); assert.equal(completed, false);
+  reconnect(); await waiting; assert.equal(completed, true);
+  const noListeners = { navigator: { onLine: false }, addEventListener: () => { throw Error('Unexpected listener'); } };
+  await load('script.js', 'waitForNativeConnection', { isNativeApp: false, window: noListeners })();
+  noListeners.navigator.onLine = true;
+  await load('script.js', 'waitForNativeConnection', { isNativeApp: true, window: noListeners })();
+});
