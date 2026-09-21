@@ -19,6 +19,7 @@
   "type": "commonjs",
   "devDependencies": {
     "@capacitor/cli": "8.5.2",
+    "typescript": "7.0.2",
     "vite": "^8.2.2"
   },
   "dependencies": {
