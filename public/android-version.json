@@ -1,0 +1,10 @@
+{
+  "versionName": "1.1.0",
+  "versionCode": 2,
+  "downloadUrl": null,
+  "releaseNotes": [
+    "Added in-app Android update notifications.",
+    "Kira can now detect when a newer Android APK is available."
+  ],
+  "publishedAt": "2026-09-22"
+}

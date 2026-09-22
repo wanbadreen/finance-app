@@ -2954,6 +2954,12 @@ async function showLoggedInState(user) {
     renderPlanningTools();
 
     await initializeFirstTimeOnboarding();
+
+    if (isNativeApp) {
+        window.dispatchEvent(
+            new CustomEvent("kira:app-ready")
+        );
+    }
 }
 
 
@@ -23170,6 +23176,14 @@ const nativePageHistory = [];
 
 function handleNativeBack() {
     if (!isNativeApp) return false;
+
+    if (document.body.classList.contains("kira-update-open")) {
+        window.dispatchEvent(
+            new CustomEvent("kira:close-update")
+        );
+        return true;
+    }
+
     if (document.body.classList.contains("kira-notification-open")) {
         document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
         return true;

@@ -1,0 +1,375 @@
+﻿.kira-update-overlay[hidden] {
+    display: none !important;
+}
+
+.kira-update-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+
+    display: grid;
+    place-items: center;
+
+    padding:
+        max(20px, env(safe-area-inset-top))
+        20px
+        max(20px, env(safe-area-inset-bottom));
+}
+
+.kira-update-backdrop {
+    position: absolute;
+    inset: 0;
+
+    background:
+        rgba(15, 23, 42, 0.58);
+
+    backdrop-filter:
+        blur(3px);
+}
+
+.kira-update-dialog {
+    position: relative;
+
+    width: min(
+        420px,
+        100%
+    );
+
+    max-height:
+        min(
+            720px,
+            calc(100vh - 40px)
+        );
+
+    overflow-y: auto;
+
+    padding: 28px;
+
+    border:
+        1px solid
+        #e5e7eb;
+
+    border-radius:
+        22px;
+
+    background:
+        #ffffff;
+
+    color:
+        #111827;
+
+    box-shadow:
+        0 28px 80px
+        rgba(
+            15,
+            23,
+            42,
+            0.28
+        );
+}
+
+.kira-update-icon {
+    width: 48px;
+    height: 48px;
+
+    display: grid;
+    place-items: center;
+
+    margin-bottom: 18px;
+
+    border-radius: 15px;
+
+    background:
+        #111827;
+
+    color:
+        #ffffff;
+
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.kira-update-dialog h2 {
+    margin:
+        0
+        0
+        8px;
+
+    font-size: 24px;
+}
+
+.kira-update-description {
+    margin:
+        0
+        0
+        20px;
+
+    color:
+        #64748b;
+
+    line-height: 1.5;
+}
+
+.kira-update-versions {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 10px;
+
+    margin-bottom: 20px;
+}
+
+.kira-update-versions span {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+
+    padding: 13px;
+
+    border:
+        1px solid
+        #e5e7eb;
+
+    border-radius: 13px;
+
+    color:
+        #64748b;
+
+    font-size: 12px;
+}
+
+.kira-update-versions strong {
+    color:
+        #111827;
+
+    font-size: 15px;
+}
+
+.kira-update-release-section {
+    margin:
+        0
+        0
+        20px;
+}
+
+.kira-update-release-section strong {
+    font-size: 13px;
+}
+
+.kira-update-release-section ul {
+    margin:
+        10px
+        0
+        0;
+
+    padding-left: 20px;
+
+    color:
+        #475569;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+.kira-update-no-download {
+    margin:
+        0
+        0
+        18px;
+
+    padding:
+        12px
+        14px;
+
+    border-radius:
+        12px;
+
+    background:
+        #f1f5f9;
+
+    color:
+        #475569;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+.kira-update-actions {
+    display: flex;
+
+    justify-content:
+        flex-end;
+
+    gap: 10px;
+}
+
+.kira-update-actions button {
+    min-height: 44px;
+
+    padding:
+        0
+        16px;
+
+    border-radius:
+        11px;
+
+    font-weight: 700;
+}
+
+.kira-update-later {
+    border:
+        1px solid
+        #d1d5db;
+
+    background:
+        #ffffff;
+
+    color:
+        #374151;
+}
+
+.kira-update-download {
+    border:
+        1px solid
+        #111827;
+
+    background:
+        #111827;
+
+    color:
+        #ffffff;
+}
+
+.kira-update-actions button:focus-visible {
+    outline:
+        3px solid
+        #bfdbfe;
+
+    outline-offset:
+        2px;
+}
+
+body.kira-update-open {
+    overflow: hidden;
+}
+
+html[data-theme="dark"]
+.kira-update-dialog,
+body[data-theme="dark"]
+.kira-update-dialog {
+    border-color:
+        #263244;
+
+    background:
+        #111827;
+
+    color:
+        #f8fafc;
+}
+
+html[data-theme="dark"]
+.kira-update-versions span,
+body[data-theme="dark"]
+.kira-update-versions span {
+    border-color:
+        #334155;
+
+    color:
+        #94a3b8;
+}
+
+html[data-theme="dark"]
+.kira-update-versions strong,
+body[data-theme="dark"]
+.kira-update-versions strong {
+    color:
+        #f8fafc;
+}
+
+html[data-theme="dark"]
+.kira-update-description,
+html[data-theme="dark"]
+.kira-update-release-section ul,
+body[data-theme="dark"]
+.kira-update-description,
+body[data-theme="dark"]
+.kira-update-release-section ul {
+    color:
+        #cbd5e1;
+}
+
+html[data-theme="dark"]
+.kira-update-no-download,
+body[data-theme="dark"]
+.kira-update-no-download {
+    background:
+        #1e293b;
+
+    color:
+        #cbd5e1;
+}
+
+html[data-theme="dark"]
+.kira-update-later,
+body[data-theme="dark"]
+.kira-update-later {
+    border-color:
+        #475569;
+
+    background:
+        #111827;
+
+    color:
+        #e2e8f0;
+}
+
+@media (
+    max-width: 520px
+) {
+
+    .kira-update-overlay {
+        align-items:
+            end;
+
+        padding:
+            12px
+            12px
+            max(
+                12px,
+                env(
+                    safe-area-inset-bottom
+                )
+            );
+    }
+
+    .kira-update-dialog {
+        width: 100%;
+
+        padding:
+            23px
+            20px;
+
+        border-radius:
+            22px;
+    }
+
+    .kira-update-actions {
+        display: grid;
+
+        grid-template-columns:
+            1fr
+            1fr;
+    }
+
+    .kira-update-actions button {
+        width: 100%;
+    }
+}

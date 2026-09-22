@@ -7,6 +7,9 @@
     "cleartext": false
   },
   "plugins": {
+    "App": {
+      "disableBackButtonHandler": true
+    },
     "SystemBars": {
       "insetsHandling": "native",
       "initialViewportFitValueHint": "auto"
