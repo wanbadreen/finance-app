@@ -81,4 +81,11 @@ test('dashboard tracks card debt separately without double-counting card payment
   assert.match(source, /renderCreditCardDashboardSummary/);
   assert.match(source, /calculateAccountBalance/);
   assert.match(source, /getTransferAccountDelta/);
+  assert.match(source, /account\.account_type\s*!==\s*["']credit_card["']/);
+});
+
+test('dashboard labels liquid money separately from credit card debt', () => {
+  const html = read('index.html');
+  assert.match(html, /Available Funds/);
+  assert.match(html, /Cash, bank, e-wallet &amp; savings|Cash, bank, e-wallet & savings/);
 });
