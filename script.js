@@ -21323,18 +21323,24 @@ function updateDashboard() {
     );
 
 
-    const totalBalance =
-        accounts.reduce(
-            (
-                total,
-                account
-            ) =>
-                total +
-                calculateAccountBalance(
-                    account.id
-                ),
-            0
-        );
+    const availableFunds =
+        accounts
+            .filter(
+                account =>
+                    account.account_type !==
+                    "credit_card"
+            )
+            .reduce(
+                (
+                    total,
+                    account
+                ) =>
+                    total +
+                    calculateAccountBalance(
+                        account.id
+                    ),
+                0
+            );
 
 
     incomeElement.textContent =
@@ -21349,7 +21355,7 @@ function updateDashboard() {
 
     balanceElement.textContent =
         formatMoney(
-            totalBalance
+            availableFunds
         );
 
     renderSetupChecklist();
