@@ -551,7 +551,7 @@ async function generateLocalNotifications() {
             if (!statement) continue;
 
             const startingDue = Number(
-                statement.amount_due ?? statement.statement_balance ?? 0
+                statement.statement_balance ?? 0
             );
 
             const paidSinceStatement = transfers
