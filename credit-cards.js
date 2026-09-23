@@ -127,10 +127,19 @@ export function getRemainingStatementDue(
             )
         );
 
+    const preTrackingPaid =
+        Math.max(
+            0,
+            toMoneyNumber(
+                statement.pre_tracking_paid_since_statement
+            )
+        );
+
     return roundMoney(
         Math.max(
             0,
             statementBalance -
+            preTrackingPaid -
             toMoneyNumber(paymentsSinceStatement)
         )
     );
@@ -524,6 +533,7 @@ export async function saveCreditCardStatement({
     statementDate,
     dueDate,
     statementBalance,
+    preTrackingPaidSinceStatement,
     minimumPayment,
     financeCharge,
     instalmentDue,
@@ -542,6 +552,10 @@ export async function saveCreditCardStatement({
                 statement_balance:
                     toMoneyNumber(statementBalance),
                 amount_due: null,
+                pre_tracking_paid_since_statement:
+                    toMoneyNumber(
+                        preTrackingPaidSinceStatement
+                    ),
                 minimum_payment:
                     toMoneyNumber(minimumPayment),
                 finance_charge:
