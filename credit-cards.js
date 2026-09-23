@@ -586,6 +586,7 @@ export async function saveCreditCardReconciliation({
     creditCardId,
     asOfDate,
     bankOutstanding,
+    kiraOutstanding,
     notes
 }) {
     const { data, error } = await supabase
@@ -596,6 +597,8 @@ export async function saveCreditCardReconciliation({
             as_of_date: asOfDate,
             bank_outstanding:
                 toMoneyNumber(bankOutstanding),
+            kira_outstanding:
+                toMoneyNumber(kiraOutstanding),
             notes:
                 notes?.trim() || null
         })
