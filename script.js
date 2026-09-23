@@ -4749,7 +4749,6 @@ function renderCreditCardDetail() {
     const progress =
         statement &&
         Number(
-            statement.amount_due ??
             statement.statement_balance
         ) >
         0
@@ -4758,7 +4757,6 @@ function renderCreditCardDetail() {
                 (
                     statementPayments /
                     Number(
-                        statement.amount_due ??
                         statement.statement_balance
                     )
                 ) *
