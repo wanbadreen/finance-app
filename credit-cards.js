@@ -119,16 +119,18 @@ export function getRemainingStatementDue(
 ) {
     if (!statement) return 0;
 
-    const startingDue =
-        statement.amount_due !== null &&
-        statement.amount_due !== undefined
-            ? toMoneyNumber(statement.amount_due)
-            : toMoneyNumber(statement.statement_balance);
+    const statementBalance =
+        Math.max(
+            0,
+            toMoneyNumber(
+                statement.statement_balance
+            )
+        );
 
     return roundMoney(
         Math.max(
             0,
-            startingDue -
+            statementBalance -
             toMoneyNumber(paymentsSinceStatement)
         )
     );
