@@ -89,3 +89,15 @@ test('dashboard labels liquid money separately from credit card debt', () => {
   assert.match(html, /Available Funds/);
   assert.match(html, /Cash, bank, e-wallet &amp; savings|Cash, bank, e-wallet & savings/);
 });
+
+test('credit card statement UI uses statement balance and derived remaining due only', () => {
+  const html = read('index.html');
+  const source = read('script.js');
+
+  assert.doesNotMatch(html, />Amount Due</);
+  assert.doesNotMatch(html, /credit-card-amount-due/);
+  assert.match(html, /Remaining Statement Due/);
+  assert.doesNotMatch(source, /<span>Amount Due<\/span>/);
+  assert.doesNotMatch(source, /credit-card-amount-due/);
+  assert.match(source, /<span>Remaining Statement Due<\/span>/);
+});
