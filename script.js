@@ -4734,9 +4734,19 @@ function renderCreditCardDetail() {
 
     const reconciliationOutstanding =
         reconciliation
-            ? getCreditCardOutstandingAsOf(
-                card,
-                reconciliation.as_of_date
+            ? (
+                reconciliation.kira_outstanding !==
+                    null
+                &&
+                reconciliation.kira_outstanding !==
+                    undefined
+                    ? Number(
+                        reconciliation.kira_outstanding
+                    )
+                    : getCreditCardOutstandingAsOf(
+                        card,
+                        reconciliation.as_of_date
+                    )
             )
             : null;
 
@@ -6042,30 +6052,74 @@ creditCardReconcileForm
                         "credit-card-reconcile-card"
                     ).value;
 
-                await saveCreditCardReconciliation({
-                    userId:
-                        currentUser.id,
-                    creditCardId,
-                    asOfDate:
-                        document.getElementById(
-                            "credit-card-reconcile-date"
-                        ).value,
-                    bankOutstanding:
-                        document.getElementById(
-                            "credit-card-bank-outstanding"
-                        ).value,
-                    notes:
-                        document.getElementById(
-                            "credit-card-reconcile-notes"
-                        ).value
-                });
+                const asOfDate =
+                    document.getElementById(
+                        "credit-card-reconcile-date"
+                    ).value;
+
+                const card =
+                    getCreditCardById(
+                        creditCardId
+                    );
+
+                if (!card) {
+                    throw new Error(
+                        "Choose a valid credit card."
+                    );
+                }
+
+                const savedReconciliation =
+                    await saveCreditCardReconciliation({
+                        userId:
+                            currentUser.id,
+                        creditCardId,
+                        asOfDate,
+                        bankOutstanding:
+                            document.getElementById(
+                                "credit-card-bank-outstanding"
+                            ).value,
+                        kiraOutstanding:
+                            getCreditCardOutstandingAsOf(
+                                card,
+                                asOfDate
+                            ),
+                        notes:
+                            document.getElementById(
+                                "credit-card-reconcile-notes"
+                            ).value
+                    });
 
                 selectedCreditCardId =
                     creditCardId;
 
-                await loadCreditCardData(
-                    true
-                );
+                creditCardReconciliations =
+                    creditCardReconciliations
+                        .concat(
+                            savedReconciliation
+                        )
+                        .sort(
+                            (
+                                first,
+                                second
+                            ) =>
+                                String(
+                                    second.as_of_date
+                                ).localeCompare(
+                                    String(
+                                        first.as_of_date
+                                    )
+                                )
+                                ||
+                                String(
+                                    second.created_at ||
+                                    ""
+                                ).localeCompare(
+                                    String(
+                                        first.created_at ||
+                                        ""
+                                    )
+                                )
+                        );
 
                 renderCreditCardsPage();
 
