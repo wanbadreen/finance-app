@@ -1114,6 +1114,14 @@
                                 </label>
 
                                 <label class="transaction-filter-field">
+                                    <span>Payment Method</span>
+                                    <select id="transaction-filter-payment-method">
+                                        <option value="all">All Payment Methods</option>
+                                        <option value="none">Not Specified</option>
+                                    </select>
+                                </label>
+
+                                <label class="transaction-filter-field">
                                     <span>Month</span>
                                     <input
                                         type="month"
@@ -1267,6 +1275,20 @@
                                 class="form-message"
                                 aria-live="polite"
                             ></p>
+
+                        </div>
+
+
+                        <div id="transaction-payment-method-group">
+
+                            <label for="transaction-payment-method">
+                                Payment Method
+                                <span class="optional-label">Optional</span>
+                            </label>
+
+                            <select id="transaction-payment-method">
+                                <option value="">Not specified</option>
+                            </select>
 
                         </div>
 
@@ -2465,6 +2487,15 @@
 
                                 <select id="recurring-account" required>
                                     <option value="">Select account</option>
+                                </select>
+
+                                <label for="recurring-payment-method">
+                                    Payment Method
+                                    <span class="optional-label">Optional</span>
+                                </label>
+
+                                <select id="recurring-payment-method">
+                                    <option value="">Not specified</option>
                                 </select>
 
                                 <label for="recurring-category">
