@@ -524,7 +524,6 @@ export async function saveCreditCardStatement({
     statementDate,
     dueDate,
     statementBalance,
-    amountDue,
     minimumPayment,
     financeCharge,
     instalmentDue,
@@ -542,12 +541,7 @@ export async function saveCreditCardStatement({
                 due_date: dueDate,
                 statement_balance:
                     toMoneyNumber(statementBalance),
-                amount_due:
-                    amountDue === "" ||
-                    amountDue === null ||
-                    amountDue === undefined
-                        ? null
-                        : toMoneyNumber(amountDue),
+                amount_due: null,
                 minimum_payment:
                     toMoneyNumber(minimumPayment),
                 finance_charge:
