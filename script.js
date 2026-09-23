@@ -4810,10 +4810,6 @@ function renderCreditCardDetail() {
                         <strong>${statement ? formatDate(statement.due_date) : "—"}</strong>
                     </div>
                     <div class="credit-card-detail-row">
-                        <span>Amount Due</span>
-                        <strong>${statement ? formatMoney(statement.amount_due ?? statement.statement_balance) : "—"}</strong>
-                    </div>
-                    <div class="credit-card-detail-row">
                         <span>Minimum Payment</span>
                         <strong>${statement ? formatMoney(statement.minimum_payment) : "—"}</strong>
                     </div>
@@ -5888,10 +5884,6 @@ creditCardStatementForm
                     statementBalance:
                         document.getElementById(
                             "credit-card-statement-balance"
-                        ).value,
-                    amountDue:
-                        document.getElementById(
-                            "credit-card-amount-due"
                         ).value,
                     minimumPayment:
                         document.getElementById(
