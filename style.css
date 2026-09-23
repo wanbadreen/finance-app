@@ -10128,3 +10128,37 @@ body[data-theme="dark"] .setup-checklist-progress-label {
         font-size: 1.65rem;
     }
 }
+
+
+.credit-card-detail-section.full-width {
+    grid-column: 1 / -1;
+}
+
+.credit-card-statement-history {
+    display: grid;
+    gap: 8px;
+}
+
+.credit-card-statement-history-row {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 1fr 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color, #eef2f7);
+    font-size: 0.8rem;
+}
+
+.credit-card-statement-history-row:last-child {
+    border-bottom: 0;
+}
+
+.credit-card-statement-history-row span {
+    color: var(--muted-text, #64748b);
+}
+
+@media (max-width: 640px) {
+    .credit-card-statement-history-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
