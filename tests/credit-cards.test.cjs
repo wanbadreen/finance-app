@@ -143,3 +143,13 @@ test('credit card reconciliation stores a stable Kira balance snapshot', () => {
   );
   assert.match(helper, /kira_outstanding:\s*toMoneyNumber\(kiraOutstanding\)/);
 });
+
+
+test('statement payment counting starts strictly after the statement date', () => {
+  const source = read('credit-cards.js');
+  const notifications = read('notifications.js');
+
+  assert.match(source, /transfer\.transfer_date > statementDate/);
+  assert.doesNotMatch(source, /transfer\.transfer_date >= statementDate/);
+  assert.match(notifications, /transfer\.transfer_date > statement\.statement_date/);
+});
