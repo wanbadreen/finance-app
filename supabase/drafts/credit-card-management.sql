@@ -131,6 +131,8 @@ create table if not exists public.credit_card_reconciliations (
     as_of_date date not null,
     bank_outstanding numeric not null
         check (bank_outstanding >= 0),
+    kira_outstanding numeric(14,2)
+        check (kira_outstanding is null or kira_outstanding >= 0),
     notes text,
     created_at timestamptz not null default now(),
 
