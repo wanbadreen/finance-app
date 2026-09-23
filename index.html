@@ -1088,6 +1088,7 @@
                                         <option value="all">All Types</option>
                                         <option value="expense">Expense</option>
                                         <option value="income">Income</option>
+                                        <option value="transfer">Transfer</option>
                                     </select>
                                 </label>
 
@@ -1184,7 +1185,7 @@
 
 
                                 <p>
-                                    Record income or spending.
+                                    Record income, spending or transfers between your accounts.
                                 </p>
 
                             </div>
@@ -1236,6 +1237,40 @@
                         ></select>
 
 
+                        <div
+                            id="transfer-account-group"
+                            class="conditional-field transfer-account-group"
+                        >
+
+                            <div class="transfer-account-grid">
+
+                                <div>
+                                    <label for="transfer-from-account">
+                                        From Account
+                                    </label>
+
+                                    <select id="transfer-from-account"></select>
+                                </div>
+
+                                <div>
+                                    <label for="transfer-to-account">
+                                        To Account
+                                    </label>
+
+                                    <select id="transfer-to-account"></select>
+                                </div>
+
+                            </div>
+
+                            <p
+                                id="transfer-account-message"
+                                class="form-message"
+                                aria-live="polite"
+                            ></p>
+
+                        </div>
+
+
 
                         <!-- TYPE -->
 
@@ -1255,6 +1290,10 @@
 
                             <option value="income">
                                 Income
+                            </option>
+
+                            <option value="transfer">
+                                Transfer
                             </option>
 
                         </select>

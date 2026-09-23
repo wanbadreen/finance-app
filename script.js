@@ -1,5 +1,14 @@
 import { isNativeApp } from "./native-platform.js";
 import { supabase } from "./supabase.js";
+import {
+    cleanupDeletedAccountTransfers,
+    fetchAccountTransfers,
+    finalizeDeletedAccountTransfer,
+    getTransferAccountDelta,
+    restoreAccountTransfer,
+    saveAccountTransfer,
+    softDeleteAccountTransfer
+} from "./transfers.js";
 import { createWorker } from "tesseract.js";
 
 
@@ -548,6 +557,33 @@ const transactionUndoProgress =
 const transactionAccountSelect =
     document.getElementById("transaction-account");
 
+const transactionAccountLabel =
+    document.querySelector('label[for="transaction-account"]');
+
+const transferAccountGroup =
+    document.getElementById("transfer-account-group");
+
+const transferFromAccountSelect =
+    document.getElementById("transfer-from-account");
+
+const transferToAccountSelect =
+    document.getElementById("transfer-to-account");
+
+const transferAccountMessage =
+    document.getElementById("transfer-account-message");
+
+const transactionCategoryLabel =
+    document.querySelector('label[for="transaction-category"]');
+
+const transactionTagsField =
+    document.querySelector(".transaction-tags-field");
+
+const receiptUploadSection =
+    transactionForm?.querySelector(".receipt-upload-section");
+
+const descriptionSuggestionHelp =
+    document.querySelector(".description-suggestion-help");
+
 const transactionTypeSelect =
     document.getElementById("type");
 
@@ -896,6 +932,7 @@ let transactionTagLinks = [];
 
 let transactions = [];
 let deletedTransactions = [];
+let transfers = [];
 
 let budgets = [];
 let recurringTransactions = [];
@@ -906,6 +943,7 @@ let reportEmailPreference = null;
 let editingGoalId = null;
 
 let pendingTransactionDelete = null;
+let pendingTransferDelete = null;
 let transactionUndoTimer = null;
 let transactionSuccessTimer = null;
 
@@ -913,6 +951,7 @@ let editingAccountId = null;
 let editingCategoryId = null;
 let editingIncomeSourceId = null;
 let editingTransactionId = null;
+let editingTransferId = null;
 let editingBudgetId = null;
 let editingRecurringId = null;
 let pendingRecurringId = null;
@@ -2877,6 +2916,10 @@ function showLoggedOutState() {
 
     transactions = [];
     deletedTransactions = [];
+    transfers = [];
+
+    pendingTransferDelete = null;
+    editingTransferId = null;
 
     budgets = [];
     recurringTransactions = [];
@@ -2920,6 +2963,22 @@ async function showLoggedInState(user) {
     if (currentUser?.id !== user.id) return;
 
     await loadAccounts();
+
+    try {
+        await cleanupDeletedAccountTransfers(
+            currentUser.id
+        );
+    } catch (error) {
+        console.warn(
+            "Stale transfer cleanup skipped:",
+            error
+        );
+    }
+
+    await loadTransfers(
+        false,
+        false
+    );
 
     await loadCategories();
 
@@ -3781,19 +3840,48 @@ function validateRecurringSubmit() {
 }
 
 function validateTransactionSubmit() {
+    const type =
+        transactionTypeSelect.value;
+
+    if (
+        type === "transfer" &&
+        editingTransactionId !== null
+    ) {
+        return {
+            field:
+                transactionTypeSelect,
+            message:
+                "Cancel the current transaction edit before creating a transfer."
+        };
+    }
+
+    if (type === "transfer") {
+        return financeField(transactionDescriptionInput, "Enter a transfer description.")
+            || financeField(transferFromAccountSelect, "Choose the account money is leaving.")
+            || financeField(transferToAccountSelect, "Choose the destination account.")
+            || financeField(
+                transferToAccountSelect,
+                "Choose a different destination account.",
+                transferFromAccountSelect.value !== transferToAccountSelect.value
+            )
+            || financeAmount(document.getElementById("amount"))
+            || financeDate(dateInput, "transfer date");
+    }
+
     return financeField(transactionDescriptionInput, "Enter a transaction description.")
         || financeField(transactionAccountSelect, "Choose an account.")
-        || financeField(transactionTypeSelect, "Choose an income or expense type.", ["income", "expense"].includes(transactionTypeSelect.value))
+        || financeField(transactionTypeSelect, "Choose an income, expense or transfer type.", ["income", "expense", "transfer"].includes(type))
         || financeField(transactionCategorySelect, "Choose a category.")
         || (transactionCategorySelect.value === "__other__" && financeField(customCategoryInput, "Enter a new category name."))
-        || (transactionTypeSelect.value === "income" && financeField(transactionIncomeSourceSelect, "Choose an income source."))
-        || (transactionTypeSelect.value === "income" && transactionIncomeSourceSelect.value === "__other__"
+        || (type === "income" && financeField(transactionIncomeSourceSelect, "Choose an income source."))
+        || (type === "income" && transactionIncomeSourceSelect.value === "__other__"
             && financeField(customIncomeSourceInput, "Enter a new income source name."))
         || financeAmount(document.getElementById("amount"))
         || financeDate(dateInput, "transaction date")
         || (receiptOcrRunning && { field: transactionDescriptionInput,
             message: "Wait for receipt scanning to finish, then review the details and save." });
 }
+
 
 configureManagementSave({
     form: accountForm,
@@ -3942,7 +4030,9 @@ async function deleteAccountPermanently(
 
         const [
             transactionCount,
-            recurringCount
+            recurringCount,
+            outgoingTransferCount,
+            incomingTransferCount
         ] =
             await Promise.all([
                 getReferenceCount(
@@ -3954,16 +4044,28 @@ async function deleteAccountPermanently(
                     "recurring_transactions",
                     "account_id",
                     account.id
+                ),
+                getReferenceCount(
+                    "account_transfers",
+                    "from_account_id",
+                    account.id
+                ),
+                getReferenceCount(
+                    "account_transfers",
+                    "to_account_id",
+                    account.id
                 )
             ]);
 
         if (
             transactionCount > 0 ||
-            recurringCount > 0
+            recurringCount > 0 ||
+            outgoingTransferCount > 0 ||
+            incomingTransferCount > 0
         ) {
 
             alert(
-                `"${account.name}" cannot be permanently deleted because it has transaction or recurring history. Keep the account inactive instead.`
+                `"${account.name}" cannot be permanently deleted because it has transaction, recurring or transfer history. Keep the account inactive instead.`
             );
 
             return;
@@ -6227,6 +6329,256 @@ async function loadDeletedTransactions() {
 
 
 // ======================================================
+// ACCOUNT TRANSFERS
+// ======================================================
+
+async function loadTransfers(
+    throwOnError = false,
+    render = true
+) {
+
+    if (!currentUser) {
+        transfers = [];
+        return;
+    }
+
+    try {
+
+        transfers =
+            await fetchAccountTransfers(
+                currentUser.id
+            );
+
+        if (render) {
+            renderAccounts();
+            renderTransactions();
+        }
+
+    } catch (error) {
+
+        transfers = [];
+
+        if (throwOnError) {
+            throw error;
+        }
+
+        console.warn(
+            "Load account transfers error:",
+            error
+        );
+    }
+}
+
+
+function populateTransferAccountSelects(
+    fromValue = "",
+    toValue = ""
+) {
+
+    if (
+        !transferFromAccountSelect ||
+        !transferToAccountSelect
+    ) {
+        return;
+    }
+
+    const currentFrom =
+        fromValue ||
+        transferFromAccountSelect.value;
+
+    const currentTo =
+        toValue ||
+        transferToAccountSelect.value;
+
+    const eligibleAccounts =
+        accounts.filter(
+            account =>
+                account.is_active ||
+                account.id === currentFrom ||
+                account.id === currentTo
+        );
+
+    const populate =
+        function (
+            select,
+            selectedValue,
+            placeholder
+        ) {
+
+            select.innerHTML =
+                `<option value="">${placeholder}</option>`;
+
+            eligibleAccounts.forEach(
+                function (account) {
+
+                    addSelectOption(
+                        select,
+                        account.id,
+                        account.name +
+                            (
+                                account.is_active
+                                    ? ""
+                                    : " (Inactive)"
+                            )
+                    );
+                }
+            );
+
+            select.value =
+                eligibleAccounts.some(
+                    account =>
+                        account.id ===
+                            selectedValue
+                )
+                    ? selectedValue
+                    : "";
+        };
+
+    populate(
+        transferFromAccountSelect,
+        currentFrom,
+        "Select source account"
+    );
+
+    populate(
+        transferToAccountSelect,
+        currentTo,
+        "Select destination account"
+    );
+}
+
+
+function updateTransactionMode() {
+
+    const isTransfer =
+        transactionTypeSelect.value ===
+        "transfer";
+
+    if (transactionAccountLabel) {
+        transactionAccountLabel.style.display =
+            isTransfer
+                ? "none"
+                : "";
+    }
+
+    if (transactionAccountSelect) {
+        transactionAccountSelect.style.display =
+            isTransfer
+                ? "none"
+                : "";
+        transactionAccountSelect.required =
+            !isTransfer;
+    }
+
+    if (transferAccountGroup) {
+        transferAccountGroup.style.display =
+            isTransfer
+                ? "block"
+                : "none";
+    }
+
+    if (transferFromAccountSelect) {
+        transferFromAccountSelect.required =
+            isTransfer;
+    }
+
+    if (transferToAccountSelect) {
+        transferToAccountSelect.required =
+            isTransfer;
+    }
+
+    if (transactionCategoryLabel) {
+        transactionCategoryLabel.style.display =
+            isTransfer
+                ? "none"
+                : "";
+    }
+
+    if (transactionCategorySelect) {
+        transactionCategorySelect.style.display =
+            isTransfer
+                ? "none"
+                : "";
+        transactionCategorySelect.required =
+            !isTransfer;
+    }
+
+    if (customCategoryGroup) {
+        customCategoryGroup.style.display =
+            "none";
+    }
+
+    if (incomeSourceGroup) {
+        incomeSourceGroup.style.display =
+            !isTransfer &&
+            transactionTypeSelect.value ===
+                "income"
+                ? "block"
+                : "none";
+    }
+
+    if (customIncomeSourceGroup) {
+        customIncomeSourceGroup.style.display =
+            "none";
+    }
+
+    if (transactionTagsField) {
+        transactionTagsField.style.display =
+            isTransfer
+                ? "none"
+                : "";
+    }
+
+    if (receiptUploadSection) {
+        receiptUploadSection.style.display =
+            isTransfer
+                ? "none"
+                : "";
+    }
+
+    if (descriptionSuggestionHelp) {
+        descriptionSuggestionHelp.style.display =
+            isTransfer
+                ? "none"
+                : "";
+    }
+
+    if (transferAccountMessage) {
+        transferAccountMessage.textContent =
+            isTransfer
+                ? "Transfers move money between your own accounts and do not count as income or spending."
+                : "";
+    }
+
+    if (isTransfer) {
+        hideDescriptionSuggestions();
+
+        formTitle.textContent =
+            editingTransferId !== null
+                ? "Edit Transfer"
+                : "Add Transfer";
+
+        submitButton.textContent =
+            editingTransferId !== null
+                ? "Save Transfer"
+                : "Transfer Money";
+
+    } else {
+
+        formTitle.textContent =
+            editingTransactionId !== null
+                ? "Edit Transaction"
+                : "Add Transaction";
+
+        submitButton.textContent =
+            editingTransactionId !== null
+                ? "Save Changes"
+                : "Add Transaction";
+    }
+}
+
+
+// ======================================================
 // TRANSACTION DROPDOWNS
 // ======================================================
 
@@ -6252,7 +6604,14 @@ function refreshTransactionDropdowns(
     customIncomeSourceGroup.style.display =
         "none";
 
+    populateTransferAccountSelects(
+        transaction?.from_account_id || "",
+        transaction?.to_account_id || ""
+    );
+
     populateTransactionFilterOptions();
+
+    updateTransactionMode();
 }
 
 
@@ -10476,7 +10835,9 @@ function renderDescriptionSuggestions(
 
     if (
         !descriptionSuggestions ||
-        editingTransactionId !== null
+        editingTransactionId !== null ||
+        transactionTypeSelect?.value ===
+            "transfer"
     ) {
 
         hideDescriptionSuggestions();
@@ -10702,6 +11063,28 @@ transactionTypeSelect.addEventListener(
     "change",
     function () {
 
+        if (
+            editingTransactionId !== null &&
+            transactionTypeSelect.value ===
+                "transfer"
+        ) {
+
+            const existingTransaction =
+                transactions.find(
+                    item =>
+                        item.id ===
+                            editingTransactionId
+                );
+
+            transactionTypeSelect.value =
+                existingTransaction?.type ||
+                "expense";
+
+            alert(
+                "Cancel the current transaction edit before creating a transfer."
+            );
+        }
+
         populateCategorySelect();
 
         updateIncomeSourceVisibility();
@@ -10711,6 +11094,8 @@ transactionTypeSelect.addEventListener(
 
         customIncomeSourceGroup.style.display =
             "none";
+
+        updateTransactionMode();
     }
 );
 
@@ -14664,8 +15049,15 @@ if (removeSavedReceiptButton) {
 
 configureFinanceSubmit({
     form: transactionForm, button: submitButton, cancel: cancelEditButton,
-    label: "Transaction", getEditId: () => editingTransactionId,
-    validate: validateTransactionSubmit, afterUnlock: updateReceiptScanButton
+    label: "Transaction", getEditId: () => editingTransactionId ?? editingTransferId,
+    validate: validateTransactionSubmit,
+    afterUnlock: () => {
+        if (editingTransferId === null) {
+            transactionTypeSelect.disabled = false;
+        }
+        updateReceiptScanButton();
+        updateTransactionMode();
+    }
 }, async function (event, markSaved) {
 
         event.preventDefault();
@@ -14725,6 +15117,52 @@ configureFinanceSubmit({
                 .getElementById("notes")
                 .value
                 .trim();
+
+        if (
+            type ===
+            "transfer"
+        ) {
+
+            const wasEditingTransfer =
+                editingTransferId !== null;
+
+            await saveAccountTransfer({
+                id:
+                    editingTransferId,
+                userId:
+                    currentUser.id,
+                fromAccountId:
+                    transferFromAccountSelect.value,
+                toAccountId:
+                    transferToAccountSelect.value,
+                amount,
+                transferDate:
+                    transactionDate,
+                description,
+                notes
+            });
+
+            markSaved();
+
+            resetTransactionForm(
+                true
+            );
+
+            showTransactionSuccessSnackbar({
+                title:
+                    wasEditingTransfer
+                        ? "Transfer updated"
+                        : "Transfer completed",
+                message:
+                    "Account balances were updated without changing income or spending."
+            });
+
+            await loadTransfers(
+                true
+            );
+
+            return;
+        }
 
         const tagNames =
             parseTransactionTagNames(
@@ -15442,20 +15880,45 @@ function getFilteredTransactions() {
 }
 
 
-function updateTransactionFilterSummary(
-    filteredCount,
-    visibleCount
-) {
+function getFilteredTransfers() {
 
-    if (!transactionFilterSummary) {
-        return;
-    }
+    const searchTerm =
+        transactionSearchInput
+            ?.value
+            .trim()
+            .toLowerCase()
+        ||
+        "";
 
+    const selectedType =
+        transactionFilterType
+            ?.value
+        ||
+        "all";
 
-    transactionFilterSummary.classList.remove(
-        "error"
-    );
+    const selectedAccount =
+        transactionFilterAccount
+            ?.value
+        ||
+        "all";
 
+    const selectedCategory =
+        transactionFilterCategory
+            ?.value
+        ||
+        "all";
+
+    const selectedTag =
+        transactionFilterTag
+            ?.value
+        ||
+        "all";
+
+    const selectedMonth =
+        transactionFilterMonth
+            ?.value
+        ||
+        "";
 
     const selectedFromDate =
         transactionFilterFromDate
@@ -15469,6 +15932,203 @@ function updateTransactionFilterSummary(
         ||
         "";
 
+    if (
+        selectedType !== "all" &&
+        selectedType !== "transfer"
+    ) {
+        return [];
+    }
+
+    if (
+        selectedCategory !== "all" ||
+        selectedTag !== "all"
+    ) {
+        return [];
+    }
+
+    return transfers.filter(
+        function (transfer) {
+
+            if (
+                selectedAccount !== "all" &&
+                transfer.from_account_id !==
+                    selectedAccount &&
+                transfer.to_account_id !==
+                    selectedAccount
+            ) {
+                return false;
+            }
+
+            const transferDate =
+                String(
+                    transfer.transfer_date ||
+                    ""
+                );
+
+            if (
+                selectedMonth &&
+                !selectedFromDate &&
+                !selectedToDate &&
+                !transferDate.startsWith(
+                    selectedMonth
+                )
+            ) {
+                return false;
+            }
+
+            if (
+                selectedFromDate &&
+                transferDate <
+                    selectedFromDate
+            ) {
+                return false;
+            }
+
+            if (
+                selectedToDate &&
+                transferDate >
+                    selectedToDate
+            ) {
+                return false;
+            }
+
+            if (searchTerm) {
+
+                const searchableText = [
+                    transfer.description,
+                    transfer.notes,
+                    getAccountName(
+                        transfer.from_account_id
+                    ),
+                    getAccountName(
+                        transfer.to_account_id
+                    ),
+                    "transfer"
+                ]
+                    .filter(Boolean)
+                    .join(" ")
+                    .toLowerCase();
+
+                if (
+                    !searchableText.includes(
+                        searchTerm
+                    )
+                ) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    );
+}
+
+
+function sortTransactionActivities(
+    activities
+) {
+
+    const sortMode =
+        transactionSortSelect
+            ?.value
+        ||
+        "newest";
+
+    return activities.sort(
+        function (
+            first,
+            second
+        ) {
+
+            if (
+                sortMode ===
+                "highest"
+            ) {
+                return (
+                    Number(second.amount) -
+                    Number(first.amount)
+                );
+            }
+
+            if (
+                sortMode ===
+                "lowest"
+            ) {
+                return (
+                    Number(first.amount) -
+                    Number(second.amount)
+                );
+            }
+
+            const firstDate =
+                new Date(
+                    `${first.activityDate}T00:00:00`
+                ).getTime();
+
+            const secondDate =
+                new Date(
+                    `${second.activityDate}T00:00:00`
+                ).getTime();
+
+            if (
+                firstDate !==
+                secondDate
+            ) {
+                return sortMode ===
+                    "oldest"
+                        ? firstDate -
+                            secondDate
+                        : secondDate -
+                            firstDate;
+            }
+
+            const firstCreated =
+                new Date(
+                    first.createdAt ||
+                    0
+                ).getTime();
+
+            const secondCreated =
+                new Date(
+                    second.createdAt ||
+                    0
+                ).getTime();
+
+            return sortMode ===
+                "oldest"
+                    ? firstCreated -
+                        secondCreated
+                    : secondCreated -
+                        firstCreated;
+        }
+    );
+}
+
+
+function updateTransactionFilterSummary(
+    filteredCount,
+    visibleCount
+) {
+
+    if (!transactionFilterSummary) {
+        return;
+    }
+
+    transactionFilterSummary.classList.remove(
+        "error"
+    );
+
+    const selectedFromDate =
+        transactionFilterFromDate
+            ?.value
+        ||
+        "";
+
+    const selectedToDate =
+        transactionFilterToDate
+            ?.value
+        ||
+        "";
 
     if (
         selectedFromDate &&
@@ -15487,18 +16147,20 @@ function updateTransactionFilterSummary(
         return;
     }
 
+    const totalActivityCount =
+        transactions.length +
+        transfers.length;
 
     if (
-        transactions.length ===
+        totalActivityCount ===
         0
     ) {
 
         transactionFilterSummary.textContent =
-            "No active transactions yet.";
+            "No active transactions or transfers yet.";
 
         return;
     }
-
 
     if (
         filteredCount ===
@@ -15506,17 +16168,460 @@ function updateTransactionFilterSummary(
     ) {
 
         transactionFilterSummary.textContent =
-            "No transactions match the current filters.";
+            "No activity matches the current filters.";
 
         return;
     }
-
 
     transactionFilterSummary.textContent =
         filteredCount ===
-            transactions.length
-            ? `Showing ${visibleCount} of ${transactions.length} transactions.`
-            : `Showing ${visibleCount} of ${filteredCount} matching transactions (${transactions.length} total).`;
+            totalActivityCount
+            ? `Showing ${visibleCount} of ${totalActivityCount} activity items.`
+            : `Showing ${visibleCount} of ${filteredCount} matching items (${totalActivityCount} total).`;
+}
+
+
+function createTransactionActivityRow(
+    transaction
+) {
+
+    const row =
+        document.createElement(
+            "div"
+        );
+
+    row.className =
+        "transaction";
+
+    const left =
+        document.createElement(
+            "div"
+        );
+
+    left.className =
+        "transaction-info";
+
+    const name =
+        document.createElement(
+            "p"
+        );
+
+    name.className =
+        "transaction-name";
+
+    name.textContent =
+        transaction.description;
+
+    const category =
+        document.createElement(
+            "p"
+        );
+
+    category.className =
+        "transaction-category";
+
+    category.textContent =
+        `${getCategoryName(
+            transaction.category_id
+        ) || "Uncategorized"} • ${
+            getAccountName(
+                transaction.account_id
+            ) || "Unknown Account"
+        }`;
+
+    const date =
+        document.createElement(
+            "p"
+        );
+
+    date.className =
+        "transaction-date";
+
+    date.textContent =
+        formatDate(
+            transaction.transaction_date
+        );
+
+    left.append(
+        name,
+        category,
+        date
+    );
+
+    const transactionTagNames =
+        getTransactionTagNames(
+            transaction
+        );
+
+    if (
+        transactionTagNames.length
+    ) {
+
+        const tagList =
+            document.createElement(
+                "div"
+            );
+
+        tagList.className =
+            "transaction-tag-list";
+
+        transactionTagNames.forEach(
+            function (
+                tagName
+            ) {
+
+                const tag =
+                    document.createElement(
+                        "span"
+                    );
+
+                tag.className =
+                    "transaction-tag-chip";
+
+                tag.textContent =
+                    tagName;
+
+                tagList.appendChild(
+                    tag
+                );
+            }
+        );
+
+        left.appendChild(
+            tagList
+        );
+    }
+
+    if (
+        transaction.type ===
+        "income"
+    ) {
+
+        const sourceName =
+            getIncomeSourceName(
+                transaction.income_source_id
+            );
+
+        if (sourceName) {
+
+            const source =
+                document.createElement(
+                    "p"
+                );
+
+            source.className =
+                "transaction-date";
+
+            source.textContent =
+                `Source: ${sourceName}`;
+
+            left.appendChild(
+                source
+            );
+        }
+    }
+
+    if (transaction.notes) {
+
+        const note =
+            document.createElement(
+                "p"
+            );
+
+        note.className =
+            "transaction-note";
+
+        note.textContent =
+            transaction.notes;
+
+        left.appendChild(
+            note
+        );
+    }
+
+    if (transaction.receipt_path) {
+
+        const receiptButton =
+            document.createElement(
+                "button"
+            );
+
+        receiptButton.type =
+            "button";
+
+        receiptButton.className =
+            "transaction-receipt-button";
+
+        receiptButton.textContent =
+            "View Receipt";
+
+        receiptButton.addEventListener(
+            "click",
+            function () {
+
+                openReceipt(
+                    transaction.receipt_path
+                );
+            }
+        );
+
+        left.appendChild(
+            receiptButton
+        );
+    }
+
+    const right =
+        document.createElement(
+            "div"
+        );
+
+    right.className =
+        "transaction-actions";
+
+    const amount =
+        document.createElement(
+            "p"
+        );
+
+    amount.className =
+        `transaction-amount ${transaction.type}`;
+
+    amount.textContent =
+        (
+            transaction.type ===
+            "income"
+                ? "+"
+                : "-"
+        )
+        +
+        formatMoney(
+            transaction.amount
+        );
+
+    const buttons =
+        document.createElement(
+            "div"
+        );
+
+    buttons.className =
+        "action-buttons";
+
+    const editButton =
+        createTextButton(
+            "Edit",
+            "edit-button"
+        );
+
+    const deleteButton =
+        createTextButton(
+            "Delete",
+            "delete-button delete-permanently-button"
+        );
+
+    editButton.addEventListener(
+        "click",
+        function () {
+
+            editTransaction(
+                transaction.id
+            );
+        }
+    );
+
+    deleteButton.addEventListener(
+        "click",
+        function () {
+
+            deleteTransaction(
+                transaction.id
+            );
+        }
+    );
+
+    buttons.append(
+        editButton,
+        deleteButton
+    );
+
+    right.append(
+        amount,
+        buttons
+    );
+
+    row.append(
+        left,
+        right
+    );
+
+    return row;
+}
+
+
+function createTransferActivityRow(
+    transfer
+) {
+
+    const row =
+        document.createElement(
+            "div"
+        );
+
+    row.className =
+        "transaction transfer-activity";
+
+    const left =
+        document.createElement(
+            "div"
+        );
+
+    left.className =
+        "transaction-info";
+
+    const name =
+        document.createElement(
+            "p"
+        );
+
+    name.className =
+        "transaction-name";
+
+    name.textContent =
+        transfer.description ||
+        "Account transfer";
+
+    const route =
+        document.createElement(
+            "p"
+        );
+
+    route.className =
+        "transaction-category";
+
+    route.textContent =
+        `Transfer • ${
+            getAccountName(
+                transfer.from_account_id
+            ) || "Unknown Account"
+        } → ${
+            getAccountName(
+                transfer.to_account_id
+            ) || "Unknown Account"
+        }`;
+
+    const date =
+        document.createElement(
+            "p"
+        );
+
+    date.className =
+        "transaction-date";
+
+    date.textContent =
+        formatDate(
+            transfer.transfer_date
+        );
+
+    left.append(
+        name,
+        route,
+        date
+    );
+
+    if (transfer.notes) {
+
+        const note =
+            document.createElement(
+                "p"
+            );
+
+        note.className =
+            "transaction-note";
+
+        note.textContent =
+            transfer.notes;
+
+        left.appendChild(
+            note
+        );
+    }
+
+    const right =
+        document.createElement(
+            "div"
+        );
+
+    right.className =
+        "transaction-actions";
+
+    const amount =
+        document.createElement(
+            "p"
+        );
+
+    amount.className =
+        "transaction-amount transfer";
+
+    amount.textContent =
+        `↔ ${formatMoney(
+            transfer.amount
+        )}`;
+
+    const buttons =
+        document.createElement(
+            "div"
+        );
+
+    buttons.className =
+        "action-buttons";
+
+    const editButton =
+        createTextButton(
+            "Edit",
+            "edit-button"
+        );
+
+    const deleteButton =
+        createTextButton(
+            "Delete",
+            "delete-button delete-permanently-button"
+        );
+
+    editButton.addEventListener(
+        "click",
+        function () {
+
+            editTransfer(
+                transfer.id
+            );
+        }
+    );
+
+    deleteButton.addEventListener(
+        "click",
+        function () {
+
+            deleteTransfer(
+                transfer.id
+            );
+        }
+    );
+
+    buttons.append(
+        editButton,
+        deleteButton
+    );
+
+    right.append(
+        amount,
+        buttons
+    );
+
+    row.append(
+        left,
+        right
+    );
+
+    return row;
 }
 
 
@@ -15529,8 +16634,14 @@ function renderTransactions() {
 
     populateTransactionFilterOptions();
 
+    const totalActivityCount =
+        transactions.length +
+        transfers.length;
 
-    if (!transactions.length) {
+    if (
+        totalActivityCount ===
+        0
+    ) {
 
         if (transactionViewAllButton) {
             transactionViewAllButton.style.display =
@@ -15546,10 +16657,10 @@ function renderTransactions() {
             transactionList,
             {
                 title:
-                    "No transactions yet",
+                    "No activity yet",
 
                 description:
-                    "Record your first income or expense to start building your financial picture.",
+                    "Record income, spending or a transfer to start building your financial picture.",
 
                 actionLabel:
                     "Add transaction",
@@ -15568,12 +16679,48 @@ function renderTransactions() {
         return;
     }
 
+    const activities = [
+        ...getFilteredTransactions()
+            .map(
+                transaction => ({
+                    kind:
+                        "transaction",
+                    amount:
+                        Number(
+                            transaction.amount
+                        ),
+                    activityDate:
+                        transaction.transaction_date,
+                    createdAt:
+                        transaction.created_at,
+                    item:
+                        transaction
+                })
+            ),
+        ...getFilteredTransfers()
+            .map(
+                transfer => ({
+                    kind:
+                        "transfer",
+                    amount:
+                        Number(
+                            transfer.amount
+                        ),
+                    activityDate:
+                        transfer.transfer_date,
+                    createdAt:
+                        transfer.created_at,
+                    item:
+                        transfer
+                })
+            )
+    ];
 
-    const filteredTransactions =
-        getFilteredTransactions();
+    sortTransactionActivities(
+        activities
+    );
 
-
-    if (!filteredTransactions.length) {
+    if (!activities.length) {
 
         if (transactionViewAllButton) {
             transactionViewAllButton.style.display =
@@ -15587,31 +16734,29 @@ function renderTransactions() {
 
         renderEmptyState(
             transactionList,
-            "No transactions match your search or filters."
+            "No activity matches your search or filters."
         );
 
         return;
     }
 
-
     const shouldLimit =
         !showAllTransactions &&
-        filteredTransactions.length >
+        activities.length >
             TRANSACTION_PREVIEW_LIMIT;
 
-    const visibleTransactions =
+    const visibleActivities =
         shouldLimit
-            ? filteredTransactions.slice(
+            ? activities.slice(
                 0,
                 TRANSACTION_PREVIEW_LIMIT
             )
-            : filteredTransactions;
-
+            : activities;
 
     if (transactionViewAllButton) {
 
         if (
-            filteredTransactions.length <=
+            activities.length <=
             TRANSACTION_PREVIEW_LIMIT
         ) {
 
@@ -15626,310 +16771,27 @@ function renderTransactions() {
             transactionViewAllButton.textContent =
                 showAllTransactions
                     ? "Show Less"
-                    : `View All (${filteredTransactions.length})`;
+                    : `View All (${activities.length})`;
         }
     }
 
-
     updateTransactionFilterSummary(
-        filteredTransactions.length,
-        visibleTransactions.length
+        activities.length,
+        visibleActivities.length
     );
 
-
-    visibleTransactions.forEach(
-        function (transaction) {
-
-            const row =
-                document.createElement(
-                    "div"
-                );
-
-            row.className =
-                "transaction";
-
-
-            const left =
-                document.createElement(
-                    "div"
-                );
-
-            left.className =
-                "transaction-info";
-
-
-            const name =
-                document.createElement(
-                    "p"
-                );
-
-            name.className =
-                "transaction-name";
-
-            name.textContent =
-                transaction.description;
-
-
-            const category =
-                document.createElement(
-                    "p"
-                );
-
-            category.className =
-                "transaction-category";
-
-            category.textContent =
-                `${getCategoryName(
-                    transaction.category_id
-                ) || "Uncategorized"} • ${
-                    getAccountName(
-                        transaction.account_id
-                    ) || "Unknown Account"
-                }`;
-
-
-            const date =
-                document.createElement(
-                    "p"
-                );
-
-            date.className =
-                "transaction-date";
-
-            date.textContent =
-                formatDate(
-                    transaction.transaction_date
-                );
-
-
-            left.appendChild(name);
-            left.appendChild(category);
-            left.appendChild(date);
-
-
-            const transactionTagNames =
-                getTransactionTagNames(
-                    transaction
-                );
-
-            if (
-                transactionTagNames.length
-            ) {
-
-                const tagList =
-                    document.createElement(
-                        "div"
-                    );
-
-                tagList.className =
-                    "transaction-tag-list";
-
-                transactionTagNames.forEach(
-                    function (tagName) {
-
-                        const tag =
-                            document.createElement(
-                                "span"
-                            );
-
-                        tag.className =
-                            "transaction-tag-chip";
-
-                        tag.textContent =
-                            tagName;
-
-                        tagList.appendChild(
-                            tag
-                        );
-                    }
-                );
-
-                left.appendChild(
-                    tagList
-                );
-            }
-
-
-            if (
-                transaction.type ===
-                "income"
-            ) {
-
-                const sourceName =
-                    getIncomeSourceName(
-                        transaction.income_source_id
-                    );
-
-                if (sourceName) {
-
-                    const source =
-                        document.createElement(
-                            "p"
-                        );
-
-                    source.className =
-                        "transaction-date";
-
-                    source.textContent =
-                        `Source: ${sourceName}`;
-
-                    left.appendChild(
-                        source
-                    );
-                }
-            }
-
-
-            if (transaction.notes) {
-
-                const note =
-                    document.createElement(
-                        "p"
-                    );
-
-                note.className =
-                    "transaction-note";
-
-                note.textContent =
-                    transaction.notes;
-
-                left.appendChild(
-                    note
-                );
-            }
-
-
-            if (transaction.receipt_path) {
-
-                const receiptButton =
-                    document.createElement(
-                        "button"
-                    );
-
-                receiptButton.type =
-                    "button";
-
-                receiptButton.className =
-                    "transaction-receipt-button";
-
-                receiptButton.textContent =
-                    "View Receipt";
-
-                receiptButton.addEventListener(
-                    "click",
-                    function () {
-
-                        openReceipt(
-                            transaction.receipt_path
-                        );
-                    }
-                );
-
-                left.appendChild(
-                    receiptButton
-                );
-            }
-
-
-            const right =
-                document.createElement(
-                    "div"
-                );
-
-            right.className =
-                "transaction-actions";
-
-
-            const amount =
-                document.createElement(
-                    "p"
-                );
-
-            amount.className =
-                `transaction-amount ${transaction.type}`;
-
-            amount.textContent =
-                (
-                    transaction.type ===
-                    "income"
-                        ? "+"
-                        : "-"
-                )
-                +
-                formatMoney(
-                    transaction.amount
-                );
-
-
-            const buttons =
-                document.createElement(
-                    "div"
-                );
-
-            buttons.className =
-                "action-buttons";
-
-
-            const editButton =
-                createTextButton(
-                    "Edit",
-                    "edit-button"
-                );
-
-
-            const deleteButton =
-                createTextButton(
-                    "Delete",
-                    "delete-button delete-permanently-button"
-                );
-
-
-            editButton.addEventListener(
-                "click",
-                function () {
-
-                    editTransaction(
-                        transaction.id
-                    );
-                }
-            );
-
-
-            deleteButton.addEventListener(
-                "click",
-                function () {
-
-                    deleteTransaction(
-                        transaction.id
-                    );
-                }
-            );
-
-
-            buttons.appendChild(
-                editButton
-            );
-
-            buttons.appendChild(
-                deleteButton
-            );
-
-
-            right.appendChild(
-                amount
-            );
-
-            right.appendChild(
-                buttons
-            );
-
-
-            row.appendChild(left);
-            row.appendChild(right);
-
+    visibleActivities.forEach(
+        function (activity) {
 
             transactionList.appendChild(
-                row
+                activity.kind ===
+                    "transfer"
+                    ? createTransferActivityRow(
+                        activity.item
+                    )
+                    : createTransactionActivityRow(
+                        activity.item
+                    )
             );
         }
     );
@@ -16207,6 +17069,304 @@ function renderDeletedTransactions() {
 
 
 // ======================================================
+// EDIT / DELETE ACCOUNT TRANSFER
+// ======================================================
+
+function editTransfer(
+    id
+) {
+
+    if (
+        financeSavePending(
+            transactionForm
+        )
+    ) {
+        return;
+    }
+
+    clearFinanceFeedback(
+        transactionForm
+    );
+
+    const transfer =
+        transfers.find(
+            item =>
+                item.id ===
+                id
+        );
+
+    if (!transfer) {
+        return;
+    }
+
+    editingTransactionId =
+        null;
+
+    editingTransferId =
+        transfer.id;
+
+    transactionDescriptionInput.value =
+        transfer.description ||
+        "";
+
+    document
+        .getElementById(
+            "amount"
+        )
+        .value =
+        transfer.amount;
+
+    dateInput.value =
+        transfer.transfer_date;
+
+    document
+        .getElementById(
+            "notes"
+        )
+        .value =
+        transfer.notes ||
+        "";
+
+    transactionTypeSelect.value =
+        "transfer";
+
+    transactionTypeSelect.disabled =
+        true;
+
+    populateTransferAccountSelects(
+        transfer.from_account_id,
+        transfer.to_account_id
+    );
+
+    updateTransactionMode();
+
+    clearSelectedReceipt();
+
+    editingReceiptPath =
+        null;
+
+    removeEditingReceipt =
+        false;
+
+    renderSavedReceiptPanel();
+
+    cancelEditButton.textContent =
+        "Cancel";
+
+    cancelEditButton.style.display =
+        "inline-flex";
+
+    scrollToFormAndFocus(
+        transactionForm,
+        transactionDescriptionInput
+    );
+}
+
+
+async function finalizePendingTransferDelete() {
+
+    if (!pendingTransferDelete) {
+        return;
+    }
+
+    const target =
+        pendingTransferDelete;
+
+    pendingTransferDelete =
+        null;
+
+    if (transactionUndoTimer) {
+
+        window.clearTimeout(
+            transactionUndoTimer
+        );
+
+        transactionUndoTimer =
+            null;
+    }
+
+    hideTransactionUndoSnackbar();
+
+    try {
+
+        await finalizeDeletedAccountTransfer(
+            target.id
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Transfer cleanup error:",
+            error
+        );
+    }
+}
+
+
+function showTransferUndoSnackbar(
+    transfer
+) {
+
+    if (!transactionUndoSnackbar) {
+        return;
+    }
+
+    pendingTransferDelete = {
+        id:
+            transfer.id,
+        description:
+            transfer.description ||
+            "Account transfer"
+    };
+
+    if (transactionUndoTitle) {
+
+        transactionUndoTitle.textContent =
+            `"${
+                pendingTransferDelete.description
+            }" deleted`;
+    }
+
+    if (transactionUndoMessage) {
+
+        transactionUndoMessage.textContent =
+            "Undo within 5 seconds.";
+    }
+
+    transactionUndoSnackbar.classList.add(
+        "show"
+    );
+
+    if (transactionUndoProgress) {
+
+        transactionUndoProgress.style.animation =
+            "none";
+
+        void transactionUndoProgress.offsetWidth;
+
+        transactionUndoProgress.style.animation =
+            "transactionUndoCountdown 5s linear forwards";
+    }
+
+    transactionUndoTimer =
+        window.setTimeout(
+            finalizePendingTransferDelete,
+            5000
+        );
+}
+
+
+async function deleteTransfer(
+    id
+) {
+
+    const transfer =
+        transfers.find(
+            item =>
+                item.id ===
+                id
+        );
+
+    if (!transfer) {
+        return;
+    }
+
+    if (pendingTransactionDelete) {
+        await finalizePendingTransactionDelete();
+    }
+
+    if (pendingTransferDelete) {
+        await finalizePendingTransferDelete();
+    }
+
+    try {
+
+        await softDeleteAccountTransfer(
+            id
+        );
+
+    } catch (error) {
+
+        alert(
+            error?.message ||
+            "Unable to delete this transfer."
+        );
+
+        return;
+    }
+
+    transfers =
+        transfers.filter(
+            item =>
+                item.id !==
+                id
+        );
+
+    renderAccounts();
+    renderTransactions();
+
+    showTransferUndoSnackbar(
+        transfer
+    );
+}
+
+
+async function undoPendingTransferDelete() {
+
+    if (!pendingTransferDelete) {
+        return;
+    }
+
+    const target =
+        pendingTransferDelete;
+
+    pendingTransferDelete =
+        null;
+
+    if (transactionUndoTimer) {
+
+        window.clearTimeout(
+            transactionUndoTimer
+        );
+
+        transactionUndoTimer =
+            null;
+    }
+
+    hideTransactionUndoSnackbar();
+
+    try {
+
+        await restoreAccountTransfer(
+            target.id
+        );
+
+        await loadTransfers(
+            true
+        );
+
+    } catch (error) {
+
+        alert(
+            error?.message ||
+            "Unable to restore this transfer."
+        );
+    }
+}
+
+
+async function undoPendingDelete() {
+
+    if (pendingTransferDelete) {
+        await undoPendingTransferDelete();
+        return;
+    }
+
+    await undoPendingTransactionDelete();
+}
+
+
+// ======================================================
 // EDIT TRANSACTION
 // ======================================================
 
@@ -16250,6 +17410,12 @@ function editTransaction(id) {
             )
                 .join(", ");
     }
+
+    editingTransferId =
+        null;
+
+    transactionTypeSelect.disabled =
+        false;
 
     transactionTypeSelect.value =
         transaction.type;
@@ -16765,6 +17931,10 @@ async function deleteTransaction(id) {
         await finalizePendingTransactionDelete();
     }
 
+    if (pendingTransferDelete) {
+        await finalizePendingTransferDelete();
+    }
+
     const deletedAt =
         new Date()
             .toISOString();
@@ -17022,7 +18192,7 @@ async function cleanupStaleDeletedTransactions() {
 transactionUndoButton
     ?.addEventListener(
         "click",
-        undoPendingTransactionDelete
+        undoPendingDelete
     );
 
 
@@ -17036,6 +18206,12 @@ function resetTransactionForm(force = false) {
 
     editingTransactionId =
         null;
+
+    editingTransferId =
+        null;
+
+    transactionTypeSelect.disabled =
+        false;
 
     pendingRecurringId =
         null;
@@ -17093,6 +18269,8 @@ function resetTransactionForm(force = false) {
     }
 
     refreshTransactionDropdowns();
+
+    updateTransactionMode();
 }
 
 
@@ -17233,6 +18411,12 @@ function calculateAccountBalance(
                         amount;
                 }
             }
+        );
+
+    balance +=
+        getTransferAccountDelta(
+            transfers,
+            accountId
         );
 
     return balance;
