@@ -101,3 +101,13 @@ test('credit card statement UI uses statement balance and derived remaining due 
   assert.doesNotMatch(source, /credit-card-amount-due/);
   assert.match(source, /<span>Remaining Statement Due<\/span>/);
 });
+
+test('saving a card statement updates local state without blocking on a refetch', () => {
+  const source = read('script.js');
+  const start = source.indexOf('creditCardStatementForm');
+  const handler = source.slice(start, source.indexOf('creditCardPaymentForm', start));
+
+  assert.match(handler, /const savedStatement\s*=\s*await saveCreditCardStatement/);
+  assert.match(handler, /creditCardStatements\s*=\s*creditCardStatements/);
+  assert.doesNotMatch(handler, /await loadCreditCardData/);
+});
