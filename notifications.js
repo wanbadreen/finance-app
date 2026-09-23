@@ -557,7 +557,7 @@ async function generateLocalNotifications() {
             const paidSinceStatement = transfers
                 .filter(transfer =>
                     transfer.to_account_id === card.account_id &&
-                    transfer.transfer_date >= statement.statement_date &&
+                    transfer.transfer_date > statement.statement_date &&
                     transfer.transfer_date <= today
                 )
                 .reduce((sum, transfer) => sum + Number(transfer.amount || 0), 0);
