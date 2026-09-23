@@ -297,3 +297,24 @@ create policy credit_card_reconciliations_delete_own
 on public.credit_card_reconciliations
 for delete to authenticated
 using ((select auth.uid()) = user_id);
+
+
+-- Credit card due reminders use the existing notification system.
+alter table public.notification_preferences
+    add column if not exists credit_card_enabled boolean not null default true;
+
+alter table public.notifications
+    drop constraint if exists notifications_kind_check;
+
+alter table public.notifications
+    add constraint notifications_kind_check
+    check (
+        kind in (
+            'recurring',
+            'budget',
+            'goal',
+            'cashflow',
+            'credit_card',
+            'system'
+        )
+    );
