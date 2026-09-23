@@ -126,3 +126,20 @@ test('saving a card statement updates local state without blocking on a refetch'
   assert.match(handler, /creditCardStatements\s*=\s*creditCardStatements/);
   assert.doesNotMatch(handler, /await loadCreditCardData/);
 });
+
+
+test('credit card reconciliation stores a stable Kira balance snapshot', () => {
+  const source = read('script.js');
+  const helper = read('credit-cards.js');
+
+  assert.match(source, /reconciliation\.kira_outstanding/);
+  assert.match(source, /kiraOutstanding:\s*getCreditCardOutstandingAsOf/);
+  assert.doesNotMatch(
+    source.slice(
+      source.indexOf('creditCardReconcileForm'),
+      source.indexOf('document\n    \.getElementById', source.indexOf('creditCardReconcileForm'))
+    ),
+    /await loadCreditCardData/
+  );
+  assert.match(helper, /kira_outstanding:\s*toMoneyNumber\(kiraOutstanding\)/);
+});
