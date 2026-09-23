@@ -4695,6 +4695,21 @@ function renderCreditCardDetail() {
             statement
         );
 
+    const preTrackingPaid =
+        statement
+            ? Math.max(
+                0,
+                Number(
+                    statement.pre_tracking_paid_since_statement ||
+                    0
+                )
+            )
+            : 0;
+
+    const totalPaidSinceStatement =
+        preTrackingPaid +
+        statementPayments;
+
     const remainingStatement =
         getRemainingStatementDue(
             statement,
@@ -4755,7 +4770,7 @@ function renderCreditCardDetail() {
             ? Math.min(
                 100,
                 (
-                    statementPayments /
+                    totalPaidSinceStatement /
                     Number(
                         statement.statement_balance
                     )
@@ -4802,6 +4817,10 @@ function renderCreditCardDetail() {
                         <strong>${statement ? formatMoney(statement.statement_balance) : "Not recorded"}</strong>
                     </div>
                     <div class="credit-card-detail-row">
+                        <span>Already Paid Since Statement</span>
+                        <strong>${statement ? formatMoney(preTrackingPaid) : "—"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
                         <span>Statement Date</span>
                         <strong>${statement ? formatDate(statement.statement_date) : "—"}</strong>
                     </div>
@@ -4822,7 +4841,7 @@ function renderCreditCardDetail() {
                             <span style="width: ${progress.toFixed(2)}%"></span>
                         </div>
                         <div class="credit-card-payment-progress-copy">
-                            <span>${formatMoney(statementPayments)} paid since statement</span>
+                            <span>${formatMoney(totalPaidSinceStatement)} paid since statement${preTrackingPaid > 0 ? ` • ${formatMoney(preTrackingPaid)} before Kira` : ""}</span>
                             <span class="credit-card-status-badge ${statementStatus}">
                                 ${statementStatus === "paid" ? "Paid" : statementStatus === "due" ? "Overdue" : "Open"}
                             </span>
@@ -5885,6 +5904,10 @@ creditCardStatementForm
                         statementBalance:
                             document.getElementById(
                                 "credit-card-statement-balance"
+                            ).value,
+                        preTrackingPaidSinceStatement:
+                            document.getElementById(
+                                "credit-card-pre-tracking-paid"
                             ).value,
                         minimumPayment:
                             document.getElementById(
