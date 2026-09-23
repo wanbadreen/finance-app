@@ -33,16 +33,29 @@ test('credit card helper models liabilities and projections', async () => {
     getRemainingStatementDue(
       {
         statement_balance: 2938.03,
-        amount_due: 2789.08
+        pre_tracking_paid_since_statement: 148.95,
+        amount_due: 1
+      },
+      0
+    ),
+    2789.08
+  );
+  assert.equal(
+    getRemainingStatementDue(
+      {
+        statement_balance: 2938.03,
+        pre_tracking_paid_since_statement: 148.95,
+        amount_due: 9999
       },
       50
     ),
-    2888.03
+    2739.08
   );
   assert.equal(
     getRemainingStatementDue(
       {
         statement_balance: 100,
+        pre_tracking_paid_since_statement: 25,
         amount_due: 10
       },
       125
@@ -97,6 +110,8 @@ test('credit card statement UI uses statement balance and derived remaining due 
   assert.doesNotMatch(html, />Amount Due</);
   assert.doesNotMatch(html, /credit-card-amount-due/);
   assert.match(html, /Remaining Statement Due/);
+  assert.match(html, /Already Paid Since Statement/);
+  assert.match(html, /credit-card-pre-tracking-paid/);
   assert.doesNotMatch(source, /<span>Amount Due<\/span>/);
   assert.doesNotMatch(source, /credit-card-amount-due/);
   assert.match(source, /<span>Remaining Statement Due<\/span>/);
