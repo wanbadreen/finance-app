@@ -97,6 +97,8 @@ create table if not exists public.credit_card_statements (
     due_date date not null,
     statement_balance numeric not null
         check (statement_balance >= 0),
+    pre_tracking_paid_since_statement numeric(14,2) not null default 0
+        check (pre_tracking_paid_since_statement >= 0),
     amount_due numeric
         check (amount_due is null or amount_due >= 0),
     minimum_payment numeric not null default 0
