@@ -13,6 +13,25 @@ import {
     ensureDefaultPaymentMethods,
     fetchPaymentMethods
 } from "./payment-methods.js";
+import {
+    createCreditCardProfile,
+    estimateMinimumPayment,
+    fetchCreditCardReconciliations,
+    fetchCreditCardStatements,
+    fetchCreditCards,
+    getAvailableCredit,
+    getCreditCardOutstanding,
+    getCreditUtilisation,
+    getLatestCreditCardReconciliation,
+    getLatestCreditCardStatement,
+    getRemainingStatementDue,
+    getStatementPayments,
+    projectCreditCard,
+    saveCreditCardReconciliation,
+    saveCreditCardStatement,
+    setCreditCardActive,
+    updateCreditCardProfile
+} from "./credit-cards.js";
 import { createWorker } from "tesseract.js";
 
 
@@ -476,6 +495,60 @@ const cancelAccountEditButton =
 
 const accountMessage =
     document.getElementById("account-message");
+
+
+// CREDIT CARDS
+
+const dashboardCreditCardSummary =
+    document.getElementById("dashboard-credit-card-summary");
+
+const dashboardCreditCardTotals =
+    document.getElementById("dashboard-credit-card-totals");
+
+const dashboardCreditCardList =
+    document.getElementById("dashboard-credit-card-list");
+
+const dashboardCreditCardViewAll =
+    document.getElementById("dashboard-credit-card-view-all");
+
+const creditCardList =
+    document.getElementById("credit-card-list");
+
+const creditCardDetail =
+    document.getElementById("credit-card-detail");
+
+const creditCardForm =
+    document.getElementById("credit-card-form");
+
+const creditCardFormTitle =
+    document.getElementById("credit-card-form-title");
+
+const creditCardOpeningOutstandingField =
+    document.getElementById("credit-card-opening-outstanding-field");
+
+const cancelCreditCardEditButton =
+    document.getElementById("cancel-credit-card-edit-button");
+
+const creditCardMessage =
+    document.getElementById("credit-card-message");
+
+const creditCardStatementForm =
+    document.getElementById("credit-card-statement-form");
+
+const creditCardStatementMessage =
+    document.getElementById("credit-card-statement-message");
+
+const creditCardPaymentForm =
+    document.getElementById("credit-card-payment-form");
+
+const creditCardPaymentMessage =
+    document.getElementById("credit-card-payment-message");
+
+const creditCardReconcileForm =
+    document.getElementById("credit-card-reconcile-form");
+
+const creditCardReconcileMessage =
+    document.getElementById("credit-card-reconcile-message");
 
 
 // CATEGORIES
@@ -944,6 +1017,9 @@ let accounts = [];
 let categories = [];
 let incomeSources = [];
 let paymentMethods = [];
+let creditCards = [];
+let creditCardStatements = [];
+let creditCardReconciliations = [];
 let tags = [];
 let transactionTagLinks = [];
 
@@ -965,6 +1041,8 @@ let transactionUndoTimer = null;
 let transactionSuccessTimer = null;
 
 let editingAccountId = null;
+let editingCreditCardId = null;
+let selectedCreditCardId = null;
 let editingCategoryId = null;
 let editingIncomeSourceId = null;
 let editingTransactionId = null;
@@ -3007,6 +3085,8 @@ async function showLoggedInState(user) {
 
     await loadPaymentMethods();
 
+    await loadCreditCardData();
+
     await seedStarterData();
 
     await loadTags();
@@ -3014,6 +3094,9 @@ async function showLoggedInState(user) {
     await cleanupStaleDeletedTransactions();
 
     await loadTransactions();
+
+    renderCreditCardsPage();
+    renderCreditCardDashboardSummary();
 
     setDefaultBudgetMonth();
 
@@ -3423,6 +3506,2552 @@ async function getReferenceCount(
 
 
 // ======================================================
+// CREDIT CARD MANAGEMENT
+// ======================================================
+
+async function loadCreditCardData(
+    throwOnError = false
+) {
+
+    if (!currentUser) {
+        creditCards = [];
+        creditCardStatements = [];
+        creditCardReconciliations = [];
+        return;
+    }
+
+    try {
+
+        const [
+            cards,
+            statements,
+            reconciliations
+        ] =
+            await Promise.all([
+                fetchCreditCards(
+                    currentUser.id
+                ),
+                fetchCreditCardStatements(
+                    currentUser.id
+                ),
+                fetchCreditCardReconciliations(
+                    currentUser.id
+                )
+            ]);
+
+        creditCards =
+            cards;
+
+        creditCardStatements =
+            statements;
+
+        creditCardReconciliations =
+            reconciliations;
+
+    } catch (error) {
+
+        creditCards = [];
+        creditCardStatements = [];
+        creditCardReconciliations = [];
+
+        if (throwOnError) {
+            throw error;
+        }
+
+        console.warn(
+            "Credit card data unavailable:",
+            error
+        );
+    }
+}
+
+
+function getCreditCardById(
+    cardId
+) {
+
+    return creditCards.find(
+        card =>
+            card.id ===
+            cardId
+    ) || null;
+}
+
+
+function getCreditCardByAccountId(
+    accountId
+) {
+
+    if (!accountId) {
+        return null;
+    }
+
+    return creditCards.find(
+        card =>
+            card.account_id ===
+            accountId
+    ) || null;
+}
+
+
+function getCreditCardAccount(
+    card
+) {
+
+    if (!card) {
+        return null;
+    }
+
+    return accounts.find(
+        account =>
+            account.id ===
+            card.account_id
+    ) || null;
+}
+
+
+function calculateAccountBalanceAsOf(
+    accountId,
+    dateValue
+) {
+
+    const account =
+        accounts.find(
+            item =>
+                item.id ===
+                accountId
+        );
+
+    if (!account) {
+        return 0;
+    }
+
+    let balance =
+        Number(
+            account.opening_balance
+        );
+
+    transactions
+        .filter(
+            transaction =>
+                transaction.account_id ===
+                    accountId
+                &&
+                (
+                    !dateValue ||
+                    transaction.transaction_date <=
+                        dateValue
+                )
+        )
+        .forEach(
+            function (transaction) {
+
+                const amount =
+                    Number(
+                        transaction.amount
+                    );
+
+                balance +=
+                    transaction.type ===
+                        "income"
+                        ? amount
+                        : -amount;
+            }
+        );
+
+    balance +=
+        getTransferAccountDelta(
+            transfers.filter(
+                transfer =>
+                    !dateValue ||
+                    transfer.transfer_date <=
+                        dateValue
+            ),
+            accountId
+        );
+
+    return balance;
+}
+
+
+function getCurrentCreditCardOutstanding(
+    card
+) {
+
+    return getCreditCardOutstanding(
+        calculateAccountBalance(
+            card.account_id
+        )
+    );
+}
+
+
+function getCreditCardOutstandingAsOf(
+    card,
+    dateValue
+) {
+
+    return getCreditCardOutstanding(
+        calculateAccountBalanceAsOf(
+            card.account_id,
+            dateValue
+        )
+    );
+}
+
+
+function formatIsoLocalDate(
+    date
+) {
+
+    const year =
+        date.getFullYear();
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+    return `${year}-${month}-${day}`;
+}
+
+
+function getNextCreditCardStatementDate(
+    card,
+    baseDate = getTodayDate()
+) {
+
+    const statementDay =
+        Number(
+            card?.statement_day
+        );
+
+    if (
+        !Number.isInteger(
+            statementDay
+        )
+        ||
+        statementDay < 1
+        ||
+        statementDay > 31
+    ) {
+        return null;
+    }
+
+    const base =
+        new Date(
+            `${baseDate}T00:00:00`
+        );
+
+    if (
+        Number.isNaN(
+            base.getTime()
+        )
+    ) {
+        return null;
+    }
+
+    const makeCandidate =
+        function (
+            year,
+            monthIndex
+        ) {
+
+            const lastDay =
+                new Date(
+                    year,
+                    monthIndex + 1,
+                    0
+                ).getDate();
+
+            return new Date(
+                year,
+                monthIndex,
+                Math.min(
+                    statementDay,
+                    lastDay
+                )
+            );
+        };
+
+    let candidate =
+        makeCandidate(
+            base.getFullYear(),
+            base.getMonth()
+        );
+
+    if (
+        candidate <
+        base
+    ) {
+
+        candidate =
+            makeCandidate(
+                base.getMonth() ===
+                    11
+                    ? base.getFullYear() + 1
+                    : base.getFullYear(),
+                (
+                    base.getMonth() + 1
+                ) % 12
+            );
+    }
+
+    return formatIsoLocalDate(
+        candidate
+    );
+}
+
+
+function getCreditCardStatementPayments(
+    card,
+    statement
+) {
+
+    if (
+        !card ||
+        !statement
+    ) {
+        return 0;
+    }
+
+    return getStatementPayments(
+        transfers,
+        card.account_id,
+        statement.statement_date,
+        getTodayDate()
+    );
+}
+
+
+function getLastCreditCardPayment(
+    card
+) {
+
+    return transfers
+        .filter(
+            transfer =>
+                !transfer.deleted_at &&
+                transfer.to_account_id ===
+                    card.account_id
+        )
+        .sort(
+            (
+                first,
+                second
+            ) =>
+                second.transfer_date
+                    .localeCompare(
+                        first.transfer_date
+                    )
+                ||
+                String(
+                    second.created_at ||
+                    ""
+                ).localeCompare(
+                    String(
+                        first.created_at ||
+                        ""
+                    )
+                )
+        )[0] || null;
+}
+
+
+function getCreditCardProjection(
+    card
+) {
+
+    const latestStatement =
+        getLatestCreditCardStatement(
+            creditCardStatements,
+            card.id
+        );
+
+    const paymentsSinceStatement =
+        getCreditCardStatementPayments(
+            card,
+            latestStatement
+        );
+
+    return projectCreditCard({
+        currentOutstanding:
+            getCurrentCreditCardOutstanding(
+                card
+            ),
+        latestStatement,
+        paymentsSinceStatement,
+        annualRate:
+            card.purchase_apr,
+        minimumPaymentPercent:
+            card.minimum_payment_percent,
+        minimumPaymentFloor:
+            card.minimum_payment_floor,
+        today:
+            getTodayDate(),
+        nextStatementDate:
+            getNextCreditCardStatementDate(
+                card
+            )
+    });
+}
+
+
+function populateCreditCardFeatureSelects() {
+
+    const cardSelectIds = [
+        "credit-card-statement-card",
+        "credit-card-payment-card",
+        "credit-card-reconcile-card"
+    ];
+
+    cardSelectIds.forEach(
+        function (id) {
+
+            const select =
+                document.getElementById(
+                    id
+                );
+
+            if (!select) {
+                return;
+            }
+
+            const selected =
+                select.value ||
+                selectedCreditCardId ||
+                "";
+
+            select.innerHTML =
+                '<option value="">Select card</option>';
+
+            creditCards
+                .filter(
+                    card =>
+                        card.is_active ||
+                        card.id ===
+                            selected
+                )
+                .forEach(
+                    function (card) {
+
+                        addSelectOption(
+                            select,
+                            card.id,
+                            card.card_name +
+                                (
+                                    card.is_active
+                                        ? ""
+                                        : " (Inactive)"
+                                )
+                        );
+                    }
+                );
+
+            select.value =
+                creditCards.some(
+                    card =>
+                        card.id ===
+                            selected
+                )
+                    ? selected
+                    : "";
+        }
+    );
+
+    const settlementSelect =
+        document.getElementById(
+            "credit-card-settlement-account"
+        );
+
+    if (settlementSelect) {
+
+        const selected =
+            settlementSelect.value;
+
+        settlementSelect.innerHTML =
+            '<option value="">Choose later</option>';
+
+        accounts
+            .filter(
+                account =>
+                    account.is_active &&
+                    account.account_type !==
+                        "credit_card"
+            )
+            .forEach(
+                function (account) {
+
+                    addSelectOption(
+                        settlementSelect,
+                        account.id,
+                        account.name
+                    );
+                }
+            );
+
+        settlementSelect.value =
+            accounts.some(
+                account =>
+                    account.id ===
+                        selected
+            )
+                ? selected
+                : "";
+    }
+
+    updateCreditCardPaymentSourceOptions();
+}
+
+
+function updateCreditCardPaymentSourceOptions() {
+
+    const cardSelect =
+        document.getElementById(
+            "credit-card-payment-card"
+        );
+
+    const sourceSelect =
+        document.getElementById(
+            "credit-card-payment-from"
+        );
+
+    if (
+        !cardSelect ||
+        !sourceSelect
+    ) {
+        return;
+    }
+
+    const card =
+        getCreditCardById(
+            cardSelect.value
+        );
+
+    const selected =
+        sourceSelect.value ||
+        card?.settlement_account_id ||
+        "";
+
+    sourceSelect.innerHTML =
+        '<option value="">Select account</option>';
+
+    accounts
+        .filter(
+            account =>
+                account.is_active &&
+                account.account_type !==
+                    "credit_card" &&
+                account.id !==
+                    card?.account_id
+        )
+        .forEach(
+            function (account) {
+
+                addSelectOption(
+                    sourceSelect,
+                    account.id,
+                    account.name
+                );
+            }
+        );
+
+    sourceSelect.value =
+        accounts.some(
+            account =>
+                account.id ===
+                    selected
+        )
+            ? selected
+            : "";
+}
+
+
+function updateCreditCardPaymentAmount() {
+
+    const card =
+        getCreditCardById(
+            document.getElementById(
+                "credit-card-payment-card"
+            )?.value
+        );
+
+    const mode =
+        document.getElementById(
+            "credit-card-payment-mode"
+        )?.value;
+
+    const amountInput =
+        document.getElementById(
+            "credit-card-payment-amount"
+        );
+
+    if (
+        !card ||
+        !amountInput
+    ) {
+        return;
+    }
+
+    if (
+        mode ===
+        "custom"
+    ) {
+        amountInput.readOnly =
+            false;
+
+        return;
+    }
+
+    const latestStatement =
+        getLatestCreditCardStatement(
+            creditCardStatements,
+            card.id
+        );
+
+    const payments =
+        getCreditCardStatementPayments(
+            card,
+            latestStatement
+        );
+
+    const projection =
+        getCreditCardProjection(
+            card
+        );
+
+    let amount =
+        0;
+
+    if (
+        mode ===
+        "statement"
+    ) {
+
+        amount =
+            getRemainingStatementDue(
+                latestStatement,
+                payments
+            );
+
+    } else if (
+        mode ===
+        "outstanding"
+    ) {
+
+        amount =
+            getCurrentCreditCardOutstanding(
+                card
+            );
+
+    } else if (
+        mode ===
+        "minimum"
+    ) {
+
+        amount =
+            latestStatement
+                ? Number(
+                    latestStatement.minimum_payment
+                )
+                : projection
+                    .estimatedMinimumPayment;
+    }
+
+    amountInput.value =
+        Number(amount)
+            .toFixed(
+                2
+            );
+
+    amountInput.readOnly =
+        true;
+}
+
+
+function renderCreditCardDashboardSummary() {
+
+    if (
+        !dashboardCreditCardSummary ||
+        !dashboardCreditCardTotals ||
+        !dashboardCreditCardList
+    ) {
+        return;
+    }
+
+    const activeCards =
+        creditCards.filter(
+            card =>
+                card.is_active
+        );
+
+    dashboardCreditCardSummary.hidden =
+        activeCards.length ===
+        0;
+
+    if (!activeCards.length) {
+        dashboardCreditCardTotals.innerHTML =
+            "";
+
+        dashboardCreditCardList.innerHTML =
+            "";
+
+        return;
+    }
+
+    const totalOutstanding =
+        activeCards.reduce(
+            (
+                total,
+                card
+            ) =>
+                total +
+                getCurrentCreditCardOutstanding(
+                    card
+                ),
+            0
+        );
+
+    const totalLimit =
+        activeCards.reduce(
+            (
+                total,
+                card
+            ) =>
+                total +
+                Number(
+                    card.credit_limit
+                ),
+            0
+        );
+
+    const totalAvailable =
+        Math.max(
+            0,
+            totalLimit -
+            totalOutstanding
+        );
+
+    const utilisation =
+        totalLimit >
+        0
+            ? (
+                totalOutstanding /
+                totalLimit
+            ) *
+                100
+            : 0;
+
+    dashboardCreditCardTotals.innerHTML =
+        [
+            [
+                "Total Card Debt",
+                formatMoney(
+                    totalOutstanding
+                ),
+                "Across active cards"
+            ],
+            [
+                "Available Credit",
+                formatMoney(
+                    totalAvailable
+                ),
+                `of ${formatMoney(totalLimit)} total limit`
+            ],
+            [
+                "Overall Utilisation",
+                `${utilisation.toFixed(1)}%`,
+                "Outstanding ÷ credit limits"
+            ]
+        ]
+            .map(
+                item =>
+                    `
+                        <article class="credit-card-dashboard-total">
+                            <span>${item[0]}</span>
+                            <strong>${item[1]}</strong>
+                            <p>${item[2]}</p>
+                        </article>
+                    `
+            )
+            .join(
+                ""
+            );
+
+    dashboardCreditCardList.innerHTML =
+        "";
+
+    activeCards
+        .slice()
+        .sort(
+            function (
+                first,
+                second
+            ) {
+
+                const firstDue =
+                    getLatestCreditCardStatement(
+                        creditCardStatements,
+                        first.id
+                    )?.due_date ||
+                    "9999-12-31";
+
+                const secondDue =
+                    getLatestCreditCardStatement(
+                        creditCardStatements,
+                        second.id
+                    )?.due_date ||
+                    "9999-12-31";
+
+                return firstDue
+                    .localeCompare(
+                        secondDue
+                    );
+            }
+        )
+        .slice(
+            0,
+            4
+        )
+        .forEach(
+            function (card) {
+
+                const statement =
+                    getLatestCreditCardStatement(
+                        creditCardStatements,
+                        card.id
+                    );
+
+                const outstanding =
+                    getCurrentCreditCardOutstanding(
+                        card
+                    );
+
+                const row =
+                    document.createElement(
+                        "button"
+                    );
+
+                row.type =
+                    "button";
+
+                row.className =
+                    "credit-card-dashboard-row";
+
+                const copy =
+                    document.createElement(
+                        "div"
+                    );
+
+                const name =
+                    document.createElement(
+                        "strong"
+                    );
+
+                name.textContent =
+                    card.card_name;
+
+                const meta =
+                    document.createElement(
+                        "span"
+                    );
+
+                meta.textContent =
+                    statement?.due_date
+                        ? `Due ${formatDate(statement.due_date)}`
+                        : "No statement saved";
+
+                copy.append(
+                    name,
+                    meta
+                );
+
+                const amount =
+                    document.createElement(
+                        "div"
+                    );
+
+                amount.className =
+                    "amount";
+
+                amount.innerHTML =
+                    `<strong>${formatMoney(outstanding)}</strong><span>outstanding</span>`;
+
+                row.append(
+                    copy,
+                    amount
+                );
+
+                row.addEventListener(
+                    "click",
+                    function () {
+
+                        selectedCreditCardId =
+                            card.id;
+
+                        navigateToPage(
+                            "credit-cards"
+                        );
+
+                        renderCreditCardsPage();
+                    }
+                );
+
+                dashboardCreditCardList
+                    .appendChild(
+                        row
+                    );
+            }
+        );
+}
+
+
+function renderCreditCardSummaryCards() {
+
+    const ids = {
+        outstanding:
+            document.getElementById(
+                "credit-card-total-outstanding"
+            ),
+        limit:
+            document.getElementById(
+                "credit-card-total-limit"
+            ),
+        available:
+            document.getElementById(
+                "credit-card-total-available"
+            ),
+        utilisation:
+            document.getElementById(
+                "credit-card-total-utilisation"
+            )
+    };
+
+    if (
+        !ids.outstanding ||
+        !ids.limit ||
+        !ids.available ||
+        !ids.utilisation
+    ) {
+        return;
+    }
+
+    const activeCards =
+        creditCards.filter(
+            card =>
+                card.is_active
+        );
+
+    const outstanding =
+        activeCards.reduce(
+            (
+                total,
+                card
+            ) =>
+                total +
+                getCurrentCreditCardOutstanding(
+                    card
+                ),
+            0
+        );
+
+    const limit =
+        activeCards.reduce(
+            (
+                total,
+                card
+            ) =>
+                total +
+                Number(
+                    card.credit_limit
+                ),
+            0
+        );
+
+    ids.outstanding.textContent =
+        formatMoney(
+            outstanding
+        );
+
+    ids.limit.textContent =
+        formatMoney(
+            limit
+        );
+
+    ids.available.textContent =
+        formatMoney(
+            Math.max(
+                0,
+                limit -
+                outstanding
+            )
+        );
+
+    ids.utilisation.textContent =
+        limit >
+        0
+            ? `${(
+                outstanding /
+                limit *
+                100
+            ).toFixed(1)}%`
+            : "0%";
+}
+
+
+function renderCreditCardList() {
+
+    if (!creditCardList) {
+        return;
+    }
+
+    creditCardList.innerHTML =
+        "";
+
+    if (!creditCards.length) {
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+        empty.className =
+            "empty-state";
+
+        empty.textContent =
+            "No credit cards yet. Add one below to start tracking card debt.";
+
+        creditCardList.appendChild(
+            empty
+        );
+
+        return;
+    }
+
+    creditCards.forEach(
+        function (card) {
+
+            const outstanding =
+                getCurrentCreditCardOutstanding(
+                    card
+                );
+
+            const available =
+                getAvailableCredit(
+                    card.credit_limit,
+                    outstanding
+                );
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+            button.type =
+                "button";
+
+            button.className =
+                "credit-card-list-item";
+
+            if (
+                card.id ===
+                selectedCreditCardId
+            ) {
+                button.classList.add(
+                    "active"
+                );
+            }
+
+            if (!card.is_active) {
+                button.classList.add(
+                    "inactive"
+                );
+            }
+
+            button.innerHTML =
+                `
+                    <div class="credit-card-list-item-header">
+                        <strong>${escapeOnboardingHtml(card.card_name)}</strong>
+                        <span>${card.last_four ? "•••• " + escapeOnboardingHtml(card.last_four) : ""}</span>
+                    </div>
+                    <div class="credit-card-list-item-footer">
+                        <span>Outstanding</span>
+                        <strong>${formatMoney(outstanding)}</strong>
+                    </div>
+                    <div class="credit-card-list-item-footer">
+                        <span>Available</span>
+                        <strong>${formatMoney(available)}</strong>
+                    </div>
+                `;
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    selectedCreditCardId =
+                        card.id;
+
+                    renderCreditCardsPage();
+                }
+            );
+
+            creditCardList.appendChild(
+                button
+            );
+        }
+    );
+}
+
+
+function renderCreditCardDetail() {
+
+    if (!creditCardDetail) {
+        return;
+    }
+
+    const card =
+        getCreditCardById(
+            selectedCreditCardId
+        );
+
+    if (!card) {
+
+        creditCardDetail.innerHTML =
+            `
+                <div class="credit-card-empty-detail">
+                    <strong>Select a credit card</strong>
+                    <p>Card details, statements, projections and payment tools will appear here.</p>
+                </div>
+            `;
+
+        return;
+    }
+
+    const outstanding =
+        getCurrentCreditCardOutstanding(
+            card
+        );
+
+    const available =
+        getAvailableCredit(
+            card.credit_limit,
+            outstanding
+        );
+
+    const utilisation =
+        getCreditUtilisation(
+            card.credit_limit,
+            outstanding
+        );
+
+    const statement =
+        getLatestCreditCardStatement(
+            creditCardStatements,
+            card.id
+        );
+
+    const statementPayments =
+        getCreditCardStatementPayments(
+            card,
+            statement
+        );
+
+    const remainingStatement =
+        getRemainingStatementDue(
+            statement,
+            statementPayments
+        );
+
+    const projection =
+        getCreditCardProjection(
+            card
+        );
+
+    const lastPayment =
+        getLastCreditCardPayment(
+            card
+        );
+
+    const reconciliation =
+        getLatestCreditCardReconciliation(
+            creditCardReconciliations,
+            card.id
+        );
+
+    const reconciliationOutstanding =
+        reconciliation
+            ? getCreditCardOutstandingAsOf(
+                card,
+                reconciliation.as_of_date
+            )
+            : null;
+
+    const reconciliationDifference =
+        reconciliation
+            ? Number(
+                reconciliation.bank_outstanding
+            ) -
+                reconciliationOutstanding
+            : null;
+
+    const statementStatus =
+        statement
+            ? remainingStatement <=
+                0.009
+                ? "paid"
+                : (
+                    statement.due_date <
+                    getTodayDate()
+                        ? "due"
+                        : "open"
+                )
+            : "";
+
+    const progress =
+        statement &&
+        Number(
+            statement.amount_due ??
+            statement.statement_balance
+        ) >
+        0
+            ? Math.min(
+                100,
+                (
+                    statementPayments /
+                    Number(
+                        statement.amount_due ??
+                        statement.statement_balance
+                    )
+                ) *
+                    100
+            )
+            : 0;
+
+    creditCardDetail.innerHTML =
+        `
+            <div class="credit-card-detail-hero">
+                <div class="credit-card-detail-heading">
+                    <div>
+                        <strong>${escapeOnboardingHtml(card.card_name)}</strong>
+                        <small>${[
+                            card.issuer,
+                            card.last_four ? "•••• " + card.last_four : ""
+                        ].filter(Boolean).map(escapeOnboardingHtml).join(" • ")}</small>
+                    </div>
+                    <span>${card.is_active ? "Active" : "Inactive"}</span>
+                </div>
+
+                <div class="credit-card-detail-outstanding">
+                    <span>Current Outstanding</span>
+                    <strong>${formatMoney(outstanding)}</strong>
+                </div>
+
+                <div class="credit-card-limit-progress">
+                    <span style="width: ${Math.min(100, utilisation).toFixed(2)}%"></span>
+                </div>
+
+                <div class="credit-card-hero-meta">
+                    <span>Available ${formatMoney(available)}</span>
+                    <span>${utilisation.toFixed(1)}% of ${formatMoney(card.credit_limit)}</span>
+                </div>
+            </div>
+
+            <div class="credit-card-detail-sections">
+
+                <section class="credit-card-detail-section">
+                    <h3>Statement</h3>
+                    <div class="credit-card-detail-row">
+                        <span>Statement Balance</span>
+                        <strong>${statement ? formatMoney(statement.statement_balance) : "Not recorded"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Statement Date</span>
+                        <strong>${statement ? formatDate(statement.statement_date) : "—"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Payment Due Date</span>
+                        <strong>${statement ? formatDate(statement.due_date) : "—"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Minimum Payment</span>
+                        <strong>${statement ? formatMoney(statement.minimum_payment) : "—"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Remaining Statement Due</span>
+                        <strong>${statement ? formatMoney(remainingStatement) : "—"}</strong>
+                    </div>
+                    ${statement ? `
+                        <div class="credit-card-payment-progress">
+                            <span style="width: ${progress.toFixed(2)}%"></span>
+                        </div>
+                        <div class="credit-card-payment-progress-copy">
+                            <span>${formatMoney(statementPayments)} paid since statement</span>
+                            <span class="credit-card-status-badge ${statementStatus}">
+                                ${statementStatus === "paid" ? "Paid" : statementStatus === "due" ? "Overdue" : "Open"}
+                            </span>
+                        </div>
+                    ` : ""}
+                </section>
+
+                <section class="credit-card-detail-section">
+                    <h3>Kira Projection</h3>
+                    <div class="credit-card-detail-row">
+                        <span>Purchase APR</span>
+                        <strong>${Number(card.purchase_apr).toFixed(2)}% p.a.</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Estimated Finance Charge</span>
+                        <strong>${formatMoney(projection.estimatedFinanceCharge)}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Projected Next Statement</span>
+                        <strong>${formatMoney(projection.projectedStatementBalance)}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Estimated Next Minimum</span>
+                        <strong>${formatMoney(projection.estimatedMinimumPayment)}</strong>
+                    </div>
+                    <div class="credit-card-estimate-notice">
+                        Estimates use your configured card rules and a simplified daily-balance assumption. Your bank statement remains the source of truth.
+                    </div>
+                </section>
+
+                <section class="credit-card-detail-section">
+                    <h3>Payment</h3>
+                    <div class="credit-card-detail-row">
+                        <span>Last Payment</span>
+                        <strong>${lastPayment ? formatMoney(lastPayment.amount) : "—"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Last Payment Date</span>
+                        <strong>${lastPayment ? formatDate(lastPayment.transfer_date) : "—"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Default Payment Account</span>
+                        <strong>${getAccountName(card.settlement_account_id) || "Not set"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Interest-Free Period</span>
+                        <strong>${Number(card.interest_free_days)} days</strong>
+                    </div>
+                </section>
+
+                <section class="credit-card-detail-section">
+                    <h3>Reconciliation</h3>
+                    <div class="credit-card-detail-row">
+                        <span>Latest Bank Outstanding</span>
+                        <strong>${reconciliation ? formatMoney(reconciliation.bank_outstanding) : "Not checked"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Kira on Same Date</span>
+                        <strong>${reconciliation ? formatMoney(reconciliationOutstanding) : "—"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Difference</span>
+                        <strong>${reconciliation ? formatMoney(reconciliationDifference) : "—"}</strong>
+                    </div>
+                    ${reconciliation ? `
+                        <div class="credit-card-reconcile-notice ${Math.abs(reconciliationDifference) >= 0.01 ? "warning" : ""}">
+                            Checked ${formatDate(reconciliation.as_of_date)}. A difference means Kira and the bank do not currently agree; review missing purchases, fees, refunds or payments before adjusting anything.
+                        </div>
+                    ` : `
+                        <div class="credit-card-reconcile-notice">
+                            Save the outstanding shown by your banking app to compare it with Kira.
+                        </div>
+                    `}
+                </section>
+
+            </div>
+
+            <div class="credit-card-detail-actions">
+                <button type="button" class="secondary-button" data-credit-card-action="transaction">
+                    Add Card Transaction
+                </button>
+                <button type="button" class="secondary-button" data-credit-card-action="statement">
+                    Add Statement
+                </button>
+                <button type="button" class="primary-button" data-credit-card-action="payment">
+                    Pay Card
+                </button>
+                <button type="button" class="secondary-button" data-credit-card-action="reconcile">
+                    Reconcile
+                </button>
+                <button type="button" class="secondary-button" data-credit-card-action="edit">
+                    Edit Card
+                </button>
+                <button type="button" class="secondary-button" data-credit-card-action="toggle">
+                    ${card.is_active ? "Deactivate" : "Reactivate"}
+                </button>
+            </div>
+        `;
+
+    creditCardDetail
+        .querySelectorAll(
+            "[data-credit-card-action]"
+        )
+        .forEach(
+            function (button) {
+
+                button.addEventListener(
+                    "click",
+                    async function () {
+
+                        const action =
+                            button.dataset
+                                .creditCardAction;
+
+                        if (
+                            action ===
+                            "transaction"
+                        ) {
+
+                            resetTransactionForm(
+                                true
+                            );
+
+                            transactionTypeSelect.value =
+                                "expense";
+
+                            refreshTransactionDropdowns({
+                                account_id:
+                                    card.account_id,
+                                payment_method_id:
+                                    card.payment_method_id
+                            });
+
+                            navigateToPage(
+                                "transactions",
+                                {
+                                    scrollToTop:
+                                        false
+                                }
+                            );
+
+                            requestAnimationFrame(
+                                () =>
+                                    transactionForm
+                                        .scrollIntoView({
+                                            behavior:
+                                                "smooth",
+                                            block:
+                                                "start"
+                                        })
+                            );
+
+                            return;
+                        }
+
+                        if (
+                            action ===
+                            "statement"
+                        ) {
+
+                            const select =
+                                document.getElementById(
+                                    "credit-card-statement-card"
+                                );
+
+                            if (select) {
+                                select.value =
+                                    card.id;
+                            }
+
+                            creditCardStatementForm
+                                ?.scrollIntoView({
+                                    behavior:
+                                        "smooth",
+                                    block:
+                                        "start"
+                                });
+
+                            return;
+                        }
+
+                        if (
+                            action ===
+                            "payment"
+                        ) {
+
+                            const select =
+                                document.getElementById(
+                                    "credit-card-payment-card"
+                                );
+
+                            if (select) {
+                                select.value =
+                                    card.id;
+                            }
+
+                            updateCreditCardPaymentSourceOptions();
+                            updateCreditCardPaymentAmount();
+
+                            creditCardPaymentForm
+                                ?.scrollIntoView({
+                                    behavior:
+                                        "smooth",
+                                    block:
+                                        "start"
+                                });
+
+                            return;
+                        }
+
+                        if (
+                            action ===
+                            "reconcile"
+                        ) {
+
+                            const select =
+                                document.getElementById(
+                                    "credit-card-reconcile-card"
+                                );
+
+                            if (select) {
+                                select.value =
+                                    card.id;
+                            }
+
+                            const bankOutstanding =
+                                document.getElementById(
+                                    "credit-card-bank-outstanding"
+                                );
+
+                            if (
+                                bankOutstanding
+                            ) {
+
+                                bankOutstanding.value =
+                                    outstanding.toFixed(
+                                        2
+                                    );
+                            }
+
+                            creditCardReconcileForm
+                                ?.scrollIntoView({
+                                    behavior:
+                                        "smooth",
+                                    block:
+                                        "start"
+                                });
+
+                            return;
+                        }
+
+                        if (
+                            action ===
+                            "edit"
+                        ) {
+
+                            editCreditCard(
+                                card.id
+                            );
+
+                            return;
+                        }
+
+                        if (
+                            action ===
+                            "toggle"
+                        ) {
+
+                            button.disabled =
+                                true;
+
+                            try {
+
+                                await setCreditCardActive(
+                                    card,
+                                    !card.is_active
+                                );
+
+                                await refreshCreditCardFeature();
+
+                            } catch (
+                                error
+                            ) {
+
+                                alert(
+                                    error.message
+                                );
+                            }
+                        }
+                    }
+                );
+            }
+        );
+}
+
+
+function renderCreditCardsPage() {
+
+    renderCreditCardSummaryCards();
+    renderCreditCardList();
+    populateCreditCardFeatureSelects();
+    renderCreditCardDetail();
+    updateCreditCardPaymentAmount();
+}
+
+
+async function refreshCreditCardFeature() {
+
+    await loadAccounts(
+        true
+    );
+
+    await loadPaymentMethods(
+        true
+    );
+
+    await loadCreditCardData(
+        true
+    );
+
+    renderCreditCardsPage();
+    renderCreditCardDashboardSummary();
+    refreshTransactionDropdowns();
+    refreshRecurringFormOptions();
+    updateDashboard();
+}
+
+
+function resetCreditCardForm() {
+
+    editingCreditCardId =
+        null;
+
+    creditCardForm
+        ?.reset();
+
+    if (
+        creditCardFormTitle
+    ) {
+
+        creditCardFormTitle.textContent =
+            "Add Credit Card";
+    }
+
+    if (
+        creditCardOpeningOutstandingField
+    ) {
+
+        creditCardOpeningOutstandingField
+            .classList
+            .remove(
+                "hidden-button"
+            );
+    }
+
+    const openingInput =
+        document.getElementById(
+            "credit-card-opening-outstanding"
+        );
+
+    if (openingInput) {
+        openingInput.required =
+            true;
+        openingInput.value =
+            "0";
+    }
+
+    const defaults = {
+        "credit-card-cash-apr":
+            "18",
+        "credit-card-min-payment-percent":
+            "5",
+        "credit-card-min-payment-floor":
+            "50",
+        "credit-card-late-fee-percent":
+            "1",
+        "credit-card-late-fee-min":
+            "10",
+        "credit-card-late-fee-max":
+            "100",
+        "credit-card-interest-free-days":
+            "20"
+    };
+
+    Object.entries(
+        defaults
+    ).forEach(
+        function (
+            [
+                id,
+                value
+            ]
+        ) {
+
+            const input =
+                document.getElementById(
+                    id
+                );
+
+            if (input) {
+                input.value =
+                    value;
+            }
+        }
+    );
+
+    cancelCreditCardEditButton
+        ?.classList
+        .add(
+            "hidden-button"
+        );
+
+    if (creditCardMessage) {
+        creditCardMessage.textContent =
+            "";
+    }
+
+    populateCreditCardFeatureSelects();
+}
+
+
+function editCreditCard(
+    cardId
+) {
+
+    const card =
+        getCreditCardById(
+            cardId
+        );
+
+    if (
+        !card ||
+        !creditCardForm
+    ) {
+        return;
+    }
+
+    editingCreditCardId =
+        card.id;
+
+    selectedCreditCardId =
+        card.id;
+
+    const values = {
+        "credit-card-name":
+            card.card_name,
+        "credit-card-issuer":
+            card.issuer || "",
+        "credit-card-last-four":
+            card.last_four || "",
+        "credit-card-limit":
+            card.credit_limit,
+        "credit-card-purchase-apr":
+            card.purchase_apr,
+        "credit-card-cash-apr":
+            card.cash_advance_apr,
+        "credit-card-min-payment-percent":
+            card.minimum_payment_percent,
+        "credit-card-min-payment-floor":
+            card.minimum_payment_floor,
+        "credit-card-late-fee-percent":
+            card.late_fee_percent,
+        "credit-card-late-fee-min":
+            card.late_fee_min,
+        "credit-card-late-fee-max":
+            card.late_fee_max,
+        "credit-card-interest-free-days":
+            card.interest_free_days,
+        "credit-card-statement-day":
+            card.statement_day || ""
+    };
+
+    Object.entries(
+        values
+    ).forEach(
+        function (
+            [
+                id,
+                value
+            ]
+        ) {
+
+            const input =
+                document.getElementById(
+                    id
+                );
+
+            if (input) {
+                input.value =
+                    value;
+            }
+        }
+    );
+
+    const settlement =
+        document.getElementById(
+            "credit-card-settlement-account"
+        );
+
+    if (settlement) {
+        settlement.value =
+            card.settlement_account_id ||
+            "";
+    }
+
+    const openingInput =
+        document.getElementById(
+            "credit-card-opening-outstanding"
+        );
+
+    if (openingInput) {
+        openingInput.required =
+            false;
+    }
+
+    creditCardOpeningOutstandingField
+        ?.classList
+        .add(
+            "hidden-button"
+        );
+
+    if (creditCardFormTitle) {
+        creditCardFormTitle.textContent =
+            "Edit Credit Card";
+    }
+
+    cancelCreditCardEditButton
+        ?.classList
+        .remove(
+            "hidden-button"
+        );
+
+    creditCardForm
+        .scrollIntoView({
+            behavior:
+                "smooth",
+            block:
+                "start"
+        });
+}
+
+
+function getCreditCardFormValues() {
+
+    const value =
+        id =>
+            document.getElementById(
+                id
+            )?.value
+            ?.trim?.()
+            ??
+            document.getElementById(
+                id
+            )?.value
+            ??
+            "";
+
+    return {
+        cardName:
+            value(
+                "credit-card-name"
+            ),
+        issuer:
+            value(
+                "credit-card-issuer"
+            ),
+        lastFour:
+            value(
+                "credit-card-last-four"
+            ),
+        creditLimit:
+            value(
+                "credit-card-limit"
+            ),
+        currentOutstanding:
+            value(
+                "credit-card-opening-outstanding"
+            ),
+        settlementAccountId:
+            value(
+                "credit-card-settlement-account"
+            ),
+        purchaseApr:
+            value(
+                "credit-card-purchase-apr"
+            ),
+        cashAdvanceApr:
+            value(
+                "credit-card-cash-apr"
+            ),
+        minimumPaymentPercent:
+            value(
+                "credit-card-min-payment-percent"
+            ),
+        minimumPaymentFloor:
+            value(
+                "credit-card-min-payment-floor"
+            ),
+        lateFeePercent:
+            value(
+                "credit-card-late-fee-percent"
+            ),
+        lateFeeMin:
+            value(
+                "credit-card-late-fee-min"
+            ),
+        lateFeeMax:
+            value(
+                "credit-card-late-fee-max"
+            ),
+        interestFreeDays:
+            value(
+                "credit-card-interest-free-days"
+            ),
+        statementDay:
+            value(
+                "credit-card-statement-day"
+            )
+    };
+}
+
+
+function validateCreditCardValues(
+    values
+) {
+
+    if (!values.cardName) {
+        return "Enter a card name.";
+    }
+
+    if (
+        values.lastFour &&
+        !/^[0-9]{4}$/.test(
+            values.lastFour
+        )
+    ) {
+        return "Last 4 digits must contain exactly four numbers.";
+    }
+
+    const numericFields = [
+        [
+            values.creditLimit,
+            "Enter a valid credit limit."
+        ],
+        [
+            values.purchaseApr,
+            "Enter the purchase APR from your card terms."
+        ],
+        [
+            values.cashAdvanceApr,
+            "Enter a valid cash advance APR."
+        ],
+        [
+            values.minimumPaymentPercent,
+            "Enter a valid minimum payment percentage."
+        ],
+        [
+            values.minimumPaymentFloor,
+            "Enter a valid minimum payment floor."
+        ],
+        [
+            values.lateFeePercent,
+            "Enter a valid late fee percentage."
+        ],
+        [
+            values.lateFeeMin,
+            "Enter a valid late fee minimum."
+        ],
+        [
+            values.lateFeeMax,
+            "Enter a valid late fee maximum."
+        ],
+        [
+            values.interestFreeDays,
+            "Enter valid interest-free days."
+        ]
+    ];
+
+    for (
+        const [
+            field,
+            message
+        ] of numericFields
+    ) {
+
+        if (
+            field ===
+            ""
+            ||
+            !Number.isFinite(
+                Number(
+                    field
+                )
+            )
+            ||
+            Number(
+                field
+            ) <
+            0
+        ) {
+            return message;
+        }
+    }
+
+    if (
+        editingCreditCardId ===
+        null
+        &&
+        (
+            values.currentOutstanding ===
+                ""
+            ||
+            !Number.isFinite(
+                Number(
+                    values.currentOutstanding
+                )
+            )
+            ||
+            Number(
+                values.currentOutstanding
+            ) <
+            0
+        )
+    ) {
+        return "Enter the current outstanding shown by your bank.";
+    }
+
+    if (
+        Number(
+            values.lateFeeMax
+        ) <
+        Number(
+            values.lateFeeMin
+        )
+    ) {
+        return "Late fee maximum cannot be below the late fee minimum.";
+    }
+
+    if (
+        values.statementDay &&
+        (
+            !Number.isInteger(
+                Number(
+                    values.statementDay
+                )
+            )
+            ||
+            Number(
+                values.statementDay
+            ) <
+            1
+            ||
+            Number(
+                values.statementDay
+            ) >
+            31
+        )
+    ) {
+        return "Statement day must be between 1 and 31.";
+    }
+
+    return "";
+}
+
+
+async function recordCreditCardPayment() {
+
+    const card =
+        getCreditCardById(
+            document.getElementById(
+                "credit-card-payment-card"
+            )?.value
+        );
+
+    const fromAccountId =
+        document.getElementById(
+            "credit-card-payment-from"
+        )?.value;
+
+    const amount =
+        Number(
+            document.getElementById(
+                "credit-card-payment-amount"
+            )?.value
+        );
+
+    const paymentDate =
+        document.getElementById(
+            "credit-card-payment-date"
+        )?.value;
+
+    if (
+        !card ||
+        !fromAccountId ||
+        !Number.isFinite(
+            amount
+        )
+        ||
+        amount <=
+        0
+        ||
+        !paymentDate
+    ) {
+        throw new Error(
+            "Choose the card, payment account, amount and payment date."
+        );
+    }
+
+    await saveAccountTransfer({
+        userId:
+            currentUser.id,
+        fromAccountId,
+        toAccountId:
+            card.account_id,
+        amount,
+        transferDate:
+            paymentDate,
+        description:
+            `Credit card payment — ${card.card_name}`,
+        notes:
+            "Recorded from Credit Card Management."
+    });
+
+    selectedCreditCardId =
+        card.id;
+
+    await loadTransfers(
+        true
+    );
+
+    renderCreditCardsPage();
+    renderCreditCardDashboardSummary();
+}
+
+
+function syncPaymentMethodForSelectedCreditCard(
+    accountSelect =
+        transactionAccountSelect,
+    paymentMethodSelect =
+        transactionPaymentMethodSelect
+) {
+
+    if (
+        !accountSelect ||
+        !paymentMethodSelect
+    ) {
+        return;
+    }
+
+    const card =
+        getCreditCardByAccountId(
+            accountSelect.value
+        );
+
+    if (
+        card &&
+        transactionTypeSelect?.value !==
+            "transfer"
+    ) {
+
+        paymentMethodSelect.value =
+            card.payment_method_id;
+
+        paymentMethodSelect.disabled =
+            true;
+
+    } else {
+
+        paymentMethodSelect.disabled =
+            false;
+    }
+}
+
+
+function syncRecurringPaymentMethodForSelectedCreditCard() {
+
+    if (
+        !recurringAccountSelect ||
+        !recurringPaymentMethodSelect
+    ) {
+        return;
+    }
+
+    const card =
+        getCreditCardByAccountId(
+            recurringAccountSelect.value
+        );
+
+    if (card) {
+
+        recurringPaymentMethodSelect.value =
+            card.payment_method_id;
+
+        recurringPaymentMethodSelect.disabled =
+            true;
+
+    } else {
+
+        recurringPaymentMethodSelect.disabled =
+            false;
+    }
+}
+
+
+creditCardForm
+    ?.addEventListener(
+        "submit",
+        async function (
+            event
+        ) {
+
+            event.preventDefault();
+
+            const values =
+                getCreditCardFormValues();
+
+            const validation =
+                validateCreditCardValues(
+                    values
+                );
+
+            if (validation) {
+
+                creditCardMessage.textContent =
+                    validation;
+
+                return;
+            }
+
+            creditCardMessage.textContent =
+                "Saving credit card...";
+
+            try {
+
+                if (
+                    editingCreditCardId ===
+                    null
+                ) {
+
+                    const created =
+                        await createCreditCardProfile({
+                            userId:
+                                currentUser.id,
+                            ...values
+                        });
+
+                    selectedCreditCardId =
+                        created.id;
+
+                } else {
+
+                    const card =
+                        getCreditCardById(
+                            editingCreditCardId
+                        );
+
+                    await updateCreditCardProfile(
+                        card,
+                        values
+                    );
+
+                    selectedCreditCardId =
+                        card.id;
+                }
+
+                resetCreditCardForm();
+
+                await refreshCreditCardFeature();
+
+                creditCardMessage.textContent =
+                    "Credit card saved.";
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    "Save credit card error:",
+                    error
+                );
+
+                creditCardMessage.textContent =
+                    error.message ||
+                    "Unable to save the credit card.";
+            }
+        }
+    );
+
+
+cancelCreditCardEditButton
+    ?.addEventListener(
+        "click",
+        resetCreditCardForm
+    );
+
+
+creditCardStatementForm
+    ?.addEventListener(
+        "submit",
+        async function (
+            event
+        ) {
+
+            event.preventDefault();
+
+            creditCardStatementMessage.textContent =
+                "Saving statement...";
+
+            try {
+
+                const creditCardId =
+                    document.getElementById(
+                        "credit-card-statement-card"
+                    ).value;
+
+                await saveCreditCardStatement({
+                    userId:
+                        currentUser.id,
+                    creditCardId,
+                    statementDate:
+                        document.getElementById(
+                            "credit-card-statement-date"
+                        ).value,
+                    dueDate:
+                        document.getElementById(
+                            "credit-card-due-date"
+                        ).value,
+                    statementBalance:
+                        document.getElementById(
+                            "credit-card-statement-balance"
+                        ).value,
+                    amountDue:
+                        document.getElementById(
+                            "credit-card-amount-due"
+                        ).value,
+                    minimumPayment:
+                        document.getElementById(
+                            "credit-card-minimum-payment"
+                        ).value,
+                    financeCharge:
+                        document.getElementById(
+                            "credit-card-finance-charge"
+                        ).value,
+                    instalmentDue:
+                        document.getElementById(
+                            "credit-card-instalment-due"
+                        ).value,
+                    pastDueAmount:
+                        document.getElementById(
+                            "credit-card-past-due"
+                        ).value,
+                    overLimitAmount:
+                        document.getElementById(
+                            "credit-card-over-limit"
+                        ).value,
+                    notes:
+                        document.getElementById(
+                            "credit-card-statement-notes"
+                        ).value
+                });
+
+                selectedCreditCardId =
+                    creditCardId;
+
+                await loadCreditCardData(
+                    true
+                );
+
+                renderCreditCardsPage();
+                renderCreditCardDashboardSummary();
+
+                creditCardStatementMessage.textContent =
+                    "Statement saved.";
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    "Save card statement error:",
+                    error
+                );
+
+                creditCardStatementMessage.textContent =
+                    error.message ||
+                    "Unable to save the statement.";
+            }
+        }
+    );
+
+
+creditCardPaymentForm
+    ?.addEventListener(
+        "submit",
+        async function (
+            event
+        ) {
+
+            event.preventDefault();
+
+            creditCardPaymentMessage.textContent =
+                "Recording payment...";
+
+            try {
+
+                await recordCreditCardPayment();
+
+                creditCardPaymentMessage.textContent =
+                    "Payment recorded as an account transfer.";
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    "Record card payment error:",
+                    error
+                );
+
+                creditCardPaymentMessage.textContent =
+                    error.message ||
+                    "Unable to record the card payment.";
+            }
+        }
+    );
+
+
+creditCardReconcileForm
+    ?.addEventListener(
+        "submit",
+        async function (
+            event
+        ) {
+
+            event.preventDefault();
+
+            creditCardReconcileMessage.textContent =
+                "Saving reconciliation...";
+
+            try {
+
+                const creditCardId =
+                    document.getElementById(
+                        "credit-card-reconcile-card"
+                    ).value;
+
+                await saveCreditCardReconciliation({
+                    userId:
+                        currentUser.id,
+                    creditCardId,
+                    asOfDate:
+                        document.getElementById(
+                            "credit-card-reconcile-date"
+                        ).value,
+                    bankOutstanding:
+                        document.getElementById(
+                            "credit-card-bank-outstanding"
+                        ).value,
+                    notes:
+                        document.getElementById(
+                            "credit-card-reconcile-notes"
+                        ).value
+                });
+
+                selectedCreditCardId =
+                    creditCardId;
+
+                await loadCreditCardData(
+                    true
+                );
+
+                renderCreditCardsPage();
+
+                creditCardReconcileMessage.textContent =
+                    "Reconciliation saved.";
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    "Save card reconciliation error:",
+                    error
+                );
+
+                creditCardReconcileMessage.textContent =
+                    error.message ||
+                    "Unable to save the reconciliation.";
+            }
+        }
+    );
+
+
+document
+    .getElementById(
+        "credit-card-payment-card"
+    )
+    ?.addEventListener(
+        "change",
+        function () {
+
+            updateCreditCardPaymentSourceOptions();
+            updateCreditCardPaymentAmount();
+        }
+    );
+
+
+document
+    .getElementById(
+        "credit-card-payment-mode"
+    )
+    ?.addEventListener(
+        "change",
+        updateCreditCardPaymentAmount
+    );
+
+
+dashboardCreditCardViewAll
+    ?.addEventListener(
+        "click",
+        function () {
+
+            navigateToPage(
+                "credit-cards"
+            );
+        }
+    );
+
+
+const cardDateDefaults = [
+    "credit-card-payment-date",
+    "credit-card-reconcile-date"
+];
+
+cardDateDefaults.forEach(
+    function (id) {
+
+        const input =
+            document.getElementById(
+                id
+            );
+
+        if (
+            input &&
+            !input.value
+        ) {
+
+            input.value =
+                getTodayDate();
+        }
+    }
+);
+
+
+// ======================================================
 // ACCOUNTS
 // ======================================================
 
@@ -3479,7 +6108,14 @@ function renderAccounts() {
 
     renderSetupChecklist();
 
-    if (!accounts.length) {
+    const managedAccounts =
+        accounts.filter(
+            account =>
+                account.account_type !==
+                    "credit_card"
+        );
+
+    if (!managedAccounts.length) {
 
         renderEmptyState(
             accountList,
@@ -3507,7 +6143,7 @@ function renderAccounts() {
         return;
     }
 
-    accounts.forEach(
+    managedAccounts.forEach(
         function (account) {
 
             const card =
@@ -3580,12 +6216,22 @@ function renderAccounts() {
             balance.className =
                 "management-value";
 
-            balance.textContent =
-                formatMoney(
-                    calculateAccountBalance(
-                        account.id
-                    )
+            const accountBalance =
+                calculateAccountBalance(
+                    account.id
                 );
+
+            balance.textContent =
+                account.account_type ===
+                    "credit_card"
+                    ? `${formatMoney(
+                        getCreditCardOutstanding(
+                            accountBalance
+                        )
+                    )} outstanding`
+                    : formatMoney(
+                        accountBalance
+                    );
 
             const buttons =
                 createManagementButtons(
@@ -6384,6 +9030,9 @@ async function loadTransactions(throwOnError = false) {
 
     renderAccounts();
 
+    renderCreditCardsPage();
+    renderCreditCardDashboardSummary();
+
     renderSpendingDashboard();
 
     renderDashboardRecentTransactions();
@@ -6478,6 +9127,8 @@ async function loadTransfers(
         if (render) {
             renderAccounts();
             renderTransactions();
+            renderCreditCardsPage();
+            renderCreditCardDashboardSummary();
         }
 
     } catch (error) {
@@ -6610,6 +9261,13 @@ function updateTransactionMode() {
                 : "";
     }
 
+    if (isTransfer) {
+        transactionPaymentMethodSelect.disabled =
+            true;
+    } else {
+        syncPaymentMethodForSelectedCreditCard();
+    }
+
     if (transferFromAccountSelect) {
         transferFromAccountSelect.required =
             isTransfer;
@@ -6727,6 +9385,8 @@ function refreshTransactionDropdowns(
         transactionPaymentMethodSelect,
         transaction?.payment_method_id || ""
     );
+
+    syncPaymentMethodForSelectedCreditCard();
 
     populateCategorySelect(
         transaction?.category_id || ""
@@ -8044,6 +10704,8 @@ function refreshRecurringFormOptions(
         recurringPaymentMethodSelect,
         selectedPaymentMethod
     );
+
+    syncRecurringPaymentMethodForSelectedCreditCard();
 
 
     recurringCategorySelect.innerHTML =
@@ -10508,6 +13170,16 @@ if (recurringReminderEnabled) {
 }
 
 
+if (recurringAccountSelect) {
+
+    recurringAccountSelect
+        .addEventListener(
+            "change",
+            syncRecurringPaymentMethodForSelectedCreditCard
+        );
+}
+
+
 if (recurringTypeSelect) {
 
     recurringTypeSelect
@@ -11224,6 +13896,16 @@ document.addEventListener(
 // ======================================================
 // TRANSACTION DROPDOWN EVENTS
 // ======================================================
+
+transactionAccountSelect
+    ?.addEventListener(
+        "change",
+        function () {
+
+            syncPaymentMethodForSelectedCreditCard();
+        }
+    );
+
 
 transactionTypeSelect.addEventListener(
     "change",
@@ -18265,6 +20947,8 @@ async function deleteTransaction(id) {
     updateDashboard();
     renderTransactions();
     renderAccounts();
+    renderCreditCardsPage();
+    renderCreditCardDashboardSummary();
     renderSpendingDashboard();
     renderDashboardRecentTransactions();
     loadDashboardBudgetSummary();
@@ -18578,28 +21262,18 @@ function updateDashboard() {
     );
 
 
-    const totalOpeningBalance =
+    const totalBalance =
         accounts.reduce(
-            function (
+            (
                 total,
                 account
-            ) {
-
-                return (
-                    total +
-                    Number(
-                        account.opening_balance
-                    )
-                );
-            },
+            ) =>
+                total +
+                calculateAccountBalance(
+                    account.id
+                ),
             0
         );
-
-
-    const totalBalance =
-        totalOpeningBalance +
-        totalIncome -
-        totalExpenses;
 
 
     incomeElement.textContent =
@@ -18618,6 +21292,8 @@ function updateDashboard() {
         );
 
     renderSetupChecklist();
+
+    renderCreditCardDashboardSummary();
 }
 
 
@@ -24460,6 +27136,7 @@ function formatAccountType(type) {
         cash: "Cash",
         e_wallet: "E-Wallet",
         savings: "Savings",
+        credit_card: "Credit Card",
         other: "Other"
     };
 
@@ -24625,6 +27302,7 @@ const pageTitles = {
     reports: "Reports",
     insights: "Smart Insights",
     accounts: "Accounts",
+    "credit-cards": "Credit Cards",
     manage: "Manage",
     settings: "Settings",
     more: "More"
@@ -24750,6 +27428,7 @@ function navigateToPage(
                 && [
                     "more",
                     "accounts",
+                    "credit-cards",
                     "manage",
                     "recurring",
                     "goals",
