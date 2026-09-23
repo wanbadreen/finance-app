@@ -4162,8 +4162,13 @@ function updateCreditCardPaymentAmount() {
 
         amount =
             latestStatement
-                ? Number(
-                    latestStatement.minimum_payment
+                ? Math.max(
+                    0,
+                    Number(
+                        latestStatement.minimum_payment
+                    )
+                    -
+                    payments
                 )
                 : projection
                     .estimatedMinimumPayment;
@@ -4661,6 +4666,29 @@ function renderCreditCardDetail() {
             card.id
         );
 
+    const statementHistory =
+        creditCardStatements
+            .filter(
+                item =>
+                    item.credit_card_id ===
+                        card.id
+            )
+            .slice()
+            .sort(
+                (
+                    first,
+                    second
+                ) =>
+                    second.statement_date
+                        .localeCompare(
+                            first.statement_date
+                        )
+            )
+            .slice(
+                0,
+                6
+            );
+
     const statementPayments =
         getCreditCardStatementPayments(
             card,
@@ -4784,6 +4812,10 @@ function renderCreditCardDetail() {
                         <strong>${statement ? formatDate(statement.due_date) : "—"}</strong>
                     </div>
                     <div class="credit-card-detail-row">
+                        <span>Amount Due</span>
+                        <strong>${statement ? formatMoney(statement.amount_due ?? statement.statement_balance) : "—"}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
                         <span>Minimum Payment</span>
                         <strong>${statement ? formatMoney(statement.minimum_payment) : "—"}</strong>
                     </div>
@@ -4821,6 +4853,14 @@ function renderCreditCardDetail() {
                     <div class="credit-card-detail-row">
                         <span>Estimated Next Minimum</span>
                         <strong>${formatMoney(projection.estimatedMinimumPayment)}</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Cash Advance APR</span>
+                        <strong>${Number(card.cash_advance_apr).toFixed(2)}% p.a.</strong>
+                    </div>
+                    <div class="credit-card-detail-row">
+                        <span>Late Fee Rule</span>
+                        <strong>${Number(card.late_fee_percent).toFixed(2)}% • ${formatMoney(card.late_fee_min)}–${formatMoney(card.late_fee_max)}</strong>
                     </div>
                     <div class="credit-card-estimate-notice">
                         Estimates use your configured card rules and a simplified daily-balance assumption. Your bank statement remains the source of truth.
@@ -4870,6 +4910,29 @@ function renderCreditCardDetail() {
                             Save the outstanding shown by your banking app to compare it with Kira.
                         </div>
                     `}
+                </section>
+
+                <section class="credit-card-detail-section full-width">
+                    <h3>Statement History</h3>
+                    ${statementHistory.length
+                        ? `
+                            <div class="credit-card-statement-history">
+                                ${statementHistory.map(item => `
+                                    <div class="credit-card-statement-history-row">
+                                        <strong>${formatDate(item.statement_date)}</strong>
+                                        <span>Balance ${formatMoney(item.statement_balance)}</span>
+                                        <span>Minimum ${formatMoney(item.minimum_payment)}</span>
+                                        <span>Due ${formatDate(item.due_date)}</span>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        `
+                        : `
+                            <div class="credit-card-estimate-notice">
+                                No statements saved yet.
+                            </div>
+                        `
+                    }
                 </section>
 
             </div>
@@ -23637,8 +23700,13 @@ function refreshGoalAccountOptions(
     accounts
         .filter(
             account =>
-                account.is_active ||
-                account.id === current
+                (
+                    account.is_active ||
+                    account.id === current
+                )
+                &&
+                account.account_type !==
+                    "credit_card"
         )
         .forEach(
             function (account) {
