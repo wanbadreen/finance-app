@@ -5869,60 +5869,83 @@ creditCardStatementForm
                         "credit-card-statement-card"
                     ).value;
 
-                await saveCreditCardStatement({
-                    userId:
-                        currentUser.id,
-                    creditCardId,
-                    statementDate:
-                        document.getElementById(
-                            "credit-card-statement-date"
-                        ).value,
-                    dueDate:
-                        document.getElementById(
-                            "credit-card-due-date"
-                        ).value,
-                    statementBalance:
-                        document.getElementById(
-                            "credit-card-statement-balance"
-                        ).value,
-                    minimumPayment:
-                        document.getElementById(
-                            "credit-card-minimum-payment"
-                        ).value,
-                    financeCharge:
-                        document.getElementById(
-                            "credit-card-finance-charge"
-                        ).value,
-                    instalmentDue:
-                        document.getElementById(
-                            "credit-card-instalment-due"
-                        ).value,
-                    pastDueAmount:
-                        document.getElementById(
-                            "credit-card-past-due"
-                        ).value,
-                    overLimitAmount:
-                        document.getElementById(
-                            "credit-card-over-limit"
-                        ).value,
-                    notes:
-                        document.getElementById(
-                            "credit-card-statement-notes"
-                        ).value
-                });
+                const savedStatement =
+                    await saveCreditCardStatement({
+                        userId:
+                            currentUser.id,
+                        creditCardId,
+                        statementDate:
+                            document.getElementById(
+                                "credit-card-statement-date"
+                            ).value,
+                        dueDate:
+                            document.getElementById(
+                                "credit-card-due-date"
+                            ).value,
+                        statementBalance:
+                            document.getElementById(
+                                "credit-card-statement-balance"
+                            ).value,
+                        minimumPayment:
+                            document.getElementById(
+                                "credit-card-minimum-payment"
+                            ).value,
+                        financeCharge:
+                            document.getElementById(
+                                "credit-card-finance-charge"
+                            ).value,
+                        instalmentDue:
+                            document.getElementById(
+                                "credit-card-instalment-due"
+                            ).value,
+                        pastDueAmount:
+                            document.getElementById(
+                                "credit-card-past-due"
+                            ).value,
+                        overLimitAmount:
+                            document.getElementById(
+                                "credit-card-over-limit"
+                            ).value,
+                        notes:
+                            document.getElementById(
+                                "credit-card-statement-notes"
+                            ).value
+                    });
 
                 selectedCreditCardId =
                     creditCardId;
 
-                await loadCreditCardData(
-                    true
-                );
-
-                renderCreditCardsPage();
-                renderCreditCardDashboardSummary();
+                creditCardStatements =
+                    creditCardStatements
+                        .filter(
+                            statement =>
+                                !(
+                                    statement.credit_card_id ===
+                                        savedStatement.credit_card_id
+                                    &&
+                                    statement.statement_date ===
+                                        savedStatement.statement_date
+                                )
+                        )
+                        .concat(
+                            savedStatement
+                        )
+                        .sort(
+                            (
+                                first,
+                                second
+                            ) =>
+                                second.statement_date
+                                    .localeCompare(
+                                        first.statement_date
+                                    )
+                        );
 
                 creditCardStatementMessage.textContent =
                     "Statement saved.";
+
+                renderCreditCardsPage();
+                renderCreditCardDashboardSummary();
 
             } catch (
                 error
