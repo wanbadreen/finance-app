@@ -12,13 +12,14 @@ test('credit card helper models liabilities and projections', async () => {
     .replace(/export\s+/g, '');
 
   const factory = new Function(
-    source + '\nreturn { getCreditCardOutstanding, getAvailableCredit, getCreditUtilisation, estimateFinanceCharge, estimateMinimumPayment };'
+    source + '\nreturn { getCreditCardOutstanding, getAvailableCredit, getCreditUtilisation, getRemainingStatementDue, estimateFinanceCharge, estimateMinimumPayment };'
   );
 
   const {
     getCreditCardOutstanding,
     getAvailableCredit,
     getCreditUtilisation,
+    getRemainingStatementDue,
     estimateFinanceCharge,
     estimateMinimumPayment
   } = factory();
@@ -28,6 +29,26 @@ test('credit card helper models liabilities and projections', async () => {
   assert.equal(Math.round(getCreditUtilisation(4000, 3011.83) * 10) / 10, 75.3);
   assert.equal(estimateFinanceCharge({ interestBearingBalance: 1000, annualRate: 18, days: 30 }), 14.79);
   assert.equal(estimateMinimumPayment({ projectedBalance: 1000, percent: 5, floor: 50 }), 50);
+  assert.equal(
+    getRemainingStatementDue(
+      {
+        statement_balance: 2938.03,
+        amount_due: 2789.08
+      },
+      50
+    ),
+    2888.03
+  );
+  assert.equal(
+    getRemainingStatementDue(
+      {
+        statement_balance: 100,
+        amount_due: 10
+      },
+      125
+    ),
+    0
+  );
 });
 
 test('credit card schema keeps account and payment method ownership aligned', () => {
