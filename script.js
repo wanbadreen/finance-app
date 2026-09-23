@@ -9,6 +9,10 @@ import {
     saveAccountTransfer,
     softDeleteAccountTransfer
 } from "./transfers.js";
+import {
+    ensureDefaultPaymentMethods,
+    fetchPaymentMethods
+} from "./payment-methods.js";
 import { createWorker } from "tesseract.js";
 
 
@@ -560,6 +564,12 @@ const transactionAccountSelect =
 const transactionAccountLabel =
     document.querySelector('label[for="transaction-account"]');
 
+const transactionPaymentMethodGroup =
+    document.getElementById("transaction-payment-method-group");
+
+const transactionPaymentMethodSelect =
+    document.getElementById("transaction-payment-method");
+
 const transferAccountGroup =
     document.getElementById("transfer-account-group");
 
@@ -719,6 +729,9 @@ const transactionFilterCategory =
 const transactionFilterTag =
     document.getElementById("transaction-filter-tag");
 
+const transactionFilterPaymentMethod =
+    document.getElementById("transaction-filter-payment-method");
+
 const transactionFilterMonth =
     document.getElementById("transaction-filter-month");
 
@@ -802,6 +815,9 @@ const recurringTypeSelect =
 
 const recurringAccountSelect =
     document.getElementById("recurring-account");
+
+const recurringPaymentMethodSelect =
+    document.getElementById("recurring-payment-method");
 
 const recurringCategorySelect =
     document.getElementById("recurring-category");
@@ -927,6 +943,7 @@ let currentUser = null;
 let accounts = [];
 let categories = [];
 let incomeSources = [];
+let paymentMethods = [];
 let tags = [];
 let transactionTagLinks = [];
 
@@ -2983,6 +3000,12 @@ async function showLoggedInState(user) {
     await loadCategories();
 
     await loadIncomeSources();
+
+    await ensureDefaultPaymentMethods(
+        currentUser.id
+    );
+
+    await loadPaymentMethods();
 
     await seedStarterData();
 
@@ -5807,6 +5830,109 @@ function updateBudgetInsight(stats) {
 
 
 // ======================================================
+// PAYMENT METHODS
+// ======================================================
+
+async function loadPaymentMethods(
+    throwOnError = false
+) {
+
+    if (!currentUser) {
+        paymentMethods = [];
+        return;
+    }
+
+    try {
+
+        paymentMethods =
+            await fetchPaymentMethods(
+                currentUser.id
+            );
+
+    } catch (error) {
+
+        paymentMethods = [];
+
+        if (throwOnError) {
+            throw error;
+        }
+
+        console.error(
+            "Load payment methods error:",
+            error
+        );
+    }
+}
+
+
+function getPaymentMethodName(
+    paymentMethodId
+) {
+
+    if (!paymentMethodId) {
+        return "";
+    }
+
+    return (
+        paymentMethods.find(
+            item =>
+                item.id ===
+                paymentMethodId
+        )?.name
+        ||
+        ""
+    );
+}
+
+
+function populatePaymentMethodSelect(
+    select,
+    selectedValue = "",
+    placeholder = "Not specified"
+) {
+
+    if (!select) {
+        return;
+    }
+
+    select.innerHTML =
+        `<option value="">${placeholder}</option>`;
+
+    paymentMethods
+        .filter(
+            method =>
+                method.is_active ||
+                method.id ===
+                    selectedValue
+        )
+        .forEach(
+            function (method) {
+
+                addSelectOption(
+                    select,
+                    method.id,
+                    method.name +
+                        (
+                            method.is_active
+                                ? ""
+                                : " (Inactive)"
+                        )
+                );
+            }
+        );
+
+    select.value =
+        paymentMethods.some(
+            method =>
+                method.id ===
+                selectedValue
+        )
+            ? selectedValue
+            : "";
+}
+
+
+// ======================================================
 // TRANSACTION TAGS
 // ======================================================
 
@@ -6477,6 +6603,13 @@ function updateTransactionMode() {
                 : "none";
     }
 
+    if (transactionPaymentMethodGroup) {
+        transactionPaymentMethodGroup.style.display =
+            isTransfer
+                ? "none"
+                : "";
+    }
+
     if (transferFromAccountSelect) {
         transferFromAccountSelect.required =
             isTransfer;
@@ -6588,6 +6721,11 @@ function refreshTransactionDropdowns(
 
     populateAccountSelect(
         transaction?.account_id || ""
+    );
+
+    populatePaymentMethodSelect(
+        transactionPaymentMethodSelect,
+        transaction?.payment_method_id || ""
     );
 
     populateCategorySelect(
@@ -7868,6 +8006,9 @@ function refreshRecurringFormOptions(
     const selectedAccount =
         recurring?.account_id || "";
 
+    const selectedPaymentMethod =
+        recurring?.payment_method_id || "";
+
     const selectedCategory =
         recurring?.category_id || "";
 
@@ -7898,6 +8039,11 @@ function refreshRecurringFormOptions(
 
     recurringAccountSelect.value =
         selectedAccount;
+
+    populatePaymentMethodSelect(
+        recurringPaymentMethodSelect,
+        selectedPaymentMethod
+    );
 
 
     recurringCategorySelect.innerHTML =
@@ -10293,6 +10439,8 @@ function useRecurringItem(item) {
     refreshTransactionDropdowns({
         account_id:
             item.account_id,
+        payment_method_id:
+            item.payment_method_id,
         category_id:
             item.category_id,
         income_source_id:
@@ -10550,6 +10698,11 @@ if (recurringForm) {
             const accountId =
                 recurringAccountSelect.value;
 
+            const recurringPaymentMethodId =
+                recurringPaymentMethodSelect
+                    ?.value ||
+                null;
+
             let categoryId =
                 recurringCategorySelect.value;
 
@@ -10600,6 +10753,8 @@ if (recurringForm) {
                 type,
                 account_id:
                     accountId,
+                payment_method_id:
+                    recurringPaymentMethodId || null,
                 category_id:
                     categoryId,
                 income_source_id:
@@ -10771,6 +10926,17 @@ function formatQuickFillMeta(
         if (source) {
             parts.push(source);
         }
+    }
+
+    const paymentMethodName =
+        getPaymentMethodName(
+            transaction.payment_method_id
+        );
+
+    if (paymentMethodName) {
+        parts.push(
+            paymentMethodName
+        );
     }
 
     const tagNames =
@@ -15074,6 +15240,11 @@ configureFinanceSubmit({
         const accountId =
             transactionAccountSelect.value;
 
+        const paymentMethodId =
+            transactionPaymentMethodSelect
+                ?.value ||
+            null;
+
         const type =
             transactionTypeSelect.value;
 
@@ -15307,6 +15478,9 @@ configureFinanceSubmit({
                 account_id:
                     accountId,
 
+                payment_method_id:
+                    paymentMethodId || null,
+
                 category_id:
                     categoryId,
 
@@ -15510,7 +15684,8 @@ function populateTransactionFilterOptions() {
     if (
         !transactionFilterAccount ||
         !transactionFilterCategory ||
-        !transactionFilterTag
+        !transactionFilterTag ||
+        !transactionFilterPaymentMethod
     ) {
         return;
     }
@@ -15525,6 +15700,10 @@ function populateTransactionFilterOptions() {
 
     const selectedTag =
         transactionFilterTag.value ||
+        "all";
+
+    const selectedPaymentMethod =
+        transactionFilterPaymentMethod.value ||
         "all";
 
 
@@ -15583,6 +15762,32 @@ function populateTransactionFilterOptions() {
     );
 
 
+    transactionFilterPaymentMethod.innerHTML =
+        '<option value="all">All Payment Methods</option>';
+
+    addSelectOption(
+        transactionFilterPaymentMethod,
+        "none",
+        "Not Specified"
+    );
+
+    paymentMethods.forEach(
+        function (method) {
+
+            addSelectOption(
+                transactionFilterPaymentMethod,
+                method.id,
+                method.name +
+                    (
+                        method.is_active
+                            ? ""
+                            : " (Inactive)"
+                    )
+            );
+        }
+    );
+
+
     transactionFilterAccount.value =
         Array.from(
             transactionFilterAccount.options
@@ -15615,6 +15820,17 @@ function populateTransactionFilterOptions() {
                     selectedTag
         )
             ? selectedTag
+            : "all";
+
+    transactionFilterPaymentMethod.value =
+        Array.from(
+            transactionFilterPaymentMethod.options
+        ).some(
+            option =>
+                option.value ===
+                    selectedPaymentMethod
+        )
+            ? selectedPaymentMethod
             : "all";
 }
 
@@ -15649,6 +15865,12 @@ function getFilteredTransactions() {
 
     const selectedTag =
         transactionFilterTag
+            ?.value
+        ||
+        "all";
+
+    const selectedPaymentMethod =
+        transactionFilterPaymentMethod
             ?.value
         ||
         "all";
@@ -15737,6 +15959,23 @@ function getFilteredTransactions() {
                 }
 
 
+                if (
+                    selectedPaymentMethod === "none" &&
+                    transaction.payment_method_id
+                ) {
+                    return false;
+                }
+
+                if (
+                    selectedPaymentMethod !== "all" &&
+                    selectedPaymentMethod !== "none" &&
+                    transaction.payment_method_id !==
+                        selectedPaymentMethod
+                ) {
+                    return false;
+                }
+
+
                 const transactionDate =
                     String(
                         transaction.transaction_date ||
@@ -15787,6 +16026,9 @@ function getFilteredTransactions() {
                         ),
                         getIncomeSourceName(
                             transaction.income_source_id
+                        ),
+                        getPaymentMethodName(
+                            transaction.payment_method_id
                         ),
                         ...getTransactionTagNames(
                             transaction
@@ -15914,6 +16156,12 @@ function getFilteredTransfers() {
         ||
         "all";
 
+    const selectedPaymentMethod =
+        transactionFilterPaymentMethod
+            ?.value
+        ||
+        "all";
+
     const selectedMonth =
         transactionFilterMonth
             ?.value
@@ -15941,7 +16189,8 @@ function getFilteredTransfers() {
 
     if (
         selectedCategory !== "all" ||
-        selectedTag !== "all"
+        selectedTag !== "all" ||
+        selectedPaymentMethod !== "all"
     ) {
         return [];
     }
@@ -16221,13 +16470,19 @@ function createTransactionActivityRow(
         "transaction-category";
 
     category.textContent =
-        `${getCategoryName(
-            transaction.category_id
-        ) || "Uncategorized"} • ${
+        [
+            getCategoryName(
+                transaction.category_id
+            ) || "Uncategorized",
             getAccountName(
                 transaction.account_id
-            ) || "Unknown Account"
-        }`;
+            ) || "Unknown Account",
+            getPaymentMethodName(
+                transaction.payment_method_id
+            )
+        ]
+            .filter(Boolean)
+            .join(" • ");
 
     const date =
         document.createElement(
@@ -16825,6 +17080,11 @@ function resetTransactionFilters() {
             "all";
     }
 
+    if (transactionFilterPaymentMethod) {
+        transactionFilterPaymentMethod.value =
+            "all";
+    }
+
     if (transactionFilterMonth) {
         transactionFilterMonth.value =
             "";
@@ -16858,6 +17118,7 @@ function resetTransactionFilters() {
     transactionFilterAccount,
     transactionFilterCategory,
     transactionFilterTag,
+    transactionFilterPaymentMethod,
     transactionSortSelect
 ]
     .filter(Boolean)
@@ -23774,7 +24035,18 @@ function renderReportTransactions(
                         );
 
                 meta.textContent =
-                    `${formatDate(transaction.transaction_date)} • ${account} • ${category}`;
+                    [
+                        formatDate(
+                            transaction.transaction_date
+                        ),
+                        account,
+                        category,
+                        getPaymentMethodName(
+                            transaction.payment_method_id
+                        )
+                    ]
+                        .filter(Boolean)
+                        .join(" • ");
 
 
                 copy.append(
@@ -23984,6 +24256,7 @@ function exportCurrentReportCsv() {
                 "Type",
                 "Description",
                 "Account",
+                "Payment Method",
                 "Category / Income Source",
                 "Amount",
                 "Notes",
@@ -24056,6 +24329,9 @@ function exportCurrentReportCsv() {
                         transaction.type,
                         transaction.description,
                         account,
+                        getPaymentMethodName(
+                            transaction.payment_method_id
+                        ),
                         categoryOrSource,
                         Number(
                             transaction.amount
