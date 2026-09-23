@@ -32,9 +32,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
 
         // Permanent package ID: app.kira.finance.
-        // Current Android release: versionCode 2, versionName 1.1.0.
-        versionCode 2
-        versionName "1.1.0"
+        // Current Android release: versionCode 3, versionName 1.2.0.
+        versionCode 3
+        versionName "1.2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         aaptOptions {
