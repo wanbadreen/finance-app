@@ -99,7 +99,7 @@ export function getStatementPayments(
                 transfer =>
                     !transfer.deleted_at &&
                     transfer.to_account_id === accountId &&
-                    transfer.transfer_date >= statementDate &&
+                    transfer.transfer_date > statementDate &&
                     (
                         !asOfDate ||
                         transfer.transfer_date <= asOfDate
