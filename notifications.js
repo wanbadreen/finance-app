@@ -478,7 +478,7 @@ async function generateLocalNotifications() {
         supabase.from("accounts").select("id,opening_balance"),
         supabase.from("categories").select("id,name"),
         supabase.from("credit_cards").select("id,account_id,card_name,is_active").eq("is_active", true),
-        supabase.from("credit_card_statements").select("id,credit_card_id,statement_date,due_date,statement_balance,amount_due,minimum_payment").order("statement_date", { ascending: false }),
+        supabase.from("credit_card_statements").select("id,credit_card_id,statement_date,due_date,statement_balance,minimum_payment").order("statement_date", { ascending: false }),
         supabase.from("account_transfers").select("id,to_account_id,amount,transfer_date,deleted_at").is("deleted_at", null)
     ]);
 
