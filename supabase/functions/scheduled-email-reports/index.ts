@@ -214,6 +214,7 @@ function buildExcelWorkbook(data: any) {
       Type: tx.type,
       Description: tx.description,
       Account: data.accounts.get(tx.account_id) || "",
+      "Payment Method": data.paymentMethods.get(tx.payment_method_id) || "",
       "Category / Income Source":
         tx.type === "expense"
           ? data.categories.get(tx.category_id) || ""
@@ -225,7 +226,7 @@ function buildExcelWorkbook(data: any) {
   );
   transactionSheet["!cols"] = [
     { wch: 14 }, { wch: 10 }, { wch: 28 }, { wch: 18 },
-    { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 10 },
+    { wch: 20 }, { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 10 },
   ];
   XLSX.utils.book_append_sheet(wb, transactionSheet, "Transactions");
 
@@ -266,10 +267,10 @@ function buildExcelWorkbook(data: any) {
 async function buildReport(userId: string, pref: any, manualMonthStart?: string | null) {
   const period = periodFor(pref, manualMonthStart);
 
-  const [txRes, accountsRes, categoriesRes, sourcesRes, budgetsRes] = await Promise.all([
+  const [txRes, accountsRes, categoriesRes, sourcesRes, paymentMethodsRes, budgetsRes] = await Promise.all([
     service
       .from("transactions")
-      .select("id,account_id,category_id,income_source_id,description,notes,amount,type,transaction_date,recurring_id")
+      .select("id,account_id,payment_method_id,category_id,income_source_id,description,notes,amount,type,transaction_date,recurring_id")
       .eq("user_id", userId)
       .is("deleted_at", null)
       .gte("transaction_date", period.start)
@@ -278,11 +279,12 @@ async function buildReport(userId: string, pref: any, manualMonthStart?: string 
     service.from("accounts").select("id,name").eq("user_id", userId),
     service.from("categories").select("id,name").eq("user_id", userId),
     service.from("income_sources").select("id,name").eq("user_id", userId),
+    service.from("payment_methods").select("id,name").eq("user_id", userId),
     service.from("budgets").select("category_id,amount,month_start").eq("user_id", userId)
       .gte("month_start", period.start).lt("month_start", period.end),
   ]);
 
-  for (const response of [txRes, accountsRes, categoriesRes, sourcesRes, budgetsRes]) {
+  for (const response of [txRes, accountsRes, categoriesRes, sourcesRes, paymentMethodsRes, budgetsRes]) {
     if (response.error) throw response.error;
   }
 
@@ -290,6 +292,7 @@ async function buildReport(userId: string, pref: any, manualMonthStart?: string 
   const accounts = new Map((accountsRes.data ?? []).map((x: any) => [x.id, x.name]));
   const categories = new Map((categoriesRes.data ?? []).map((x: any) => [x.id, x.name]));
   const sources = new Map((sourcesRes.data ?? []).map((x: any) => [x.id, x.name]));
+  const paymentMethods = new Map((paymentMethodsRes.data ?? []).map((x: any) => [x.id, x.name]));
 
   let income = 0;
   let expenses = 0;
@@ -340,9 +343,11 @@ async function buildReport(userId: string, pref: any, manualMonthStart?: string 
     const label = tx.type === "expense"
       ? categories.get(tx.category_id) || "Uncategorized"
       : sources.get(tx.income_source_id) || "Other Income";
+    const paymentMethod = paymentMethods.get(tx.payment_method_id) || "";
     const signed = tx.type === "income" ? "+" : "-";
     const color = tx.type === "income" ? "#15803d" : "#b42318";
-    return `<tr><td style="padding:12px 0;border-bottom:1px solid #eef2f7;vertical-align:top;"><div style="color:#111827;font-size:14px;font-weight:600;line-height:1.4;">${escapeHtml(tx.description)}</div><div style="margin-top:3px;color:#94a3b8;font-size:11px;line-height:1.4;">${escapeHtml(tx.transaction_date)} · ${escapeHtml(account)} · ${escapeHtml(label)}</div></td><td style="padding:12px 0 12px 16px;border-bottom:1px solid #eef2f7;color:${color};font-size:14px;font-weight:700;text-align:right;vertical-align:top;white-space:nowrap;">${signed}${escapeHtml(money(Number(tx.amount)))}</td></tr>`;
+    const meta = [tx.transaction_date, account, label, paymentMethod].filter(Boolean).join(" · ");
+    return `<tr><td style="padding:12px 0;border-bottom:1px solid #eef2f7;vertical-align:top;"><div style="color:#111827;font-size:14px;font-weight:600;line-height:1.4;">${escapeHtml(tx.description)}</div><div style="margin-top:3px;color:#94a3b8;font-size:11px;line-height:1.4;">${escapeHtml(meta)}</div></td><td style="padding:12px 0 12px 16px;border-bottom:1px solid #eef2f7;color:${color};font-size:14px;font-weight:700;text-align:right;vertical-align:top;white-space:nowrap;">${signed}${escapeHtml(money(Number(tx.amount)))}</td></tr>`;
   }).join("");
 
   const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#111827;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#f4f6f8;"><tr><td align="center" style="padding:28px 14px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:640px;background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;">
@@ -362,7 +367,7 @@ async function buildReport(userId: string, pref: any, manualMonthStart?: string 
   </table></td></tr></table></body></html>`;
 
   const workbookBytes = buildExcelWorkbook({
-    period, transactions, accounts, categories, sources,
+    period, transactions, accounts, categories, sources, paymentMethods,
     income, expenses, net, topCategories, budgetRows,
   });
 
