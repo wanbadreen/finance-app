@@ -478,7 +478,7 @@ async function generateLocalNotifications() {
         supabase.from("accounts").select("id,opening_balance"),
         supabase.from("categories").select("id,name"),
         supabase.from("credit_cards").select("id,account_id,card_name,is_active").eq("is_active", true),
-        supabase.from("credit_card_statements").select("id,credit_card_id,statement_date,due_date,statement_balance,minimum_payment").order("statement_date", { ascending: false }),
+        supabase.from("credit_card_statements").select("id,credit_card_id,statement_date,due_date,statement_balance,pre_tracking_paid_since_statement,minimum_payment").order("statement_date", { ascending: false }),
         supabase.from("account_transfers").select("id,to_account_id,amount,transfer_date,deleted_at").is("deleted_at", null)
     ]);
 
@@ -562,7 +562,19 @@ async function generateLocalNotifications() {
                 )
                 .reduce((sum, transfer) => sum + Number(transfer.amount || 0), 0);
 
-            const remainingDue = Math.max(0, startingDue - paidSinceStatement);
+            const preTrackingPaid = Math.max(
+                0,
+                Number(
+                    statement.pre_tracking_paid_since_statement || 0
+                )
+            );
+
+            const remainingDue = Math.max(
+                0,
+                startingDue -
+                preTrackingPaid -
+                paidSinceStatement
+            );
             if (remainingDue <= 0.009) continue;
 
             const days = diffDays(today, statement.due_date);
