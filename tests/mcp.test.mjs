@@ -310,6 +310,37 @@ test('account transfer validates owned active accounts and records an internal t
   assert.equal(db.tables.account_transfers.length,1);
 });
 
+test('delete account transfer soft-deletes the owned transfer so it stops affecting Kira balances',async()=>{
+  const transferId='00000000-0000-4000-8000-000000000027';
+  const toId='00000000-0000-4000-8000-000000000028';
+  const db=database({
+    accounts:[
+      {id:accountId,user_id:user,name:'Maybank',account_type:'bank',opening_balance:100,is_active:true},
+      {id:toId,user_id:user,name:'Cash',account_type:'cash',opening_balance:0,is_active:true}
+    ],
+    account_transfers:[{
+      id:transferId,user_id:user,from_account_id:accountId,to_account_id:toId,
+      amount:20,transfer_date:'2026-09-24',description:'Transfer - Maybank to Cash',
+      notes:null,fee_percent:0,deleted_at:null
+    }]
+  });
+
+  const before=await reader(db,user)('get_accounts',{});
+  assert.equal(before.accounts.find(x=>x.id===accountId).balance,80);
+  assert.equal(before.accounts.find(x=>x.id===toId).balance,20);
+
+  const r=await reader(db,user)('delete_account_transfer',{transfer_id:transferId,confirmed:true});
+  assert.equal(r.deleted,true);
+  assert.equal(r.deletion_mode,'soft_delete');
+  assert.ok(db.tables.account_transfers[0].deleted_at);
+  assert.equal(r.transfer.from_account_name,'Maybank');
+  assert.equal(r.transfer.to_account_name,'Cash');
+
+  const after=await reader(db,user)('get_accounts',{});
+  assert.equal(after.accounts.find(x=>x.id===accountId).balance,100);
+  assert.equal(after.accounts.find(x=>x.id===toId).balance,0);
+});
+
 test('TNG credit-card transfer defaults to the same one-percent fee used by Kira UI',async()=>{
   const cardId='00000000-0000-4000-8000-000000000025';
   const tngId='00000000-0000-4000-8000-000000000026';
@@ -434,12 +465,13 @@ test('HTTP discovery, auth challenges, MCP initialize, tool metadata and dispatc
   );
 
   const list=(await call('tools/list')).result.tools;
-  assert.equal(list.length,11);
-  assert.equal(list.filter(x=>!x.annotations.readOnlyHint).length,4);
+  assert.equal(list.length,12);
+  assert.equal(list.filter(x=>!x.annotations.readOnlyHint).length,5);
   assert.equal(list.find(x=>x.name==='create_transaction').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='edit_transaction').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='create_account_transfer').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='delete_transaction').annotations.destructiveHint,true);
+  assert.equal(list.find(x=>x.name==='delete_account_transfer').annotations.destructiveHint,true);
   assert.equal(list.find(x=>x.name==='create_transaction').annotations.idempotentHint,false);
 
   assert.equal(
