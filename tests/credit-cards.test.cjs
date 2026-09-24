@@ -187,3 +187,34 @@ test('statement form resets values when switching cards and after save', () => {
     /resetCreditCardStatementForm\(\s*creditCardId\s*\)[\s\S]*?"Statement saved\."/
   );
 });
+
+
+test('credit card to e-wallet transfers support automatic top-up fees', () => {
+  const html = read('index.html');
+  const source = read('script.js');
+  const transfers = read('transfers.js');
+
+  assert.match(html, /id="transfer-fee-group"/);
+  assert.match(html, /id="transfer-fee-percent"/);
+  assert.match(html, /TNG eWallet defaults to 1%/);
+
+  assert.match(source, /source\?\.account_type ===\s*"credit_card"/);
+  assert.match(source, /destination\?\.account_type ===\s*"e_wallet"/);
+  assert.match(source, /isTngEwalletAccount/);
+  assert.match(source, /transferFeePercentInput\.value =\s*"1"/);
+  assert.match(source, /feePercent:\s*transferFeePercentInput/);
+  assert.match(source, /Automatic top-up fee/);
+  assert.match(source, /await loadTransfers\(\s*true\s*\);[\s\S]*?await loadTransactions\(\s*true\s*\);/);
+
+  assert.match(transfers, /feePercent = 0/);
+  assert.match(transfers, /fee_percent:\s*numericFeePercent/);
+});
+
+test('transfer refresh recalculates dashboard available funds immediately', () => {
+  const source = read('script.js');
+  const start = source.indexOf('async function loadTransfers');
+  const end = source.indexOf('function populateTransferAccountSelects', start);
+  const helper = source.slice(start, end);
+
+  assert.match(helper, /updateDashboard\(\)/);
+});

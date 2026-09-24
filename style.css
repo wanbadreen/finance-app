@@ -9744,6 +9744,27 @@ body[data-theme="dark"] .setup-checklist-progress-label {
     margin-bottom: 16px;
 }
 
+.transfer-fee-group {
+    margin: 2px 0 16px;
+    padding: 14px;
+    border: 1px solid #dbeafe;
+    border-radius: 14px;
+    background: #f8fbff;
+}
+
+.transfer-fee-help {
+    margin: 2px 0 0;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#transfer-fee-amount[readonly] {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+}
+
 .transaction.transfer-activity {
     box-shadow: inset 3px 0 0 #2563eb;
 }
