@@ -3,9 +3,9 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { configuration, authenticator } from './auth.mjs';
 import { schemas, descriptions, reader } from './tools.mjs';
 
-const writeTools = new Set(['create_transaction','edit_transaction','delete_transaction','create_account_transfer']);
+const writeTools = new Set(['create_transaction','edit_transaction','delete_transaction','create_account_transfer','delete_account_transfer']);
 const isWriteTool = name => writeTools.has(name);
-const isDestructiveTool = name => name === 'delete_transaction';
+const isDestructiveTool = name => ['delete_transaction','delete_account_transfer'].includes(name);
 
 export function handler(config = configuration(), authenticate = authenticator(config)) {
   const metadataUrl = `${new URL(config.resource).origin}/.well-known/oauth-protected-resource`;
@@ -22,7 +22,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
         authorization_servers:[config.issuer],
         scopes_supported:['openid'],
         bearer_methods_supported:['header'],
-        kira_mcp_version:'1.2.0'
+        kira_mcp_version:'1.3.0'
       }));
     }
 
@@ -53,7 +53,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
       return res.end();
     }
 
-    const server = new McpServer({name:'kira',version:'1.2.0'});
+    const server = new McpServer({name:'kira',version:'1.3.0'});
     const run = reader(context.db,context.userId);
 
     for (const [name,schema] of Object.entries(schemas)) {
