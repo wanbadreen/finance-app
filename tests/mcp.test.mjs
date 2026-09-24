@@ -37,6 +37,7 @@ function database(seed) {
 
       const filters=[];
       let insertRows=null;
+      let updateRow=null;
       let selected=null;
 
       const q={
@@ -54,11 +55,23 @@ function database(seed) {
           insertRows=(Array.isArray(rows)?rows:[rows]).map(row=>({...row}));
           return q;
         },
+        update(row){
+          updateRow={...row};
+          return q;
+        },
         async single(){
-          if (!insertRows) return {data:null,error:{message:'No inserted row'}};
           const target=tables[table] ||= [];
-          const row={id:'00000000-0000-4000-8000-000000000099',...insertRows[0]};
-          target.push(row);
+          let row;
+          if (insertRows) {
+            row={id:'00000000-0000-4000-8000-000000000099',...insertRows[0]};
+            target.push(row);
+          } else if (updateRow) {
+            row=target.find(x=>filters.every(f=>f(x)));
+            if (!row) return {data:null,error:{message:'No matching row'}};
+            Object.assign(row,updateRow);
+          } else {
+            return {data:null,error:{message:'No mutation row'}};
+          }
           if (!selected) return {data:row,error:null};
           const fields=String(selected).split(',').map(x=>x.trim());
           return {data:Object.fromEntries(fields.map(key=>[key,row[key]??null])),error:null};
@@ -203,6 +216,118 @@ test('create transaction requires explicit confirmation and validates owned refe
   assert.equal(db.tables.transactions[0].user_id,user);
 });
 
+test('edit transaction updates only an owned ordinary transaction after confirmation',async()=>{
+  const db=database({
+    accounts:[{id:accountId,user_id:user,name:'Maybank',account_type:'bank',opening_balance:0,is_active:true}],
+    categories:[{id:categoryId,user_id:user,name:'Food',type:'expense',is_active:true}],
+    income_sources:[],
+    payment_methods:[{id:methodId,user_id:user,name:'QR',method_type:'bank_transfer',system_key:null,is_active:true,sort_order:1}],
+    transactions:[{
+      id:'00000000-0000-4000-8000-000000000021',user_id:user,account_id:accountId,
+      category_id:categoryId,income_source_id:null,payment_method_id:null,type:'expense',
+      amount:10,transaction_date:'2026-09-24',description:'Dinner',notes:null,deleted_at:null,
+      recurring_id:null,linked_transfer_id:null
+    }]
+  });
+  const r=await reader(db,user)('edit_transaction',{
+    transaction_id:'00000000-0000-4000-8000-000000000021',
+    amount:12.5,
+    description:'Late dinner',
+    payment_method_id:methodId,
+    confirmed:true
+  });
+  assert.equal(r.updated,true);
+  assert.equal(r.before.amount,10);
+  assert.equal(r.transaction.amount,12.5);
+  assert.equal(r.transaction.description,'Late dinner');
+  assert.equal(db.tables.transactions[0].amount,12.5);
+});
+
+test('edit and delete refuse recurring and automatic transfer-fee transactions',async()=>{
+  const base={
+    id:'00000000-0000-4000-8000-000000000022',user_id:user,account_id:accountId,
+    category_id:categoryId,income_source_id:null,payment_method_id:null,type:'expense',
+    amount:10,transaction_date:'2026-09-24',description:'Protected',notes:null,deleted_at:null
+  };
+  const recurringDb=database({
+    accounts:[{id:accountId,user_id:user,name:'Maybank',account_type:'bank',opening_balance:0,is_active:true}],
+    categories:[{id:categoryId,user_id:user,name:'Food',type:'expense',is_active:true}],
+    income_sources:[],payment_methods:[],
+    transactions:[{...base,recurring_id:'00000000-0000-4000-8000-000000000030',linked_transfer_id:null}]
+  });
+  await assert.rejects(reader(recurringDb,user)('delete_transaction',{
+    transaction_id:base.id,confirmed:true
+  }),/Recurring-generated/);
+
+  const feeDb=database({
+    accounts:[{id:accountId,user_id:user,name:'Maybank',account_type:'bank',opening_balance:0,is_active:true}],
+    categories:[{id:categoryId,user_id:user,name:'Food',type:'expense',is_active:true}],
+    income_sources:[],payment_methods:[],
+    transactions:[{...base,recurring_id:null,linked_transfer_id:'00000000-0000-4000-8000-000000000031'}]
+  });
+  await assert.rejects(reader(feeDb,user)('edit_transaction',{
+    transaction_id:base.id,amount:20,confirmed:true
+  }),/Automatic transfer-fee/);
+});
+
+test('delete transaction uses a confirmed soft delete',async()=>{
+  const txId='00000000-0000-4000-8000-000000000023';
+  const db=database({
+    transactions:[{
+      id:txId,user_id:user,account_id:accountId,category_id:categoryId,type:'expense',
+      amount:10,transaction_date:'2026-09-24',description:'Dinner',notes:null,deleted_at:null,
+      recurring_id:null,linked_transfer_id:null
+    }]
+  });
+  const r=await reader(db,user)('delete_transaction',{transaction_id:txId,confirmed:true});
+  assert.equal(r.deleted,true);
+  assert.equal(r.deletion_mode,'soft_delete');
+  assert.ok(db.tables.transactions[0].deleted_at);
+});
+
+test('account transfer validates owned active accounts and records an internal transfer',async()=>{
+  const toId='00000000-0000-4000-8000-000000000024';
+  const db=database({
+    accounts:[
+      {id:accountId,user_id:user,name:'Maybank',account_type:'bank',opening_balance:100,is_active:true},
+      {id:toId,user_id:user,name:'Cash',account_type:'cash',opening_balance:0,is_active:true},
+      {id:otherAccountId,user_id:other,name:'Other',account_type:'bank',opening_balance:0,is_active:true}
+    ],
+    account_transfers:[]
+  });
+  await assert.rejects(reader(db,user)('create_account_transfer',{
+    from_account_id:otherAccountId,to_account_id:toId,amount:20,transfer_date:'2026-09-24',
+    description:'Transfer',confirmed:true
+  }),/active source account/);
+
+  const r=await reader(db,user)('create_account_transfer',{
+    from_account_id:accountId,to_account_id:toId,amount:20,transfer_date:'2026-09-24',
+    description:'Move cash',confirmed:true
+  });
+  assert.equal(r.created,true);
+  assert.equal(r.transfer.from_account_name,'Maybank');
+  assert.equal(r.transfer.to_account_name,'Cash');
+  assert.equal(db.tables.account_transfers.length,1);
+});
+
+test('TNG credit-card transfer defaults to the same one-percent fee used by Kira UI',async()=>{
+  const cardId='00000000-0000-4000-8000-000000000025';
+  const tngId='00000000-0000-4000-8000-000000000026';
+  const db=database({
+    accounts:[
+      {id:cardId,user_id:user,name:'UOB Card',account_type:'credit_card',opening_balance:0,is_active:true},
+      {id:tngId,user_id:user,name:'TNG eWallet',account_type:'e_wallet',opening_balance:0,is_active:true}
+    ],
+    account_transfers:[]
+  });
+  const r=await reader(db,user)('create_account_transfer',{
+    from_account_id:cardId,to_account_id:tngId,amount:100,transfer_date:'2026-09-24',
+    description:'TNG top up',confirmed:true
+  });
+  assert.equal(r.transfer.fee_percent,1);
+  assert.equal(r.transfer.fee_amount,1);
+});
+
 test('income create requires a matching income category and source',async()=>{
   const db=database({
     accounts:[{id:accountId,user_id:user,name:'Maybank',account_type:'bank',opening_balance:0,is_active:true}],
@@ -309,9 +434,12 @@ test('HTTP discovery, auth challenges, MCP initialize, tool metadata and dispatc
   );
 
   const list=(await call('tools/list')).result.tools;
-  assert.equal(list.length,8);
-  assert.equal(list.filter(x=>!x.annotations.readOnlyHint).length,1);
+  assert.equal(list.length,11);
+  assert.equal(list.filter(x=>!x.annotations.readOnlyHint).length,4);
   assert.equal(list.find(x=>x.name==='create_transaction').annotations.destructiveHint,false);
+  assert.equal(list.find(x=>x.name==='edit_transaction').annotations.destructiveHint,false);
+  assert.equal(list.find(x=>x.name==='create_account_transfer').annotations.destructiveHint,false);
+  assert.equal(list.find(x=>x.name==='delete_transaction').annotations.destructiveHint,true);
   assert.equal(list.find(x=>x.name==='create_transaction').annotations.idempotentHint,false);
 
   assert.equal(
