@@ -9503,12 +9503,6 @@ function calculateTransferFee(
         numericAmount
         *
         numericPercent
-        *
-        100
-        /
-        100
-        /
-        100
     )
     /
     100;
@@ -18439,6 +18433,8 @@ configureFinanceSubmit({
             await loadTransfers(
                 true
             );
+
+            await loadCategories();
 
             await loadTransactions(
                 true
