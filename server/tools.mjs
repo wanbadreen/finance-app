@@ -265,10 +265,10 @@ export function reader(db, userId) {
       ? args.payment_method_id
       : existing.payment_method_id;
 
-    const account = a.find(x => x.id === accountId && x.is_active);
+    const account = a.find(x => x.id === accountId && (x.is_active || x.id === existing.account_id));
     if (!account) throw inputError('Choose an active account that belongs to this Kira user.');
 
-    const category = c.find(x => x.id === categoryId && x.is_active);
+    const category = c.find(x => x.id === categoryId && (x.is_active || x.id === existing.category_id));
     if (!category) throw inputError('Choose an active category that belongs to this Kira user.');
     if (![nextType,'both'].includes(category.type)) {
       throw inputError(`Category "${category.name}" does not match transaction type "${nextType}".`);
@@ -277,7 +277,7 @@ export function reader(db, userId) {
     let incomeSource = null;
     if (nextType === 'income') {
       if (!incomeSourceId) throw inputError('Income transactions require an active income source.');
-      incomeSource = i.find(x => x.id === incomeSourceId && x.is_active);
+      incomeSource = i.find(x => x.id === incomeSourceId && (x.is_active || x.id === existing.income_source_id));
       if (!incomeSource) throw inputError('Choose an active income source that belongs to this Kira user.');
     } else if (incomeSourceId) {
       throw inputError('Expense transactions must not include an income source.');
@@ -285,7 +285,7 @@ export function reader(db, userId) {
 
     let paymentMethod = null;
     if (paymentMethodId) {
-      paymentMethod = p.find(x => x.id === paymentMethodId && x.is_active);
+      paymentMethod = p.find(x => x.id === paymentMethodId && (x.is_active || x.id === existing.payment_method_id));
       if (!paymentMethod) throw inputError('Choose an active payment method that belongs to this Kira user.');
     }
 
