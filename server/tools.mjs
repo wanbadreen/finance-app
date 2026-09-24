@@ -70,6 +70,10 @@ export const schemas = {
     fee_percent: percentInput,
     confirmed: z.literal(true)
   }).strict(),
+  delete_account_transfer: z.object({
+    transfer_id: id,
+    confirmed: z.literal(true)
+  }).strict(),
 };
 
 export const descriptions = {
@@ -84,6 +88,7 @@ export const descriptions = {
   edit_transaction: 'Edit one existing ordinary Kira income or expense transaction. Never edit automatic transfer-fee or recurring-generated transactions. First identify the exact transaction with list_transactions, resolve any changed references with get_transaction_options, show the proposed before/after values, and only call after explicit user confirmation.',
   delete_transaction: 'Delete one existing ordinary Kira income or expense transaction by soft-deleting it. Never delete automatic transfer-fee or recurring-generated transactions. First identify the exact transaction with list_transactions, show what will be deleted, and only call after explicit user confirmation.',
   create_account_transfer: 'Record one transfer between two of the user’s own active Kira accounts. This records a Kira balance transfer; it does not move real bank money. Resolve account IDs first and only call after the user explicitly confirms source, destination, amount, date and any fee.',
+  delete_account_transfer: 'Delete one existing Kira account-transfer record by soft-deleting it. First identify the exact transfer, show source, destination, amount and date, and only call after explicit user confirmation. This reverses its effect on Kira balances; if the transfer created an automatic fee transaction, the existing database trigger soft-deletes that fee too. It does not move real money at a bank or wallet provider.',
 };
 
 const columns = {
@@ -426,6 +431,45 @@ export function reader(db, userId) {
     };
   }
 
+  async function deleteAccountTransfer(args) {
+    const [transfers, a] = await Promise.all([
+      all('account_transfers'),
+      all('accounts')
+    ]);
+
+    const existing = transfers.find(x => x.id === args.transfer_id);
+    if (!existing) throw inputError('Account transfer not found for this Kira user.');
+
+    const from = a.find(x => x.id === existing.from_account_id);
+    const to = a.find(x => x.id === existing.to_account_id);
+
+    const deletedAt = new Date().toISOString();
+    const { data, error } = await db
+      .from('account_transfers')
+      .update({ deleted_at: deletedAt })
+      .eq('id', existing.id)
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .select('id,from_account_id,to_account_id,amount,transfer_date,description,notes,fee_percent,deleted_at')
+      .single();
+
+    if (error || !data) throw new Error('Database write failed');
+
+    return {
+      deleted: true,
+      deletion_mode: 'soft_delete',
+      transfer: {
+        ...data,
+        amount: money(Number(data.amount)),
+        fee_percent: Number(data.fee_percent || 0),
+        fee_amount: money(Number(data.amount) * Number(data.fee_percent || 0) / 100),
+        from_account_name: from?.name || null,
+        to_account_name: to?.name || null
+      },
+      note: 'The transfer no longer affects Kira balances. Any automatic fee linked to this transfer is soft-deleted by Kira’s existing database trigger. This does not move real money at a bank or wallet provider.'
+    };
+  }
+
   return async (name, input) => {
     const args = schemas[name].parse(input);
 
@@ -435,6 +479,7 @@ export function reader(db, userId) {
     if (name === 'edit_transaction') return editTransaction(args);
     if (name === 'delete_transaction') return deleteTransaction(args);
     if (name === 'create_account_transfer') return createAccountTransfer(args);
+    if (name === 'delete_account_transfer') return deleteAccountTransfer(args);
 
     if (name === 'get_credit_cards') {
       return { cards: await cards(), statement_note: 'Recorded statement amounts; not remaining statement due.' };
