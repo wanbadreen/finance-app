@@ -1,9 +1,12 @@
 {
-  "versionName": "1.3.1",
-  "versionCode": 5,
-  "downloadUrl": "https://github.com/wanbadreen/finance-app/releases/download/v1.3.1/Kira-v1.3.1-build5.apk",
+  "versionName": "1.3.2",
+  "versionCode": 6,
+  "downloadUrl": "https://github.com/wanbadreen/finance-app/releases/download/v1.3.2/Kira-v1.3.2-build6.apk",
   "releaseNotes": [
-    "Fixed credit card statement form reset."
+    "Added credit card to e-wallet top-up fee tracking.",
+    "TNG eWallet top-ups default to a 1% fee.",
+    "Top-up fees are recorded automatically as Fees & Charges expenses and stay synced with transfer edit, delete and undo actions.",
+    "Fixed Available Funds not refreshing immediately after account transfers."
   ],
   "publishedAt": "2026-09-24"
 }
