@@ -155,7 +155,8 @@ export async function saveAccountTransfer({
     amount,
     transferDate,
     description,
-    notes = ""
+    notes = "",
+    feePercent = 0
 }) {
 
     const numericAmount =
@@ -166,6 +167,26 @@ export async function saveAccountTransfer({
             transferDate,
             description
         });
+
+    const numericFeePercent =
+        Number(
+            feePercent ||
+            0
+        );
+
+    if (
+        !Number.isFinite(
+            numericFeePercent
+        )
+        ||
+        numericFeePercent < 0
+        ||
+        numericFeePercent > 100
+    ) {
+        throw new Error(
+            "Transfer fee percentage must be between 0 and 100."
+        );
+    }
 
     const payload = {
         user_id:
@@ -193,7 +214,10 @@ export async function saveAccountTransfer({
                 notes ||
                 ""
             ).trim() ||
-            null
+            null,
+
+        fee_percent:
+            numericFeePercent
     };
 
     const query =
