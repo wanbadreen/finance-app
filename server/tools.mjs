@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 const id = z.string().uuid();
@@ -10,6 +11,21 @@ const moneyInput = z.number().finite().positive().max(999999999.99).refine(
   { message: 'Amount must have at most two decimal places' }
 );
 const percentInput = z.number().finite().min(0).max(100).optional();
+const openAIFile = z.object({
+  download_url: z.url(),
+  file_id: z.string().min(1),
+  mime_type: z.string().optional(),
+  file_name: z.string().optional()
+}).strict();
+
+const RECEIPT_BUCKET = 'receipts';
+const MAX_RECEIPT_FILE_SIZE = 5 * 1024 * 1024;
+const RECEIPT_MIME_EXTENSIONS = new Map([
+  ['image/jpeg','jpg'],
+  ['image/png','png'],
+  ['image/webp','webp'],
+  ['application/pdf','pdf']
+]);
 
 export const schemas = {
   get_accounts: empty,
@@ -37,6 +53,12 @@ export const schemas = {
     income_source_id: id.optional(),
     payment_method_id: id.optional(),
     notes: z.string().trim().max(1000).optional(),
+    receipt: openAIFile.optional(),
+    confirmed: z.literal(true)
+  }).strict(),
+  attach_receipt_to_transaction: z.object({
+    transaction_id: id,
+    receipt: openAIFile,
     confirmed: z.literal(true)
   }).strict(),
   edit_transaction: z.object({
@@ -84,7 +106,8 @@ export const descriptions = {
   get_credit_cards: 'Read card profiles, computed outstanding balances and recorded statements. Statement amounts are historical, not remaining due.',
   get_debts: 'Read tracked credit-card debt only. Kira has no persisted general-loan/debt ledger; this is not a complete debt inventory.',
   get_transaction_options: 'Read active Kira accounts, categories, income sources and payment methods needed to prepare a transaction or transfer. Use this to resolve names to IDs before any write.',
-  create_transaction: 'Create one Kira income or expense transaction. Never use for transfers, edits or deletes. Call get_transaction_options first to resolve IDs. Only call after the user explicitly confirms the exact transaction details; set confirmed=true only after that confirmation.',
+  create_transaction: 'Create one Kira income or expense transaction, optionally attaching one user-provided receipt image/PDF. Never use for transfers, edits or deletes. Call get_transaction_options first to resolve IDs. If a receipt is attached, preserve the exact user-provided file in the receipt field. Only call after the user explicitly confirms the exact transaction details and receipt attachment; set confirmed=true only after that confirmation.',
+  attach_receipt_to_transaction: 'Attach or replace one receipt on an existing ordinary Kira transaction. Accepts JPG, PNG, WebP or PDF up to 5 MB. First identify the exact transaction, tell the user if an existing receipt will be replaced, and only call after explicit confirmation.',
   edit_transaction: 'Edit one existing ordinary Kira income or expense transaction. Never edit automatic transfer-fee or recurring-generated transactions. First identify the exact transaction with list_transactions, resolve any changed references with get_transaction_options, show the proposed before/after values, and only call after explicit user confirmation.',
   delete_transaction: 'Delete one existing ordinary Kira income or expense transaction by soft-deleting it. Never delete automatic transfer-fee or recurring-generated transactions. First identify the exact transaction with list_transactions, show what will be deleted, and only call after explicit user confirmation.',
   create_account_transfer: 'Record one transfer between two of the user’s own active Kira accounts. This records a Kira balance transfer; it does not move real bank money. Resolve account IDs first and only call after the user explicitly confirms source, destination, amount, date and any fee.',
@@ -121,6 +144,78 @@ export function balances(accounts, transactions, transfers) {
 }
 
 export function reader(db, userId) {
+  function receiptMime(bytes) {
+    if (bytes.length >= 5
+      && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44
+      && bytes[3] === 0x46 && bytes[4] === 0x2d) return 'application/pdf';
+    if (bytes.length >= 8
+      && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47
+      && bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a) return 'image/png';
+    if (bytes.length >= 3
+      && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+    if (bytes.length >= 12
+      && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46
+      && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return 'image/webp';
+    return null;
+  }
+
+  async function uploadReceiptFile(file) {
+    const url = new URL(file.download_url);
+    if (url.protocol !== 'https:' || url.username || url.password) {
+      throw inputError('Receipt download URL must be a secure ChatGPT-provided HTTPS URL.');
+    }
+
+    let response;
+    try {
+      response = await fetch(url, { redirect: 'follow' });
+    } catch {
+      throw inputError('Unable to download the attached receipt from ChatGPT. Reattach the file and try again.');
+    }
+    if (!response.ok) {
+      throw inputError('Unable to download the attached receipt from ChatGPT. Reattach the file and try again.');
+    }
+
+    const declaredLength = Number(response.headers.get('content-length') || 0);
+    if (declaredLength > MAX_RECEIPT_FILE_SIZE) {
+      throw inputError('Receipt must be 5 MB or smaller.');
+    }
+
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (!bytes.length) throw inputError('Receipt file is empty.');
+    if (bytes.length > MAX_RECEIPT_FILE_SIZE) throw inputError('Receipt must be 5 MB or smaller.');
+
+    const mimeType = receiptMime(bytes);
+    const extension = RECEIPT_MIME_EXTENSIONS.get(mimeType);
+    if (!mimeType || !extension) {
+      throw inputError('Receipt must be a valid JPG, PNG, WebP or PDF file.');
+    }
+
+    const dateFolder = new Date().toISOString().slice(0,10);
+    const path = `${userId}/${dateFolder}/${randomUUID()}.${extension}`;
+    const { data, error } = await db.storage
+      .from(RECEIPT_BUCKET)
+      .upload(path, bytes, {
+        cacheControl:'3600',
+        upsert:false,
+        contentType:mimeType
+      });
+
+    if (error) throw new Error('Receipt upload failed');
+
+    return {
+      path: data?.path || path,
+      mime_type: mimeType,
+      file_name: file.file_name || null,
+      file_id: file.file_id
+    };
+  }
+
+  async function deleteReceiptFile(path) {
+    if (!path) return true;
+    const { error } = await db.storage.from(RECEIPT_BUCKET).remove([path]);
+    return !error;
+  }
+
   function query(table) {
     let q = db.from(table).select(columns[table], { count: 'exact' }).eq('user_id', userId);
     if (['transactions','account_transfers'].includes(table)) q = q.is('deleted_at', null);
@@ -207,6 +302,9 @@ export function reader(db, userId) {
       if (!paymentMethod) throw inputError('Choose an active payment method that belongs to this Kira user.');
     }
 
+    let uploadedReceipt = null;
+    if (args.receipt) uploadedReceipt = await uploadReceiptFile(args.receipt);
+
     const payload = {
       user_id: userId,
       account_id: account.id,
@@ -218,7 +316,7 @@ export function reader(db, userId) {
       amount: money(args.amount),
       type: args.type,
       transaction_date: args.transaction_date,
-      receipt_path: null,
+      receipt_path: uploadedReceipt?.path || null,
       recurring_id: null,
       recurring_due_date: null,
       recurring_next_due_date: null,
@@ -231,7 +329,10 @@ export function reader(db, userId) {
       .select('id,account_id,category_id,income_source_id,payment_method_id,description,notes,amount,type,transaction_date')
       .single();
 
-    if (error || !data) throw new Error('Database write failed');
+    if (error || !data) {
+      if (uploadedReceipt?.path) await deleteReceiptFile(uploadedReceipt.path);
+      throw new Error('Database write failed');
+    }
 
     return {
       created: true,
@@ -242,7 +343,54 @@ export function reader(db, userId) {
         category_name: category.name,
         income_source_name: incomeSource?.name || null,
         payment_method_name: paymentMethod?.name || null,
+        receipt_attached: Boolean(uploadedReceipt),
+        receipt_file_name: uploadedReceipt?.file_name || null,
+        receipt_mime_type: uploadedReceipt?.mime_type || null
       }
+    };
+  }
+
+  async function attachReceipt(args) {
+    const transactions = await all('transactions');
+    const existing = transactions.find(x => x.id === args.transaction_id);
+    if (!existing) throw inputError('Transaction not found for this Kira user.');
+    if (existing.linked_transfer_id) {
+      throw inputError('Automatic transfer-fee transactions cannot have receipts attached directly.');
+    }
+
+    const uploaded = await uploadReceiptFile(args.receipt);
+    const oldPath = existing.receipt_path || null;
+
+    const { data, error } = await db
+      .from('transactions')
+      .update({ receipt_path: uploaded.path })
+      .eq('id', existing.id)
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .select('id,description,amount,type,transaction_date,receipt_path')
+      .single();
+
+    if (error || !data) {
+      await deleteReceiptFile(uploaded.path);
+      throw new Error('Database write failed');
+    }
+
+    let cleanupWarning = null;
+    if (oldPath && oldPath !== uploaded.path) {
+      const removed = await deleteReceiptFile(oldPath);
+      if (!removed) cleanupWarning = 'New receipt attached, but the previous receipt file could not be cleaned up.';
+    }
+
+    return {
+      attached: true,
+      replaced_existing_receipt: Boolean(oldPath),
+      transaction: {
+        ...data,
+        amount: money(Number(data.amount)),
+        receipt_file_name: uploaded.file_name,
+        receipt_mime_type: uploaded.mime_type
+      },
+      cleanup_warning: cleanupWarning
     };
   }
 
@@ -476,6 +624,7 @@ export function reader(db, userId) {
     if (name === 'get_accounts') return { accounts: await accounts() };
     if (name === 'get_transaction_options') return transactionOptions(args.type);
     if (name === 'create_transaction') return createTransaction(args);
+    if (name === 'attach_receipt_to_transaction') return attachReceipt(args);
     if (name === 'edit_transaction') return editTransaction(args);
     if (name === 'delete_transaction') return deleteTransaction(args);
     if (name === 'create_account_transfer') return createAccountTransfer(args);
