@@ -1,4 +1,4 @@
-# Kira MCP read-only v1 — implementation and setup
+# Kira MCP v1.1 — implementation and setup
 
 ## Status
 
@@ -8,9 +8,14 @@ Local MCP tests: 14 passing. Vite production build: passing. Existing tests: 26/
 
 Not yet verified: live Supabase OAuth, the deployed Vercel routes, ChatGPT linking, or two-user production RLS. No authenticated test-user tokens or OAuth client configuration were supplied. There is no live endpoint URL yet.
 
+
+## v1.1 transaction creation
+
+The MCP now exposes `get_transaction_options` and `create_transaction`. The options tool returns only the authenticated user's active accounts, categories, income sources and payment methods. The create tool requires `confirmed: true`, validates every referenced row belongs to that same user, enforces category/type matching, requires an income source for income transactions, and inserts through the user's OAuth bearer token so existing RLS still applies. It does not support transfers, edits, deletes, receipt upload or recurring schedule changes.
+
 ## Audit and design
 
-The app is plain JavaScript + Vite, with Capacitor Android and Supabase JS 2.116.0. Existing web authentication and supabase.js remain unchanged. Server modules use Node ESM, MCP SDK Streamable HTTP, jose JWT verification, and a fresh user-scoped Supabase client per request. There is no service_role client, arbitrary SQL tool, storage download, RPC call or mutation in the six tools.
+The app is plain JavaScript + Vite, with Capacitor Android and Supabase JS 2.116.0. Existing web authentication and supabase.js remain unchanged. Server modules use Node ESM, MCP SDK Streamable HTTP, jose JWT verification, and a fresh user-scoped Supabase client per request. There is no service_role client, arbitrary SQL tool, storage download or RPC call. Seven tools are read-only. create_transaction is the only write tool; it creates one confirmed income/expense transaction and cannot edit, delete or transfer money.
 
 All queries use a fixed table/column allowlist, the verified JWT subject as user_id, and the same bearer token for Supabase RLS. Missing/bad tokens return 401 and OAuth discovery metadata. JWT signatures, expiry, issuer, exact MCP resource audience, authenticated role, non-anonymous identity, client allowlist and openid scope are checked; getUser confirms identity server-side. ID tokens lacking the authenticated role are rejected.
 
@@ -18,21 +23,21 @@ Accounts use opening balance + income - expense + transfers. Deleted transaction
 
 get_credit_cards includes recorded statements, explicitly not calculated remaining statement due. get_debts covers tracked credit-card liabilities only: the repository has no general-debt table. A zero result does not mean the user has no other debts.
 
-No database migration or grant/policy changes are included. Existing public-table RLS and grants remain required. Any future public user-owned table must explicitly GRANT authenticated, enable RLS, and enforce auth.uid() = user_id. The MCP read-only boundary is the tool implementation; existing Supabase OAuth token permissions are not automatically reduced to SELECT by the openid scope. Database-wide OAuth write restrictions would be a separate policy change requiring regression tests.
+No database migration or grant/policy changes are included. Existing public-table RLS and grants remain required. Any future public user-owned table must explicitly GRANT authenticated, enable RLS, and enforce auth.uid() = user_id. The MCP write boundary is the tool implementation plus existing Supabase RLS. create_transaction validates that account, category, income source and payment method are active and belong to the authenticated user before insert. Existing OAuth token permissions are not reduced by the openid scope, so any future write tool must repeat the same ownership validation and stay behind user-scoped RLS.
 
 ## Changed files
 
 - server/auth.mjs: configuration and token validation.
-- server/tools.mjs: six tools, schemas, aggregation and user filters.
+- server/tools.mjs: eight tools: seven read tools plus confirmed create_transaction, with schemas, aggregation, ownership validation and user filters.
 - server/handler.mjs, server/local.mjs: MCP HTTP transport and local launcher.
 - server/oauth-claims.mjs: pure audience transform to integrate into an existing trusted Auth hook; not a deployed hook.
 - api/mcp.mjs, api/oauth-resource.mjs: Vercel entry points.
-- oauth-consent.html, oauth-consent.js: explicit consent using existing Kira sign-in, restricted OAuth clients and scopes.
+- oauth-consent.html, oauth-consent.js: explicit consent using existing Kira sign-in, restricted OAuth clients/scopes, and disclosure that Kira can create a confirmed income/expense transaction.
 - vite.config.mjs: builds both existing app and new consent page.
 - vercel.json: adds two endpoint rewrites; retains existing headers.
 - package.json, package-lock.json: pinned new dependencies and MCP commands; Supabase pinned at existing version.
 - .env.example: placeholder configuration only.
-- tests/mcp.test.mjs: local behavior, isolation and signed JWT tests.
+- tests/mcp.test.mjs: local behavior, isolation, transaction-write safeguards and signed JWT tests.
 - scripts/test-mcp-live.mjs: read-only two-user live RLS check.
 - docs/MCP.md: this guide.
 
