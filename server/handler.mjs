@@ -82,7 +82,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
             : null;
           const text = safeInput
             || (write
-              ? 'Unable to create the Kira transaction. Check the confirmed details, account/category/source/payment method, or permissions.'
+              ? 'Unable to complete the Kira write action. Check the confirmed details, referenced records, or permissions.'
               : 'Unable to read Kira data. Check filters, permissions or dataset size; no partial totals returned.');
           return {isError:true,content:[{type:'text',text}]};
         }
