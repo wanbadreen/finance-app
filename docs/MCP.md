@@ -1,4 +1,4 @@
-# Kira MCP v1.3 — implementation and setup
+# Kira MCP v1.4 — implementation and setup
 
 ## Status
 
@@ -30,9 +30,20 @@ Kira MCP now exposes `delete_account_transfer`.
 - The existing `account_transfers_sync_fee_transaction` database trigger already soft-deletes any automatic fee transaction linked to the transfer, so credit-card → e-wallet top-up fees stay consistent.
 - This changes Kira records only; it never reverses or moves real money at a bank or wallet provider.
 
+## v1.4 receipt attachments
+
+Kira MCP now accepts ChatGPT file inputs for receipt attachments.
+
+- `create_transaction` accepts an optional top-level `receipt` file parameter, so a confirmed transaction can be created together with the user-provided receipt.
+- `attach_receipt_to_transaction` attaches or replaces a receipt on an existing ordinary transaction after explicit confirmation.
+- The tool descriptors declare `_meta["openai/fileParams"] = ["receipt"]` and use the required ChatGPT file object shape: `download_url`, `file_id`, optional `mime_type`, optional `file_name`.
+- The MCP downloads the temporary ChatGPT file URL server-side, rejects files over 5 MB, validates the file bytes as JPG/PNG/WebP/PDF, uploads them to the existing private Supabase Storage `receipts` bucket under the authenticated user's folder, and stores the resulting path in `transactions.receipt_path`.
+- Replacing a receipt uploads the new file first, updates the transaction, then removes the previous receipt. A failed database update cleans up the newly uploaded file.
+- No service role is used; existing Storage RLS continues to enforce the user-owned first folder segment.
+
 ## Audit and design
 
-The app is plain JavaScript + Vite, with Capacitor Android and Supabase JS 2.116.0. Existing web authentication and supabase.js remain unchanged. Server modules use Node ESM, MCP SDK Streamable HTTP, jose JWT verification, and a fresh user-scoped Supabase client per request. There is no service_role client, arbitrary SQL tool, storage download or RPC call. Seven tools are read-only. Five write tools are available: create_transaction, edit_transaction, delete_transaction, create_account_transfer, and delete_account_transfer. Every write requires confirmed=true and remains behind the authenticated user's RLS.
+The app is plain JavaScript + Vite, with Capacitor Android and Supabase JS 2.116.0. Existing web authentication and supabase.js remain unchanged. Server modules use Node ESM, MCP SDK Streamable HTTP, jose JWT verification, and a fresh user-scoped Supabase client per request. There is no service_role client, arbitrary SQL tool, storage download or RPC call. Seven tools are read-only. Six write tools are available: create_transaction, attach_receipt_to_transaction, edit_transaction, delete_transaction, create_account_transfer, and delete_account_transfer. Every write requires confirmed=true and remains behind the authenticated user's RLS.
 
 All queries use a fixed table/column allowlist, the verified JWT subject as user_id, and the same bearer token for Supabase RLS. Missing/bad tokens return 401 and OAuth discovery metadata. JWT signatures, expiry, issuer, exact MCP resource audience, authenticated role, non-anonymous identity, client allowlist and openid scope are checked; getUser confirms identity server-side. ID tokens lacking the authenticated role are rejected.
 
@@ -45,11 +56,11 @@ No database migration or grant/policy changes are included. Existing public-tabl
 ## Changed files
 
 - server/auth.mjs: configuration and token validation.
-- server/tools.mjs: twelve tools: seven read tools plus confirmed create/edit/delete transaction actions, internal account transfer creation, and confirmed transfer deletion, with schemas, aggregation, ownership validation and user filters.
+- server/tools.mjs: thirteen tools: seven read tools plus confirmed create/attach-receipt/edit/delete transaction actions, internal account transfer creation, and confirmed transfer deletion, with schemas, file validation, aggregation, ownership validation and user filters.
 - server/handler.mjs, server/local.mjs: MCP HTTP transport and local launcher.
 - server/oauth-claims.mjs: pure audience transform to integrate into an existing trusted Auth hook; not a deployed hook.
 - api/mcp.mjs, api/oauth-resource.mjs: Vercel entry points.
-- oauth-consent.html, oauth-consent.js: explicit consent using existing Kira sign-in, restricted OAuth clients/scopes, and disclosure that Kira can perform the configured confirmed transaction and internal-transfer write actions.
+- oauth-consent.html, oauth-consent.js: explicit consent using existing Kira sign-in, restricted OAuth clients/scopes, and disclosure that Kira can perform the configured confirmed transaction, receipt-file and internal-transfer write actions.
 - vite.config.mjs: builds both existing app and new consent page.
 - vercel.json: adds two endpoint rewrites; retains existing headers.
 - package.json, package-lock.json: pinned new dependencies and MCP commands; Supabase pinned at existing version.
@@ -135,6 +146,8 @@ This reads only; it checks each user's own rows and verifies that cross-user rea
 Local tests use a mock database and real locally signed JWTs. They cannot establish the deployed database's RLS state. Dependency audit found seven issues in the existing Capacitor/assets toolchain (including one critical transitive tar issue); no reported issues in the added MCP/jose/zod runtime dependencies. Broad dependency upgrades were kept outside this change.
 
 ## References
+
+- https://developers.openai.com/plugins/reference
 
 - https://developers.openai.com/plugins/build/auth
 - https://supabase.com/docs/guides/auth/oauth-server/getting-started
