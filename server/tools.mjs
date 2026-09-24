@@ -194,7 +194,7 @@ export function reader(db, userId) {
     const path = `${userId}/${dateFolder}/${randomUUID()}.${extension}`;
     const { data, error } = await db.storage
       .from(RECEIPT_BUCKET)
-      .upload(path, bytes, {
+      .upload(path, bytes.buffer, {
         cacheControl:'3600',
         upsert:false,
         contentType:mimeType
