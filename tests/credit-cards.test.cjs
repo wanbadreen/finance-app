@@ -153,3 +153,37 @@ test('statement payment counting starts strictly after the statement date', () =
   assert.doesNotMatch(source, /transfer\.transfer_date >= statementDate/);
   assert.match(notifications, /transfer\.transfer_date > statement\.statement_date/);
 });
+
+
+test('statement form resets values when switching cards and after save', () => {
+  const source = read('script.js');
+
+  assert.match(
+    source,
+    /function resetCreditCardStatementForm\(\s*cardId = ""\s*\)/
+  );
+  assert.match(
+    source,
+    /creditCardStatementForm\s*\?\.reset\(\)/
+  );
+  assert.match(
+    source,
+    /"credit-card-statement-card"[\s\S]*?addEventListener\(\s*"change"[\s\S]*?resetCreditCardStatementForm\(\s*event\.target\.value\s*\)/
+  );
+  assert.match(
+    source,
+    /action ===\s*"statement"[\s\S]*?resetCreditCardStatementForm\(\s*card\.id\s*\)/
+  );
+
+  const statementHandlerStart =
+    source.indexOf('creditCardStatementForm');
+  const paymentHandlerStart =
+    source.indexOf('creditCardPaymentForm', statementHandlerStart);
+  const statementHandler =
+    source.slice(statementHandlerStart, paymentHandlerStart);
+
+  assert.match(
+    statementHandler,
+    /resetCreditCardStatementForm\(\s*creditCardId\s*\)[\s\S]*?"Statement saved\."/
+  );
+});

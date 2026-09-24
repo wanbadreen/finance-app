@@ -5043,15 +5043,9 @@ function renderCreditCardDetail() {
                             "statement"
                         ) {
 
-                            const select =
-                                document.getElementById(
-                                    "credit-card-statement-card"
-                                );
-
-                            if (select) {
-                                select.value =
-                                    card.id;
-                            }
+                            resetCreditCardStatementForm(
+                                card.id
+                            );
 
                             creditCardStatementForm
                                 ?.scrollIntoView({
@@ -5301,6 +5295,32 @@ function resetCreditCardForm() {
     }
 
     populateCreditCardFeatureSelects();
+}
+
+
+function resetCreditCardStatementForm(
+    cardId = ""
+) {
+
+    creditCardStatementForm
+        ?.reset();
+
+    const cardSelect =
+        document.getElementById(
+            "credit-card-statement-card"
+        );
+
+    if (cardSelect) {
+        cardSelect.value =
+            cardId;
+    }
+
+    if (
+        creditCardStatementMessage
+    ) {
+        creditCardStatementMessage.textContent =
+            "";
+    }
 }
 
 
@@ -5974,6 +5994,10 @@ creditCardStatementForm
                                     )
                         );
 
+                resetCreditCardStatementForm(
+                    creditCardId
+                );
+
                 creditCardStatementMessage.textContent =
                     "Statement saved.";
 
@@ -6139,6 +6163,23 @@ creditCardReconcileForm
                     error.message ||
                     "Unable to save the reconciliation.";
             }
+        }
+    );
+
+
+document
+    .getElementById(
+        "credit-card-statement-card"
+    )
+    ?.addEventListener(
+        "change",
+        function (
+            event
+        ) {
+
+            resetCreditCardStatementForm(
+                event.target.value
+            );
         }
     );
 
