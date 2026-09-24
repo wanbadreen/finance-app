@@ -1,4 +1,4 @@
-# Kira MCP v1.1 — implementation and setup
+# Kira MCP v1.2 — implementation and setup
 
 ## Status
 
@@ -13,9 +13,17 @@ Not yet verified: live Supabase OAuth, the deployed Vercel routes, ChatGPT linki
 
 The MCP now exposes `get_transaction_options` and `create_transaction`. The options tool returns only the authenticated user's active accounts, categories, income sources and payment methods. The create tool requires `confirmed: true`, validates every referenced row belongs to that same user, enforces category/type matching, requires an income source for income transactions, and inserts through the user's OAuth bearer token so existing RLS still applies. It does not support transfers, edits, deletes, receipt upload or recurring schedule changes.
 
+## v1.2 edit, delete and transfer
+
+Kira MCP now also exposes `edit_transaction`, `delete_transaction`, and `create_account_transfer`.
+
+- `edit_transaction` requires explicit confirmation, first identifies the exact transaction, validates all changed references against the authenticated user's records, preserves receipt/recurring metadata, and refuses automatic transfer-fee or recurring-generated rows.
+- `delete_transaction` requires explicit confirmation and performs a soft delete. It refuses automatic transfer-fee or recurring-generated rows so Kira's special bookkeeping cannot be corrupted.
+- `create_account_transfer` records an internal transfer between two active accounts owned by the authenticated user. It never moves money at a bank or wallet provider. Credit-card to TNG eWallet transfers default to the same 1% fee used by the Kira UI unless an explicit fee is supplied; the existing database trigger remains responsible for synchronising the fee transaction.
+
 ## Audit and design
 
-The app is plain JavaScript + Vite, with Capacitor Android and Supabase JS 2.116.0. Existing web authentication and supabase.js remain unchanged. Server modules use Node ESM, MCP SDK Streamable HTTP, jose JWT verification, and a fresh user-scoped Supabase client per request. There is no service_role client, arbitrary SQL tool, storage download or RPC call. Seven tools are read-only. create_transaction is the only write tool; it creates one confirmed income/expense transaction and cannot edit, delete or transfer money.
+The app is plain JavaScript + Vite, with Capacitor Android and Supabase JS 2.116.0. Existing web authentication and supabase.js remain unchanged. Server modules use Node ESM, MCP SDK Streamable HTTP, jose JWT verification, and a fresh user-scoped Supabase client per request. There is no service_role client, arbitrary SQL tool, storage download or RPC call. Seven tools are read-only. Four write tools are available: create_transaction, edit_transaction, delete_transaction, and create_account_transfer. Every write requires confirmed=true and remains behind the authenticated user's RLS.
 
 All queries use a fixed table/column allowlist, the verified JWT subject as user_id, and the same bearer token for Supabase RLS. Missing/bad tokens return 401 and OAuth discovery metadata. JWT signatures, expiry, issuer, exact MCP resource audience, authenticated role, non-anonymous identity, client allowlist and openid scope are checked; getUser confirms identity server-side. ID tokens lacking the authenticated role are rejected.
 
@@ -28,7 +36,7 @@ No database migration or grant/policy changes are included. Existing public-tabl
 ## Changed files
 
 - server/auth.mjs: configuration and token validation.
-- server/tools.mjs: eight tools: seven read tools plus confirmed create_transaction, with schemas, aggregation, ownership validation and user filters.
+- server/tools.mjs: eleven tools: seven read tools plus confirmed create/edit/delete transaction actions and internal account transfer creation, with schemas, aggregation, ownership validation and user filters.
 - server/handler.mjs, server/local.mjs: MCP HTTP transport and local launcher.
 - server/oauth-claims.mjs: pure audience transform to integrate into an existing trusted Auth hook; not a deployed hook.
 - api/mcp.mjs, api/oauth-resource.mjs: Vercel entry points.
