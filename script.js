@@ -655,6 +655,15 @@ const transferToAccountSelect =
 const transferAccountMessage =
     document.getElementById("transfer-account-message");
 
+const transferFeeGroup =
+    document.getElementById("transfer-fee-group");
+
+const transferFeePercentInput =
+    document.getElementById("transfer-fee-percent");
+
+const transferFeeAmountInput =
+    document.getElementById("transfer-fee-amount");
+
 const transactionCategoryLabel =
     document.querySelector('label[for="transaction-category"]');
 
@@ -9319,6 +9328,7 @@ async function loadTransfers(
             );
 
         if (render) {
+            updateDashboard();
             renderAccounts();
             renderTransactions();
             renderCreditCardsPage();
@@ -9416,6 +9426,178 @@ function populateTransferAccountSelects(
         currentTo,
         "Select destination account"
     );
+}
+
+
+function getTransferAccount(
+    accountId
+) {
+
+    return accounts.find(
+        account =>
+            account.id ===
+                accountId
+    ) || null;
+}
+
+
+function isTngEwalletAccount(
+    account
+) {
+
+    if (!account) {
+        return false;
+    }
+
+    const normalized =
+        String(
+            account.name ||
+            ""
+        )
+            .toLowerCase()
+            .replace(
+                /[^a-z0-9]/g,
+                ""
+            );
+
+    return (
+        normalized.includes(
+            "tng"
+        )
+        ||
+        normalized.includes(
+            "touchngo"
+        )
+    );
+}
+
+
+function calculateTransferFee(
+    amount,
+    feePercent
+) {
+
+    const numericAmount =
+        Number(amount);
+
+    const numericPercent =
+        Number(feePercent);
+
+    if (
+        !Number.isFinite(
+            numericAmount
+        )
+        ||
+        !Number.isFinite(
+            numericPercent
+        )
+        ||
+        numericAmount <= 0
+        ||
+        numericPercent <= 0
+    ) {
+        return 0;
+    }
+
+    return Math.round(
+        numericAmount
+        *
+        numericPercent
+        *
+        100
+        /
+        100
+        /
+        100
+    )
+    /
+    100;
+}
+
+
+function updateTransferFeeUI({
+    allowTngDefault = true
+} = {}) {
+
+    if (
+        !transferFeeGroup ||
+        !transferFeePercentInput ||
+        !transferFeeAmountInput
+    ) {
+        return;
+    }
+
+    const isTransfer =
+        transactionTypeSelect.value ===
+            "transfer";
+
+    const source =
+        getTransferAccount(
+            transferFromAccountSelect?.value
+        );
+
+    const destination =
+        getTransferAccount(
+            transferToAccountSelect?.value
+        );
+
+    const eligible =
+        isTransfer
+        &&
+        source?.account_type ===
+            "credit_card"
+        &&
+        destination?.account_type ===
+            "e_wallet";
+
+    transferFeeGroup.style.display =
+        eligible
+            ? "block"
+            : "none";
+
+    if (!eligible) {
+
+        transferFeePercentInput.value =
+            "";
+
+        transferFeeAmountInput.value =
+            formatMoney(
+                0
+            );
+
+        return;
+    }
+
+    if (
+        allowTngDefault
+        &&
+        editingTransferId ===
+            null
+        &&
+        transferFeePercentInput.value ===
+            ""
+        &&
+        isTngEwalletAccount(
+            destination
+        )
+    ) {
+
+        transferFeePercentInput.value =
+            "1";
+    }
+
+    const feeAmount =
+        calculateTransferFee(
+            document.getElementById(
+                "amount"
+            )?.value,
+            transferFeePercentInput.value
+        );
+
+    transferFeeAmountInput.value =
+        formatMoney(
+            feeAmount
+        );
 }
 
 
@@ -9534,6 +9716,8 @@ function updateTransactionMode() {
                 ? "Transfers move money between your own accounts and do not count as income or spending."
                 : "";
     }
+
+    updateTransferFeeUI();
 
     if (isTransfer) {
         hideDescriptionSuggestions();
@@ -14101,6 +14285,49 @@ transactionAccountSelect
     );
 
 
+transferFromAccountSelect
+    ?.addEventListener(
+        "change",
+        updateTransferFeeUI
+    );
+
+
+transferToAccountSelect
+    ?.addEventListener(
+        "change",
+        updateTransferFeeUI
+    );
+
+
+document
+    .getElementById(
+        "amount"
+    )
+    ?.addEventListener(
+        "input",
+        function () {
+
+            updateTransferFeeUI({
+                allowTngDefault:
+                    false
+            });
+        }
+    );
+
+
+transferFeePercentInput
+    ?.addEventListener(
+        "input",
+        function () {
+
+            updateTransferFeeUI({
+                allowTngDefault:
+                    false
+            });
+        }
+    );
+
+
 transactionTypeSelect.addEventListener(
     "change",
     function () {
@@ -18186,7 +18413,12 @@ configureFinanceSubmit({
                 transferDate:
                     transactionDate,
                 description,
-                notes
+                notes,
+                feePercent:
+                    transferFeePercentInput
+                        ?.value
+                    ||
+                    0
             });
 
             markSaved();
@@ -18205,6 +18437,10 @@ configureFinanceSubmit({
             });
 
             await loadTransfers(
+                true
+            );
+
+            await loadTransactions(
                 true
             );
 
@@ -19452,6 +19688,26 @@ function createTransactionActivityRow(
         }
     }
 
+    if (
+        transaction.linked_transfer_id
+    ) {
+
+        const automatic =
+            document.createElement(
+                "p"
+            );
+
+        automatic.className =
+            "transaction-date";
+
+        automatic.textContent =
+            "Automatic top-up fee";
+
+        left.appendChild(
+            automatic
+        );
+    }
+
     if (transaction.notes) {
 
         const note =
@@ -19569,10 +19825,15 @@ function createTransactionActivityRow(
         }
     );
 
-    buttons.append(
-        editButton,
-        deleteButton
-    );
+    if (
+        !transaction.linked_transfer_id
+    ) {
+
+        buttons.append(
+            editButton,
+            deleteButton
+        );
+    }
 
     right.append(
         amount,
@@ -19657,6 +19918,40 @@ function createTransferActivityRow(
         route,
         date
     );
+
+    if (
+        Number(
+            transfer.fee_percent ||
+            0
+        ) > 0
+    ) {
+
+        const fee =
+            document.createElement(
+                "p"
+            );
+
+        fee.className =
+            "transaction-date";
+
+        fee.textContent =
+            `Top-up fee ${
+                Number(
+                    transfer.fee_percent
+                )
+            }% • ${
+                formatMoney(
+                    calculateTransferFee(
+                        transfer.amount,
+                        transfer.fee_percent
+                    )
+                )
+            }`;
+
+        left.appendChild(
+            fee
+        );
+    }
 
     if (transfer.notes) {
 
@@ -20275,7 +20570,26 @@ function editTransfer(
         transfer.to_account_id
     );
 
+    if (transferFeePercentInput) {
+        transferFeePercentInput.value =
+            Number(
+                transfer.fee_percent ||
+                0
+            ) > 0
+                ? String(
+                    Number(
+                        transfer.fee_percent
+                    )
+                )
+                : "";
+    }
+
     updateTransactionMode();
+
+    updateTransferFeeUI({
+        allowTngDefault:
+            false
+    });
 
     clearSelectedReceipt();
 
@@ -20439,8 +20753,9 @@ async function deleteTransfer(
                 id
         );
 
-    renderAccounts();
-    renderTransactions();
+    await loadTransactions(
+        true
+    );
 
     showTransferUndoSnackbar(
         transfer
@@ -20479,6 +20794,10 @@ async function undoPendingTransferDelete() {
         );
 
         await loadTransfers(
+            true
+        );
+
+        await loadTransactions(
             true
         );
 
