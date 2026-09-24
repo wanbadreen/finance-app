@@ -19,7 +19,8 @@ export function handler(config = configuration(), authenticate = authenticator(c
         resource:config.resource,
         authorization_servers:[config.issuer],
         scopes_supported:['openid'],
-        bearer_methods_supported:['header']
+        bearer_methods_supported:['header'],
+        kira_mcp_version:'1.1.0'
       }));
     }
 
