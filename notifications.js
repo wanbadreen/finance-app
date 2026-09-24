@@ -4,6 +4,7 @@ import { supabase } from "./supabase.js";
 const KIRA_NOTIFICATION_REFRESH_MS = 60_000;
 const DEFAULT_NOTIFICATION_PREFERENCES = {
     recurring_enabled: true,
+    credit_card_enabled: true,
     budget_enabled: true,
     goal_enabled: true,
     cashflow_enabled: true,
@@ -76,6 +77,7 @@ function safeText(value) {
 function getNotificationIcon(kind, severity) {
     if (severity === "critical") return "!";
     if (kind === "recurring") return "↻";
+    if (kind === "credit_card") return "◈";
     if (kind === "budget") return "%";
     if (kind === "goal") return "◎";
     if (kind === "cashflow") return "↗";
@@ -181,6 +183,13 @@ function ensureUi() {
                 </div>
                 <div class="kira-notification-preference-row">
                     <div>
+                        <strong>Credit card reminders</strong>
+                        <span>Upcoming card payments, due today and overdue statement balances.</span>
+                    </div>
+                    <label class="kira-switch"><input type="checkbox" id="kira-pref-credit-card"><span></span></label>
+                </div>
+                <div class="kira-notification-preference-row">
+                    <div>
                         <strong>Budget alerts</strong>
                         <span>Warnings at 80%, 100% and when you go over budget.</span>
                     </div>
@@ -253,6 +262,7 @@ function cacheElements() {
     els.moreLink = qs("#kira-more-notifications");
     els.moreCount = qs("#kira-more-notification-count");
     els.prefRecurring = qs("#kira-pref-recurring");
+    els.prefCreditCard = qs("#kira-pref-credit-card");
     els.prefBudget = qs("#kira-pref-budget");
     els.prefGoal = qs("#kira-pref-goal");
     els.prefCashflow = qs("#kira-pref-cashflow");
@@ -293,7 +303,7 @@ function bindUi() {
         }
     });
 
-    ["transaction-form", "budget-form", "recurring-form", "goal-form", "account-form"].forEach(id => {
+    ["transaction-form", "budget-form", "recurring-form", "goal-form", "account-form", "credit-card-form", "credit-card-statement-form", "credit-card-payment-form"].forEach(id => {
         qs(`#${id}`)?.addEventListener("submit", () => {
             window.setTimeout(() => refreshNotifications({ generate: true }), 1200);
         });
@@ -370,6 +380,7 @@ async function ensurePreferenceRow() {
 function renderPreferences() {
     const pref = state.preferences || DEFAULT_NOTIFICATION_PREFERENCES;
     if (els.prefRecurring) els.prefRecurring.checked = Boolean(pref.recurring_enabled);
+    if (els.prefCreditCard) els.prefCreditCard.checked = Boolean(pref.credit_card_enabled);
     if (els.prefBudget) els.prefBudget.checked = Boolean(pref.budget_enabled);
     if (els.prefGoal) els.prefGoal.checked = Boolean(pref.goal_enabled);
     if (els.prefCashflow) els.prefCashflow.checked = Boolean(pref.cashflow_enabled);
@@ -410,6 +421,7 @@ async function savePreferences() {
         const payload = {
             user_id: state.user.id,
             recurring_enabled: Boolean(els.prefRecurring?.checked),
+            credit_card_enabled: Boolean(els.prefCreditCard?.checked),
             budget_enabled: Boolean(els.prefBudget?.checked),
             goal_enabled: Boolean(els.prefGoal?.checked),
             cashflow_enabled: Boolean(els.prefCashflow?.checked),
@@ -458,16 +470,19 @@ async function generateLocalNotifications() {
     if (!state.user || !state.preferences) return;
 
     const pref = state.preferences;
-    const [recurringRes, budgetsRes, transactionsRes, goalsRes, accountsRes, categoriesRes] = await Promise.all([
+    const [recurringRes, budgetsRes, transactionsRes, goalsRes, accountsRes, categoriesRes, creditCardsRes, cardStatementsRes, transfersRes] = await Promise.all([
         supabase.from("recurring_transactions").select("id,name,type,amount,next_due_date,is_active,reminder_enabled,reminder_days_before").eq("is_active", true),
         supabase.from("budgets").select("id,category_id,amount,month_start").eq("month_start", currentMonthStart()),
         supabase.from("transactions").select("id,account_id,category_id,amount,type,transaction_date").is("deleted_at", null),
         supabase.from("savings_goals").select("id,name,target_amount,current_amount,target_date,status,created_at"),
         supabase.from("accounts").select("id,opening_balance"),
-        supabase.from("categories").select("id,name")
+        supabase.from("categories").select("id,name"),
+        supabase.from("credit_cards").select("id,account_id,card_name,is_active").eq("is_active", true),
+        supabase.from("credit_card_statements").select("id,credit_card_id,statement_date,due_date,statement_balance,pre_tracking_paid_since_statement,minimum_payment").order("statement_date", { ascending: false }),
+        supabase.from("account_transfers").select("id,to_account_id,amount,transfer_date,deleted_at").is("deleted_at", null)
     ]);
 
-    const responses = [recurringRes, budgetsRes, transactionsRes, goalsRes, accountsRes, categoriesRes];
+    const responses = [recurringRes, budgetsRes, transactionsRes, goalsRes, accountsRes, categoriesRes, creditCardsRes, cardStatementsRes, transfersRes];
     const firstError = responses.find(result => result.error)?.error;
     if (firstError) {
         console.warn("Notification data refresh failed:", firstError);
@@ -480,6 +495,9 @@ async function generateLocalNotifications() {
     const goals = goalsRes.data || [];
     const accounts = accountsRes.data || [];
     const categories = new Map((categoriesRes.data || []).map(item => [item.id, item.name]));
+    const creditCards = creditCardsRes.data || [];
+    const cardStatements = cardStatementsRes.data || [];
+    const transfers = transfersRes.data || [];
     const rows = [];
     const today = todayIso();
 
@@ -519,6 +537,79 @@ async function generateLocalNotifications() {
                     target_page: "recurring",
                     target_hash: "recurring",
                     dedupe_key: `recurring:${item.id}:${item.next_due_date}:${stage}`
+                });
+            }
+        }
+    }
+
+    if (pref.credit_card_enabled) {
+        for (const card of creditCards) {
+            const statement = cardStatements
+                .filter(item => item.credit_card_id === card.id)
+                .sort((a, b) => b.statement_date.localeCompare(a.statement_date))[0];
+
+            if (!statement) continue;
+
+            const startingDue = Number(
+                statement.statement_balance ?? 0
+            );
+
+            const paidSinceStatement = transfers
+                .filter(transfer =>
+                    transfer.to_account_id === card.account_id &&
+                    transfer.transfer_date > statement.statement_date &&
+                    transfer.transfer_date <= today
+                )
+                .reduce((sum, transfer) => sum + Number(transfer.amount || 0), 0);
+
+            const preTrackingPaid = Math.max(
+                0,
+                Number(
+                    statement.pre_tracking_paid_since_statement || 0
+                )
+            );
+
+            const remainingDue = Math.max(
+                0,
+                startingDue -
+                preTrackingPaid -
+                paidSinceStatement
+            );
+            if (remainingDue <= 0.009) continue;
+
+            const days = diffDays(today, statement.due_date);
+            let stage = null;
+            let severity = "info";
+            let title = "";
+            let message = "";
+
+            if (days < 0) {
+                stage = "overdue";
+                severity = "critical";
+                title = `${card.card_name} payment is overdue`;
+                message = `${formatMoney(remainingDue)} remains unpaid from the latest statement.`;
+            } else if (days === 0) {
+                stage = "today";
+                severity = "warning";
+                title = `${card.card_name} is due today`;
+                message = `${formatMoney(remainingDue)} remains due today.`;
+            } else if (days <= 3) {
+                stage = "soon";
+                severity = "warning";
+                title = `${card.card_name} payment is due soon`;
+                message = `${formatMoney(remainingDue)} remains due in ${days} day${days === 1 ? "" : "s"}.`;
+            }
+
+            if (stage) {
+                rows.push({
+                    user_id: state.user.id,
+                    kind: "credit_card",
+                    severity,
+                    title,
+                    message,
+                    target_page: "credit-cards",
+                    target_hash: "credit-cards",
+                    dedupe_key: `credit-card:${card.id}:${statement.statement_date}:${stage}`
                 });
             }
         }

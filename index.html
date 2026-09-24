@@ -375,6 +375,23 @@
 
 
                     <a
+                        href="#credit-cards-page"
+                        class="nav-item"
+                        data-page="credit-cards"
+                    >
+
+                        <span class="nav-icon">
+                            ◈
+                        </span>
+
+                        <span>
+                            Credit Cards
+                        </span>
+
+                    </a>
+
+
+                    <a
                         href="#manage-page"
                         class="nav-item"
                         data-page="manage"
@@ -530,7 +547,7 @@
                     <section class="balance-card">
 
                         <p>
-                            Total Balance
+                            Available Funds
                         </p>
 
 
@@ -540,7 +557,7 @@
 
 
                         <span>
-                            Current financial position
+                            Cash, bank, e-wallet & savings
                         </span>
 
                     </section>
@@ -581,6 +598,44 @@
 
                         </article>
 
+
+                    </section>
+
+
+                    <section
+                        id="dashboard-credit-card-summary"
+                        class="dashboard-credit-card-section"
+                        hidden
+                    >
+
+                        <div class="section-heading">
+
+                            <div>
+                                <h2>Credit Cards</h2>
+                                <p class="section-subtitle">
+                                    Current card debt, limits and upcoming payments.
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                id="dashboard-credit-card-view-all"
+                                class="secondary-button"
+                            >
+                                View Cards
+                            </button>
+
+                        </div>
+
+                        <div
+                            id="dashboard-credit-card-totals"
+                            class="credit-card-dashboard-totals"
+                        ></div>
+
+                        <div
+                            id="dashboard-credit-card-list"
+                            class="credit-card-dashboard-list"
+                        ></div>
 
                     </section>
 
@@ -2000,7 +2055,7 @@
 
 
                             <p>
-                                Manage your bank accounts, cash and e-wallets.
+                                Manage bank accounts, cash, savings and e-wallets. Credit cards are managed separately.
                             </p>
 
                         </div>
@@ -2021,7 +2076,7 @@
                             <div>
 
                                 <h2>
-                                    My Accounts
+                                    Everyday Accounts
                                 </h2>
 
 
@@ -2153,6 +2208,615 @@
 
                 </section>
 
+
+
+
+                <!-- =================================================
+                     CREDIT CARDS PAGE
+                ================================================== -->
+
+                <section
+                    id="credit-cards-page"
+                    class="app-page"
+                    data-page="credit-cards"
+                >
+
+                    <div class="content-page-header">
+
+                        <div>
+                            <h2>Credit Cards</h2>
+                            <p>
+                                Track card debt, statements, estimated charges and repayments in one place.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <section class="credit-card-summary-grid">
+
+                        <article class="credit-card-summary-card">
+                            <span>Total Outstanding</span>
+                            <strong id="credit-card-total-outstanding">RM 0.00</strong>
+                            <p>Total liability across active cards.</p>
+                        </article>
+
+                        <article class="credit-card-summary-card">
+                            <span>Total Credit Limit</span>
+                            <strong id="credit-card-total-limit">RM 0.00</strong>
+                            <p>Combined active card limits.</p>
+                        </article>
+
+                        <article class="credit-card-summary-card">
+                            <span>Available Credit</span>
+                            <strong id="credit-card-total-available">RM 0.00</strong>
+                            <p>Combined remaining credit.</p>
+                        </article>
+
+                        <article class="credit-card-summary-card">
+                            <span>Overall Utilisation</span>
+                            <strong id="credit-card-total-utilisation">0%</strong>
+                            <p>Outstanding divided by total limits.</p>
+                        </article>
+
+                    </section>
+
+
+                    <section class="credit-card-workspace">
+
+                        <div class="credit-card-list-panel">
+
+                            <div class="section-heading">
+                                <div>
+                                    <h2>My Cards</h2>
+                                    <p class="section-subtitle">
+                                        Select a card to see its full position.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div
+                                id="credit-card-list"
+                                class="credit-card-list"
+                            ></div>
+
+                        </div>
+
+
+                        <div
+                            id="credit-card-detail"
+                            class="credit-card-detail-panel"
+                        >
+
+                            <div class="credit-card-empty-detail">
+                                <strong>Select a credit card</strong>
+                                <p>
+                                    Card details, statements, projections and payment tools will appear here.
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+                    <section class="credit-card-tools-grid">
+
+                        <form
+                            id="credit-card-form"
+                            class="management-form credit-card-form"
+                        >
+
+                            <h2 id="credit-card-form-title">
+                                Add Credit Card
+                            </h2>
+
+                            <p class="form-helper">
+                                Current outstanding is only used when creating the card and becomes its opening liability.
+                            </p>
+
+                            <label for="credit-card-name">
+                                Card Name
+                            </label>
+                            <input
+                                type="text"
+                                id="credit-card-name"
+                                placeholder="e.g. Maybank Shopee Visa"
+                                required
+                            >
+
+                            <div class="credit-card-form-grid">
+
+                                <label>
+                                    <span>Issuer / Bank</span>
+                                    <input
+                                        type="text"
+                                        id="credit-card-issuer"
+                                        placeholder="e.g. Maybank"
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Last 4 Digits</span>
+                                    <input
+                                        type="text"
+                                        id="credit-card-last-four"
+                                        inputmode="numeric"
+                                        maxlength="4"
+                                        pattern="[0-9]{4}"
+                                        placeholder="1234"
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Credit Limit</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-limit"
+                                        min="0"
+                                        step="0.01"
+                                        value="0"
+                                        required
+                                    >
+                                </label>
+
+                                <label id="credit-card-opening-outstanding-field">
+                                    <span>Current Outstanding</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-opening-outstanding"
+                                        min="0"
+                                        step="0.01"
+                                        value="0"
+                                        required
+                                    >
+                                </label>
+
+                            </div>
+
+                            <label for="credit-card-settlement-account">
+                                Default Payment Account
+                                <span class="optional-label">Optional</span>
+                            </label>
+                            <select id="credit-card-settlement-account">
+                                <option value="">Choose later</option>
+                            </select>
+
+                            <div class="credit-card-rule-heading">
+                                <h3>Calculation Rules</h3>
+                                <p>
+                                    Enter the rates from your bank terms. Kira uses these for estimates only.
+                                </p>
+                            </div>
+
+                            <div class="credit-card-form-grid">
+
+                                <label>
+                                    <span>Purchase APR (% p.a.)</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-purchase-apr"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        placeholder="15, 17 or 18"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Cash Advance APR (% p.a.)</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-cash-apr"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        value="18"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Minimum Payment (%)</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-min-payment-percent"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        value="5"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Minimum Payment Floor</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-min-payment-floor"
+                                        min="0"
+                                        step="0.01"
+                                        value="50"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Late Fee (%)</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-late-fee-percent"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        value="1"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Late Fee Minimum</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-late-fee-min"
+                                        min="0"
+                                        step="0.01"
+                                        value="10"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Late Fee Maximum</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-late-fee-max"
+                                        min="0"
+                                        step="0.01"
+                                        value="100"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Interest-Free Days</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-interest-free-days"
+                                        min="0"
+                                        max="90"
+                                        step="1"
+                                        value="20"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Usual Statement Day</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-statement-day"
+                                        min="1"
+                                        max="31"
+                                        step="1"
+                                        placeholder="e.g. 12"
+                                    >
+                                </label>
+
+                            </div>
+
+                            <button
+                                type="submit"
+                                id="save-credit-card-button"
+                                class="primary-button"
+                            >
+                                + Add Credit Card
+                            </button>
+
+                            <button
+                                type="button"
+                                id="cancel-credit-card-edit-button"
+                                class="secondary-button hidden-button"
+                            >
+                                Cancel Edit
+                            </button>
+
+                            <p
+                                id="credit-card-message"
+                                class="form-message"
+                                aria-live="polite"
+                            ></p>
+
+                        </form>
+
+
+                        <form
+                            id="credit-card-statement-form"
+                            class="management-form credit-card-secondary-form"
+                        >
+
+                            <h2>Add / Update Statement</h2>
+
+                            <p class="form-helper">
+                                Bank statement values are the source of truth. Saving the same statement date updates that snapshot.
+                            </p>
+
+                            <label for="credit-card-statement-card">
+                                Credit Card
+                            </label>
+                            <select id="credit-card-statement-card" required>
+                                <option value="">Select card</option>
+                            </select>
+
+                            <div class="credit-card-form-grid">
+
+                                <label>
+                                    <span>Statement Date</span>
+                                    <input
+                                        type="date"
+                                        id="credit-card-statement-date"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Payment Due Date</span>
+                                    <input
+                                        type="date"
+                                        id="credit-card-due-date"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Statement Balance</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-statement-balance"
+                                        min="0"
+                                        step="0.01"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>
+                                        Already Paid Since Statement
+                                        <span class="optional-label">Optional</span>
+                                    </span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-pre-tracking-paid"
+                                        min="0"
+                                        step="0.01"
+                                        value="0"
+                                        placeholder="0.00"
+                                    >
+                                    <small class="field-help">
+                                        Payments already made after this statement before Kira started tracking the card. This does not change Current Outstanding.
+                                    </small>
+                                </label>
+
+                                <label>
+                                    <span>Minimum Payment</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-minimum-payment"
+                                        min="0"
+                                        step="0.01"
+                                        value="0"
+                                        required
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Finance Charge on Statement</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-finance-charge"
+                                        min="0"
+                                        step="0.01"
+                                        value="0"
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Monthly Instalments Due</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-instalment-due"
+                                        min="0"
+                                        step="0.01"
+                                        value="0"
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Past Due Amount</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-past-due"
+                                        min="0"
+                                        step="0.01"
+                                        value="0"
+                                    >
+                                </label>
+
+                                <label>
+                                    <span>Over-Limit Amount</span>
+                                    <input
+                                        type="number"
+                                        id="credit-card-over-limit"
+                                        min="0"
+                                        step="0.01"
+                                        value="0"
+                                    >
+                                </label>
+
+                            </div>
+
+                            <label for="credit-card-statement-notes">
+                                Notes
+                                <span class="optional-label">Optional</span>
+                            </label>
+                            <textarea
+                                id="credit-card-statement-notes"
+                                rows="3"
+                                placeholder="Statement notes"
+                            ></textarea>
+
+                            <button
+                                type="submit"
+                                class="primary-button"
+                            >
+                                Save Statement
+                            </button>
+
+                            <p
+                                id="credit-card-statement-message"
+                                class="form-message"
+                                aria-live="polite"
+                            ></p>
+
+                        </form>
+
+
+                        <form
+                            id="credit-card-payment-form"
+                            class="management-form credit-card-secondary-form"
+                        >
+
+                            <h2>Record Card Payment</h2>
+
+                            <p class="form-helper">
+                                Pay in your banking app first, then record it here. Kira stores this as an account transfer, not another expense.
+                            </p>
+
+                            <label for="credit-card-payment-card">
+                                Credit Card
+                            </label>
+                            <select id="credit-card-payment-card" required>
+                                <option value="">Select card</option>
+                            </select>
+
+                            <label for="credit-card-payment-from">
+                                Pay From
+                            </label>
+                            <select id="credit-card-payment-from" required>
+                                <option value="">Select account</option>
+                            </select>
+
+                            <label for="credit-card-payment-mode">
+                                Payment Amount
+                            </label>
+                            <select id="credit-card-payment-mode">
+                                <option value="statement">Remaining Statement Due</option>
+                                <option value="outstanding">Current Outstanding</option>
+                                <option value="minimum">Minimum Payment</option>
+                                <option value="custom">Custom Amount</option>
+                            </select>
+
+                            <input
+                                type="number"
+                                id="credit-card-payment-amount"
+                                min="0.01"
+                                step="0.01"
+                                placeholder="0.00"
+                                required
+                            >
+
+                            <label for="credit-card-payment-date">
+                                Payment Date
+                            </label>
+                            <input
+                                type="date"
+                                id="credit-card-payment-date"
+                                required
+                            >
+
+                            <button
+                                type="submit"
+                                class="primary-button"
+                            >
+                                Record Payment
+                            </button>
+
+                            <p
+                                id="credit-card-payment-message"
+                                class="form-message"
+                                aria-live="polite"
+                            ></p>
+
+                        </form>
+
+
+                        <form
+                            id="credit-card-reconcile-form"
+                            class="management-form credit-card-secondary-form"
+                        >
+
+                            <h2>Reconcile with Bank</h2>
+
+                            <p class="form-helper">
+                                Compare Kira with the outstanding shown by your bank. Reconciliation does not silently alter your ledger.
+                            </p>
+
+                            <label for="credit-card-reconcile-card">
+                                Credit Card
+                            </label>
+                            <select id="credit-card-reconcile-card" required>
+                                <option value="">Select card</option>
+                            </select>
+
+                            <label for="credit-card-reconcile-date">
+                                Bank Balance As Of
+                            </label>
+                            <input
+                                type="date"
+                                id="credit-card-reconcile-date"
+                                required
+                            >
+
+                            <label for="credit-card-bank-outstanding">
+                                Bank Outstanding
+                            </label>
+                            <input
+                                type="number"
+                                id="credit-card-bank-outstanding"
+                                min="0"
+                                step="0.01"
+                                required
+                            >
+
+                            <label for="credit-card-reconcile-notes">
+                                Notes
+                                <span class="optional-label">Optional</span>
+                            </label>
+                            <textarea
+                                id="credit-card-reconcile-notes"
+                                rows="3"
+                                placeholder="e.g. Bank app checked after payment posted"
+                            ></textarea>
+
+                            <button
+                                type="submit"
+                                class="secondary-button"
+                            >
+                                Save Reconciliation
+                            </button>
+
+                            <p
+                                id="credit-card-reconcile-message"
+                                class="form-message"
+                                aria-live="polite"
+                            ></p>
+
+                        </form>
+
+                    </section>
+
+                </section>
 
 
                 <!-- =================================================
@@ -4577,6 +5241,39 @@
 
                                     <p>
                                         Manage bank accounts, cash, savings and e-wallets.
+                                    </p>
+
+                                </div>
+
+                                <span class="more-hub-arrow" aria-hidden="true">
+                                    ›
+                                </span>
+
+                            </a>
+
+
+                            <a
+                                href="#credit-cards"
+                                class="more-hub-card more-hub-link"
+                                data-page="credit-cards"
+                            >
+
+                                <div class="more-hub-icon">
+                                    ◈
+                                </div>
+
+                                <div class="more-hub-content">
+
+                                    <div class="more-hub-title-row">
+
+                                        <h3>
+                                            Credit Cards
+                                        </h3>
+
+                                    </div>
+
+                                    <p>
+                                        Track card debt, statements, estimates and repayments.
                                     </p>
 
                                 </div>
