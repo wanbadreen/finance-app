@@ -83,6 +83,15 @@ const settingsThemeOptions =
 const settingsThemeMessage =
     document.getElementById("settings-theme-message");
 
+const settingsBudgetCycleStartDay =
+    document.getElementById("settings-budget-cycle-start-day");
+
+const saveBudgetCycleSettingsButton =
+    document.getElementById("save-budget-cycle-settings-button");
+
+const settingsBudgetCycleMessage =
+    document.getElementById("settings-budget-cycle-message");
+
 const forgotPasswordButton =
     document.getElementById("forgot-password-button");
 
@@ -1482,6 +1491,192 @@ function updateAvatarUi(
             }
         );
 }
+
+
+async function loadBudgetPreferences() {
+
+    if (
+        !currentUser ||
+        !settingsBudgetCycleStartDay
+    ) {
+        return;
+    }
+
+    if (settingsBudgetCycleMessage) {
+        settingsBudgetCycleMessage.textContent =
+            "Loading budget cycle…";
+    }
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("budget_preferences")
+            .select("budget_cycle_start_day")
+            .eq(
+                "user_id",
+                currentUser.id
+            )
+            .maybeSingle();
+
+    if (error) {
+
+        console.error(
+            "Budget preference load error:",
+            error
+        );
+
+        if (settingsBudgetCycleMessage) {
+            settingsBudgetCycleMessage.textContent =
+                "Unable to load budget cycle setting.";
+        }
+
+        return;
+    }
+
+    const startDay =
+        Number(
+            data?.budget_cycle_start_day
+            ??
+            27
+        );
+
+    settingsBudgetCycleStartDay.value =
+        String(
+            startDay
+        );
+
+    if (settingsBudgetCycleMessage) {
+        settingsBudgetCycleMessage.textContent =
+            "";
+    }
+}
+
+
+saveBudgetCycleSettingsButton
+    ?.addEventListener(
+        "click",
+        async function () {
+
+            if (
+                !currentUser ||
+                !settingsBudgetCycleStartDay
+            ) {
+                return;
+            }
+
+            const startDay =
+                Number(
+                    settingsBudgetCycleStartDay.value
+                );
+
+            if (
+                !Number.isInteger(
+                    startDay
+                )
+                ||
+                startDay < 25
+                ||
+                startDay > 30
+            ) {
+
+                if (settingsBudgetCycleMessage) {
+                    settingsBudgetCycleMessage.textContent =
+                        "Choose a day from 25th to 30th.";
+                }
+
+                return;
+            }
+
+            saveBudgetCycleSettingsButton.disabled =
+                true;
+
+            if (settingsBudgetCycleMessage) {
+                settingsBudgetCycleMessage.textContent =
+                    "Saving budget cycle…";
+            }
+
+            const {
+                error
+            } =
+                await supabase
+                    .from("budget_preferences")
+                    .upsert(
+                        {
+                            user_id:
+                                currentUser.id,
+                            budget_cycle_start_day:
+                                startDay,
+                            updated_at:
+                                new Date()
+                                    .toISOString()
+                        },
+                        {
+                            onConflict:
+                                "user_id"
+                        }
+                    );
+
+            saveBudgetCycleSettingsButton.disabled =
+                false;
+
+            if (error) {
+
+                console.error(
+                    "Budget preference save error:",
+                    error
+                );
+
+                if (settingsBudgetCycleMessage) {
+                    settingsBudgetCycleMessage.textContent =
+                        error.message;
+                }
+
+                return;
+            }
+
+            /*
+              Saving the preference makes the database recalculate
+              budget_month_start for this user's existing transactions.
+              Refresh local transactions so budget cards update immediately.
+            */
+            try {
+
+                await loadTransactions(
+                    true
+                );
+
+            } catch (refreshError) {
+
+                console.error(
+                    "Budget cycle transaction refresh error:",
+                    refreshError
+                );
+            }
+
+            if (settingsBudgetCycleMessage) {
+
+                settingsBudgetCycleMessage.textContent =
+                    `Budget cycle starts on the ${startDay}th.`;
+
+                setTimeout(
+                    function () {
+
+                        if (
+                            settingsBudgetCycleMessage.textContent ===
+                            `Budget cycle starts on the ${startDay}th.`
+                        ) {
+
+                            settingsBudgetCycleMessage.textContent =
+                                "";
+                        }
+                    },
+                    3000
+                );
+            }
+        }
+    );
 
 
 function renderUserSettings(user) {
@@ -28081,6 +28276,14 @@ function navigateToPage(
         renderFinancialCalendar();
 
         refreshRecurringFormOptions();
+    }
+
+    if (
+        pageName ===
+        "settings"
+    ) {
+
+        loadBudgetPreferences();
     }
 
 
