@@ -50,7 +50,8 @@ function database(seed) {
     from(table) {
       assert.ok([
         'accounts','transactions','account_transfers','categories',
-        'income_sources','payment_methods','credit_cards','credit_card_statements'
+        'income_sources','payment_methods','credit_cards','credit_card_statements',
+        'recurring_transactions','recurring_occurrence_statuses','budgets'
       ].includes(table));
 
       const filters=[];
@@ -191,6 +192,104 @@ test('transaction options expose only own active choices and filter category typ
   assert.deepEqual(r.categories,[{id:categoryId,name:'Food',type:'expense'}]);
   assert.deepEqual(r.income_sources,[]);
   assert.equal(r.payment_methods[0].name,'QR');
+});
+
+test('recurring payment reader returns own enriched rows, statuses and monthly equivalents',async()=>{
+  const recurringId='00000000-0000-4000-8000-000000000050';
+  const yearlyId='00000000-0000-4000-8000-000000000051';
+  const db=database({
+    accounts:[
+      {id:accountId,user_id:user,name:'Maybank',account_type:'bank',opening_balance:0,is_active:true}
+    ],
+    categories:[
+      {id:categoryId,user_id:user,name:'Bills',type:'expense',is_active:true}
+    ],
+    income_sources:[],
+    payment_methods:[
+      {id:methodId,user_id:user,name:'Auto Debit',method_type:'auto_debit',system_key:null,is_active:true,sort_order:1}
+    ],
+    recurring_transactions:[
+      {
+        id:recurringId,user_id:user,name:'Gym',kind:'subscription',type:'expense',
+        account_id:accountId,category_id:categoryId,income_source_id:null,payment_method_id:methodId,
+        amount:120,frequency:'monthly',next_due_date:'2026-10-01',notes:null,is_active:true,
+        reminder_enabled:true,reminder_days_before:3,created_at:'2026-01-01T00:00:00Z',updated_at:'2026-01-01T00:00:00Z'
+      },
+      {
+        id:yearlyId,user_id:user,name:'Annual App',kind:'subscription',type:'expense',
+        account_id:accountId,category_id:categoryId,income_source_id:null,payment_method_id:null,
+        amount:120,frequency:'yearly',next_due_date:'2027-01-01',notes:null,is_active:true,
+        reminder_enabled:true,reminder_days_before:3,created_at:'2026-01-01T00:00:00Z',updated_at:'2026-01-01T00:00:00Z'
+      },
+      {
+        id:'00000000-0000-4000-8000-000000000052',user_id:other,name:'Secret',kind:'subscription',type:'expense',
+        account_id:otherAccountId,category_id:categoryId,amount:999,frequency:'monthly',
+        next_due_date:'2026-10-01',is_active:true,reminder_enabled:true,reminder_days_before:3
+      }
+    ],
+    recurring_occurrence_statuses:[
+      {
+        id:'00000000-0000-4000-8000-000000000053',user_id:user,recurring_id:recurringId,
+        due_date:'2026-10-01',status:'paid',created_at:'2026-09-25T00:00:00Z',updated_at:'2026-09-25T00:00:00Z'
+      }
+    ]
+  });
+  const r=await reader(db,user)('get_recurring_payments',{active_only:true,type:'expense',kind:'subscription'});
+  assert.equal(r.total_count,2);
+  assert.equal(r.recurring_payments[0].name,'Gym');
+  assert.equal(r.recurring_payments[0].next_due_status,'paid');
+  assert.equal(r.recurring_payments[0].account_name,'Maybank');
+  assert.equal(r.recurring_payments[0].category_name,'Bills');
+  assert.equal(r.recurring_payments[0].payment_method_name,'Auto Debit');
+  assert.equal(r.recurring_payments[0].monthly_equivalent,120);
+  assert.equal(r.recurring_payments[1].monthly_equivalent,10);
+  assert.equal(r.active_summary.monthly_expense_equivalent,130);
+  assert.equal(r.active_summary.annual_expense_equivalent,1560);
+});
+
+test('create budget requires confirmation, validates category ownership/type and rejects duplicates',async()=>{
+  assert.throws(()=>schemas.create_budget.parse({
+    month:'2026-10',category_id:categoryId,amount:300
+  }));
+
+  const bothId='00000000-0000-4000-8000-000000000054';
+  const db=database({
+    categories:[
+      {id:categoryId,user_id:user,name:'Food',type:'expense',is_active:true},
+      {id:incomeCategoryId,user_id:user,name:'Salary',type:'income',is_active:true},
+      {id:bothId,user_id:user,name:'Mixed',type:'both',is_active:true},
+      {id:'00000000-0000-4000-8000-000000000055',user_id:other,name:'Other',type:'expense',is_active:true}
+    ],
+    budgets:[],
+    transactions:[
+      {
+        id:'00000000-0000-4000-8000-000000000056',user_id:user,account_id:accountId,
+        category_id:categoryId,type:'expense',amount:75,transaction_date:'2026-10-05',deleted_at:null
+      }
+    ]
+  });
+
+  await assert.rejects(reader(db,user)('create_budget',{
+    month:'2026-10',category_id:incomeCategoryId,amount:300,confirmed:true
+  }),/expense or both-type/);
+
+  const r=await reader(db,user)('create_budget',{
+    month:'2026-10',category_id:categoryId,amount:300,confirmed:true
+  });
+  assert.equal(r.created,true);
+  assert.equal(r.budget.category_name,'Food');
+  assert.equal(r.budget.amount,300);
+  assert.equal(r.budget.spent,75);
+  assert.equal(r.budget.remaining,225);
+  assert.equal(db.tables.budgets.length,1);
+  assert.equal(db.tables.budgets[0].user_id,user);
+
+  await assert.rejects(reader(db,user)('create_budget',{
+    month:'2026-10',category_id:categoryId,amount:400,confirmed:true
+  }),/already exists/);
+
+  const options=await reader(db,user)('get_transaction_options',{type:'expense'});
+  assert.ok(options.categories.some(x=>x.id===bothId));
 });
 
 test('create transaction requires explicit confirmation and validates owned references',async()=>{
@@ -525,14 +624,16 @@ test('HTTP discovery, auth challenges, MCP initialize, tool metadata and dispatc
   );
 
   const list=(await call('tools/list')).result.tools;
-  assert.equal(list.length,13);
-  assert.equal(list.filter(x=>!x.annotations.readOnlyHint).length,6);
+  assert.equal(list.length,15);
+  assert.equal(list.filter(x=>!x.annotations.readOnlyHint).length,7);
   assert.equal(list.find(x=>x.name==='create_transaction').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='edit_transaction').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='create_account_transfer').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='delete_transaction').annotations.destructiveHint,true);
   assert.equal(list.find(x=>x.name==='delete_account_transfer').annotations.destructiveHint,true);
   assert.equal(list.find(x=>x.name==='attach_receipt_to_transaction').annotations.destructiveHint,false);
+  assert.equal(list.find(x=>x.name==='create_budget').annotations.destructiveHint,false);
+  assert.equal(list.find(x=>x.name==='get_recurring_payments').annotations.readOnlyHint,true);
   assert.deepEqual(list.find(x=>x.name==='create_transaction')._meta['openai/fileParams'],['receipt']);
   assert.deepEqual(list.find(x=>x.name==='attach_receipt_to_transaction')._meta['openai/fileParams'],['receipt']);
   assert.equal(list.find(x=>x.name==='create_transaction').annotations.idempotentHint,false);
