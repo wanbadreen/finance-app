@@ -4482,7 +4482,7 @@
                             </h2>
 
                             <p>
-                                Personalise your profile and how the app looks.
+                                Personalise your profile, budget cycle and how the app looks.
                             </p>
 
                         </div>
@@ -4706,6 +4706,74 @@
 
                                 <span
                                     id="settings-profile-message"
+                                    class="settings-inline-message"
+                                    aria-live="polite"
+                                ></span>
+
+                            </div>
+
+                        </article>
+
+
+                        <article class="settings-card">
+
+                            <div class="settings-card-heading">
+
+                                <div>
+
+                                    <p class="settings-eyebrow">
+                                        Budget Cycle
+                                    </p>
+
+                                    <h3>
+                                        Early recurring payments
+                                    </h3>
+
+                                    <p>
+                                        Choose when payments for recurring commitments due on the 30th should start counting toward the following month's budget.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            <div class="settings-form-grid">
+
+                                <label class="settings-field">
+
+                                    <span>
+                                        Start next month's budget cycle on
+                                    </span>
+
+                                    <select id="settings-budget-cycle-start-day">
+                                        <option value="25">25th</option>
+                                        <option value="26">26th</option>
+                                        <option value="27">27th</option>
+                                        <option value="28">28th</option>
+                                        <option value="29">29th</option>
+                                        <option value="30">30th</option>
+                                    </select>
+
+                                    <small class="settings-field-help">
+                                        Default is 27th. Transaction dates stay unchanged; only budget attribution changes.
+                                    </small>
+
+                                </label>
+
+                            </div>
+
+                            <div class="settings-card-actions">
+
+                                <button
+                                    type="button"
+                                    id="save-budget-cycle-settings-button"
+                                    class="primary-button settings-save-button"
+                                >
+                                    Save budget cycle
+                                </button>
+
+                                <span
+                                    id="settings-budget-cycle-message"
                                     class="settings-inline-message"
                                     aria-live="polite"
                                 ></span>
