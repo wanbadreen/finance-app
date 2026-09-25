@@ -1,0 +1,3 @@
+Trigger Vercel production deployment for the Kira MCP project.
+
+This file has no runtime effect.
