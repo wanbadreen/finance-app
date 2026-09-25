@@ -1,7 +1,8 @@
 import { supabase } from './supabase.js';
 const status = document.querySelector('#status');
 const authorizationId = new URL(location.href).searchParams.get('authorization_id');
-const allowed = (import.meta.env.VITE_MCP_CLIENT_IDS || '').split(',').map(x=>x.trim());
+const allowed = (import.meta.env.VITE_MCP_CLIENT_IDS || '7bc4b0df-7ece-4168-a44a-5fb7c625593c').split(',').map(x=>x.trim());
+const allowedScopes = new Set(['openid', 'email', 'offline_access']);
 const approve = document.querySelector('#approve');
 const deny = document.querySelector('#deny');
 async function load() {
@@ -13,7 +14,11 @@ async function load() {
   if (error || !data || !('authorization_id' in data)) {status.textContent='Request unavailable or already approved. Restart the connection in ChatGPT.';return;}
   document.querySelector('#details').textContent = `Client: ${data.client.name}\nRedirect: ${data.redirect_uri}\nScopes: ${data.scope || ''}`;
   deny.disabled=false;
-  if (!allowed.includes(data.client.id) || data.scope.split(' ').some(x=>x && x!=='openid')) {status.textContent='This client or its permissions are not configured for Kira MCP.';return;}
+  const requestedScopes = (data.scope || '').split(/\s+/).filter(Boolean);
+  if (!allowed.includes(data.client.id) || requestedScopes.some(scope => !allowedScopes.has(scope))) {
+    status.textContent='This client or its permissions are not configured for Kira MCP.';
+    return;
+  }
   status.textContent=`Signed in as ${user.email}. Review and approve this connection.`;
   approve.disabled=false;
 }
