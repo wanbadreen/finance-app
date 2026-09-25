@@ -3,7 +3,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { configuration, authenticator } from './auth.mjs';
 import { schemas, descriptions, reader } from './tools.mjs';
 
-const writeTools = new Set(['create_transaction','attach_receipt_to_transaction','edit_transaction','delete_transaction','create_account_transfer','delete_account_transfer']);
+const writeTools = new Set(['create_transaction','attach_receipt_to_transaction','edit_transaction','delete_transaction','create_account_transfer','delete_account_transfer','create_budget']);
 const fileParams = new Map([
   ['create_transaction',['receipt']],
   ['attach_receipt_to_transaction',['receipt']]
@@ -26,7 +26,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
         authorization_servers:[config.issuer],
         scopes_supported:['openid'],
         bearer_methods_supported:['header'],
-        kira_mcp_version:'1.4.0'
+        kira_mcp_version:'1.5.0'
       }));
     }
 
@@ -57,7 +57,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
       return res.end();
     }
 
-    const server = new McpServer({name:'kira',version:'1.4.0'});
+    const server = new McpServer({name:'kira',version:'1.5.0'});
     const run = reader(context.db,context.userId);
 
     for (const [name,schema] of Object.entries(schemas)) {
