@@ -8527,6 +8527,33 @@ function renderBudgets() {
 // CATEGORY SPENDING FOR BUDGET
 // ======================================================
 
+function getTransactionBudgetMonth(
+    transaction
+) {
+
+    const budgetMonthStart =
+        transaction?.budget_month_start;
+
+    if (budgetMonthStart) {
+
+        return String(
+            budgetMonthStart
+        ).slice(
+            0,
+            7
+        );
+    }
+
+    return String(
+        transaction?.transaction_date ||
+        ""
+    ).slice(
+        0,
+        7
+    );
+}
+
+
 function calculateCategorySpending(
     categoryId,
     month
@@ -8543,10 +8570,10 @@ function calculateCategorySpending(
                     transaction.category_id ===
                         categoryId
                     &&
-                    transaction.transaction_date
-                        ?.startsWith(
-                            month
-                        )
+                    getTransactionBudgetMonth(
+                        transaction
+                    ) ===
+                        month
                 );
             }
         )
@@ -23546,16 +23573,15 @@ function getInsightTotals(rows) {
 
 function getInsightBudgetRows(currentRows) {
     const monthStart = getInsightMonthRange(0).start;
+    const budgetMonth = monthStart.slice(0, 7);
 
     return budgets
         .filter(budget => budget.month_start === monthStart)
         .map(budget => {
-            const spent = currentRows
-                .filter(item =>
-                    item.type === "expense" &&
-                    item.category_id === budget.category_id
-                )
-                .reduce((total, item) => total + Number(item.amount), 0);
+            const spent = calculateCategorySpending(
+                budget.category_id,
+                budgetMonth
+            );
 
             const category = categories.find(item => item.id === budget.category_id);
             const limit = Number(budget.amount);
