@@ -278,7 +278,7 @@ export function reader(db, userId) {
     return {
       accounts: a.filter(x=>x.is_active).map(({id,name,account_type})=>({id,name,account_type})),
       categories: c
-        .filter(x=>x.is_active && (!type || x.type===type))
+        .filter(x=>x.is_active && (!type || x.type===type || x.type==='both'))
         .map(({id,name,type})=>({id,name,type})),
       income_sources: (!type || type==='income')
         ? i.filter(x=>x.is_active).map(({id,name})=>({id,name}))
