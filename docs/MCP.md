@@ -1,4 +1,4 @@
-# Kira MCP v1.4 — implementation and setup
+# Kira MCP v1.5 — implementation and setup
 
 ## Status
 
@@ -41,9 +41,17 @@ Kira MCP now accepts ChatGPT file inputs for receipt attachments.
 - Replacing a receipt uploads the new file first, updates the transaction, then removes the previous receipt. A failed database update cleans up the newly uploaded file.
 - No service role is used; existing Storage RLS continues to enforce the user-owned first folder segment.
 
+## v1.5 recurring reads and budget creation
+
+Kira MCP now exposes `get_recurring_payments` and `create_budget`.
+
+- `get_recurring_payments` reads only the authenticated user's recurring transactions/subscriptions and next-occurrence statuses. It can filter active rows, type and kind, enriches account/category/income-source/payment-method names, and returns monthly-equivalent recurring cash-flow totals using the same Kira formulas: weekly × 52 / 12, monthly as-is, yearly / 12.
+- `create_budget` creates one confirmed monthly category budget. Kira budgets are category-specific. The tool validates that the category belongs to the user, is active, and is an expense/both category; it rejects duplicate category budgets for the same month and returns current month spending/remaining amount after creation.
+- No new table or RLS policy is created. Existing user-scoped RLS on `recurring_transactions`, `recurring_occurrence_statuses`, `budgets`, and related reference tables remains in force.
+
 ## Audit and design
 
-The app is plain JavaScript + Vite, with Capacitor Android and Supabase JS 2.116.0. Existing web authentication and supabase.js remain unchanged. Server modules use Node ESM, MCP SDK Streamable HTTP, jose JWT verification, and a fresh user-scoped Supabase client per request. There is no service_role client, arbitrary SQL tool, storage download or RPC call. Seven tools are read-only. Six write tools are available: create_transaction, attach_receipt_to_transaction, edit_transaction, delete_transaction, create_account_transfer, and delete_account_transfer. Every write requires confirmed=true and remains behind the authenticated user's RLS.
+The app is plain JavaScript + Vite, with Capacitor Android and Supabase JS 2.116.0. Existing web authentication and supabase.js remain unchanged. Server modules use Node ESM, MCP SDK Streamable HTTP, jose JWT verification, and a fresh user-scoped Supabase client per request. There is no service_role client, arbitrary SQL tool, storage download or RPC call. Eight tools are read-only. Seven write tools are available: create_transaction, attach_receipt_to_transaction, edit_transaction, delete_transaction, create_account_transfer, delete_account_transfer, and create_budget. Every write requires confirmed=true and remains behind the authenticated user's RLS.
 
 All queries use a fixed table/column allowlist, the verified JWT subject as user_id, and the same bearer token for Supabase RLS. Missing/bad tokens return 401 and OAuth discovery metadata. JWT signatures, expiry, issuer, exact MCP resource audience, authenticated role, non-anonymous identity, client allowlist and openid scope are checked; getUser confirms identity server-side. ID tokens lacking the authenticated role are rejected.
 
@@ -56,7 +64,7 @@ No database migration or grant/policy changes are included. Existing public-tabl
 ## Changed files
 
 - server/auth.mjs: configuration and token validation.
-- server/tools.mjs: thirteen tools: seven read tools plus confirmed create/attach-receipt/edit/delete transaction actions, internal account transfer creation, and confirmed transfer deletion, with schemas, file validation, aggregation, ownership validation and user filters.
+- server/tools.mjs: fifteen tools: eight read tools plus confirmed create/attach-receipt/edit/delete transaction actions, internal account transfer creation/deletion, and monthly category budget creation, with schemas, file validation, aggregation, ownership validation and user filters.
 - server/handler.mjs, server/local.mjs: MCP HTTP transport and local launcher.
 - server/oauth-claims.mjs: pure audience transform to integrate into an existing trusted Auth hook; not a deployed hook.
 - api/mcp.mjs, api/oauth-resource.mjs: Vercel entry points.
