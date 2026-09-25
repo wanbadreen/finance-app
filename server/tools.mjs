@@ -131,7 +131,7 @@ export const descriptions = {
 
 const columns = {
   accounts: 'id,name,account_type,opening_balance,is_active',
-  transactions: 'id,account_id,category_id,income_source_id,payment_method_id,type,amount,transaction_date,description,notes,receipt_path,recurring_id,recurring_due_date,recurring_next_due_date,linked_transfer_id',
+  transactions: 'id,account_id,category_id,income_source_id,payment_method_id,type,amount,transaction_date,budget_month_start,description,notes,receipt_path,recurring_id,recurring_due_date,recurring_next_due_date,linked_transfer_id',
   account_transfers: 'id,from_account_id,to_account_id,amount,transfer_date,description,notes,fee_percent',
   categories: 'id,name,type,is_active',
   income_sources: 'id,name,is_active',
@@ -381,11 +381,12 @@ export function reader(db, userId) {
 
     if (error || !data) throw new Error('Database write failed');
 
-    const [year,m] = args.month.split('-').map(Number);
-    const end = `${m===12?year+1:year}-${String(m===12?1:m+1).padStart(2,'0')}-01`;
     const monthTransactions = await all(
       'transactions',
-      q=>q.eq('category_id',category.id).eq('type','expense').gte('transaction_date',monthStart).lt('transaction_date',end)
+      q=>q
+        .eq('category_id',category.id)
+        .eq('type','expense')
+        .eq('budget_month_start',monthStart)
     );
     const spent = money(monthTransactions.reduce((n,x)=>n+Number(x.amount),0));
     const limit = money(Number(data.amount));
