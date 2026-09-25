@@ -42,6 +42,13 @@ export const schemas = {
   get_category_spending: z.object({ month, category_id: id.optional() }).strict(),
   get_credit_cards: empty,
   get_debts: empty,
+  get_recurring_payments: z.object({
+    active_only: z.boolean().default(false),
+    type: transactionType.optional(),
+    kind: z.enum(['recurring','subscription']).optional(),
+    limit: z.number().int().min(1).max(100).default(50),
+    offset: z.number().int().min(0).max(100000).default(0)
+  }).strict(),
   get_transaction_options: z.object({ type: transactionType.optional() }).strict(),
   create_transaction: z.object({
     type: transactionType,
@@ -96,6 +103,12 @@ export const schemas = {
     transfer_id: id,
     confirmed: z.literal(true)
   }).strict(),
+  create_budget: z.object({
+    month,
+    category_id: id,
+    amount: moneyInput,
+    confirmed: z.literal(true)
+  }).strict(),
 };
 
 export const descriptions = {
@@ -105,6 +118,7 @@ export const descriptions = {
   get_category_spending: 'Read expense totals by category for YYYY-MM. Transfers excluded.',
   get_credit_cards: 'Read card profiles, computed outstanding balances and recorded statements. Statement amounts are historical, not remaining due.',
   get_debts: 'Read tracked credit-card debt only. Kira has no persisted general-loan/debt ledger; this is not a complete debt inventory.',
+  get_recurring_payments: 'Read the authenticated user’s Kira recurring payments and subscriptions, including next due date/status, account/category/payment method names, monthly equivalents, and active recurring cash-flow summary. Supports active/type/kind filters and pagination.',
   get_transaction_options: 'Read active Kira accounts, categories, income sources and payment methods needed to prepare a transaction or transfer. Use this to resolve names to IDs before any write.',
   create_transaction: 'Create one Kira income or expense transaction, optionally attaching one user-provided receipt image/PDF. Never use for transfers, edits or deletes. Call get_transaction_options first to resolve IDs. If a receipt is attached, preserve the exact user-provided file in the receipt field. Only call after the user explicitly confirms the exact transaction details and receipt attachment; set confirmed=true only after that confirmation.',
   attach_receipt_to_transaction: 'Attach or replace one receipt on an existing ordinary Kira transaction. Accepts JPG, PNG, WebP or PDF up to 5 MB. First identify the exact transaction, tell the user if an existing receipt will be replaced, and only call after explicit confirmation.',
@@ -112,6 +126,7 @@ export const descriptions = {
   delete_transaction: 'Delete one existing ordinary Kira income or expense transaction by soft-deleting it. Never delete automatic transfer-fee or recurring-generated transactions. First identify the exact transaction with list_transactions, show what will be deleted, and only call after explicit user confirmation.',
   create_account_transfer: 'Record one transfer between two of the user’s own active Kira accounts. This records a Kira balance transfer; it does not move real bank money. Resolve account IDs first and only call after the user explicitly confirms source, destination, amount, date and any fee.',
   delete_account_transfer: 'Delete one existing Kira account-transfer record by soft-deleting it. First identify the exact transfer, show source, destination, amount and date, and only call after explicit user confirmation. This reverses its effect on Kira balances; if the transfer created an automatic fee transaction, the existing database trigger soft-deletes that fee too. It does not move real money at a bank or wallet provider.',
+  create_budget: 'Create one Kira monthly category budget. Budgets are category-specific, not a single overall monthly limit. Resolve an active expense/both category first, show month/category/amount to the user, and only call after explicit confirmation. Duplicate category budgets for the same month are rejected.',
 };
 
 const columns = {
@@ -123,6 +138,9 @@ const columns = {
   payment_methods: 'id,name,method_type,system_key,is_active,sort_order',
   credit_cards: 'id,account_id,card_name,issuer,last_four,credit_limit,is_active',
   credit_card_statements: 'id,credit_card_id,statement_date,due_date,statement_balance,amount_due,minimum_payment',
+  recurring_transactions: 'id,name,kind,type,account_id,category_id,income_source_id,payment_method_id,amount,frequency,next_due_date,notes,is_active,reminder_enabled,reminder_days_before,created_at,updated_at',
+  recurring_occurrence_statuses: 'id,recurring_id,due_date,status,created_at,updated_at',
+  budgets: 'id,category_id,month_start,amount,created_at,updated_at',
 };
 
 const money = x => Math.round((x + Number.EPSILON) * 100) / 100;
@@ -269,6 +287,120 @@ export function reader(db, userId) {
         .filter(x=>x.is_active)
         .sort((x,y)=>Number(x.sort_order)-Number(y.sort_order) || x.name.localeCompare(y.name))
         .map(({id,name,method_type,system_key})=>({id,name,method_type,system_key}))
+    };
+  }
+
+  function recurringMonthlyEquivalent(item) {
+    const amount = Number(item?.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+    if (item.frequency === 'weekly') return money(amount * 52 / 12);
+    if (item.frequency === 'yearly') return money(amount / 12);
+    return money(amount);
+  }
+
+  async function recurringPayments(args) {
+    const [rows,statuses,a,categories,incomeSources,paymentMethods] = await Promise.all([
+      all('recurring_transactions'),
+      all('recurring_occurrence_statuses'),
+      all('accounts'),
+      all('categories'),
+      all('income_sources'),
+      all('payment_methods')
+    ]);
+
+    const filtered = rows
+      .filter(x => !args.active_only || x.is_active)
+      .filter(x => !args.type || x.type === args.type)
+      .filter(x => !args.kind || x.kind === args.kind)
+      .sort((x,y) =>
+        String(x.next_due_date || '').localeCompare(String(y.next_due_date || ''))
+        || String(x.name || '').localeCompare(String(y.name || ''))
+        || String(x.id).localeCompare(String(y.id))
+      );
+
+    const active = rows.filter(x => x.is_active);
+    const monthlyIncome = money(active.filter(x=>x.type==='income').reduce((n,x)=>n+recurringMonthlyEquivalent(x),0));
+    const monthlyExpense = money(active.filter(x=>x.type==='expense').reduce((n,x)=>n+recurringMonthlyEquivalent(x),0));
+
+    const items = filtered.slice(args.offset,args.offset+args.limit).map(item => {
+      const nextStatus = statuses.find(s => s.recurring_id===item.id && s.due_date===item.next_due_date)?.status || 'pending';
+      return {
+        ...item,
+        amount: money(Number(item.amount)),
+        monthly_equivalent: recurringMonthlyEquivalent(item),
+        next_due_status: nextStatus,
+        account_name: a.find(x=>x.id===item.account_id)?.name || null,
+        category_name: categories.find(x=>x.id===item.category_id)?.name || null,
+        income_source_name: incomeSources.find(x=>x.id===item.income_source_id)?.name || null,
+        payment_method_name: paymentMethods.find(x=>x.id===item.payment_method_id)?.name || null
+      };
+    });
+
+    return {
+      recurring_payments: items,
+      total_count: filtered.length,
+      next_offset: args.offset + args.limit < filtered.length ? args.offset + args.limit : null,
+      active_summary: {
+        monthly_income_equivalent: monthlyIncome,
+        monthly_expense_equivalent: monthlyExpense,
+        monthly_net_equivalent: money(monthlyIncome-monthlyExpense),
+        annual_expense_equivalent: money(monthlyExpense*12)
+      }
+    };
+  }
+
+  async function createBudget(args) {
+    const [categories,budgets] = await Promise.all([
+      all('categories'),
+      all('budgets')
+    ]);
+
+    const category = categories.find(x=>x.id===args.category_id && x.is_active);
+    if (!category) throw inputError('Choose an active budget category that belongs to this Kira user.');
+    if (!['expense','both'].includes(category.type)) {
+      throw inputError('Kira budgets can only use an expense or both-type category.');
+    }
+
+    const monthStart = `${args.month}-01`;
+    if (budgets.some(x=>x.category_id===category.id && x.month_start===monthStart)) {
+      throw inputError(`A budget for "${category.name}" already exists for ${args.month}.`);
+    }
+
+    const payload = {
+      user_id:userId,
+      category_id:category.id,
+      month_start:monthStart,
+      amount:money(args.amount)
+    };
+
+    const {data,error} = await db
+      .from('budgets')
+      .insert(payload)
+      .select('id,category_id,month_start,amount,created_at,updated_at')
+      .single();
+
+    if (error || !data) throw new Error('Database write failed');
+
+    const [year,m] = args.month.split('-').map(Number);
+    const end = `${m===12?year+1:year}-${String(m===12?1:m+1).padStart(2,'0')}-01`;
+    const monthTransactions = await all(
+      'transactions',
+      q=>q.eq('category_id',category.id).eq('type','expense').gte('transaction_date',monthStart).lt('transaction_date',end)
+    );
+    const spent = money(monthTransactions.reduce((n,x)=>n+Number(x.amount),0));
+    const limit = money(Number(data.amount));
+
+    return {
+      created:true,
+      budget:{
+        ...data,
+        amount:limit,
+        month:args.month,
+        category_name:category.name,
+        spent,
+        remaining:money(limit-spent),
+        percentage_used:limit>0?money(spent/limit*100):0
+      }
     };
   }
 
@@ -622,6 +754,7 @@ export function reader(db, userId) {
     const args = schemas[name].parse(input);
 
     if (name === 'get_accounts') return { accounts: await accounts() };
+    if (name === 'get_recurring_payments') return recurringPayments(args);
     if (name === 'get_transaction_options') return transactionOptions(args.type);
     if (name === 'create_transaction') return createTransaction(args);
     if (name === 'attach_receipt_to_transaction') return attachReceipt(args);
@@ -629,6 +762,7 @@ export function reader(db, userId) {
     if (name === 'delete_transaction') return deleteTransaction(args);
     if (name === 'create_account_transfer') return createAccountTransfer(args);
     if (name === 'delete_account_transfer') return deleteAccountTransfer(args);
+    if (name === 'create_budget') return createBudget(args);
 
     if (name === 'get_credit_cards') {
       return { cards: await cards(), statement_note: 'Recorded statement amounts; not remaining statement due.' };
