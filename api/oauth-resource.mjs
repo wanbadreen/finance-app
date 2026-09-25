@@ -10,7 +10,7 @@ export default function(req,res) {
       authorization_servers:[config.issuer],
       scopes_supported:['openid'],
       bearer_methods_supported:['header'],
-      kira_mcp_version:'1.4.0'
+      kira_mcp_version:'1.5.0'
     }));
   } catch {
     res.statusCode=503;
