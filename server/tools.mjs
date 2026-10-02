@@ -1,3 +1,4 @@
+import { normalizeTransaction } from '../split-core.mjs';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
@@ -131,7 +132,7 @@ export const descriptions = {
 
 const columns = {
   accounts: 'id,name,account_type,opening_balance,is_active',
-  transactions: 'id,account_id,category_id,income_source_id,payment_method_id,type,amount,transaction_date,budget_month_start,description,notes,receipt_path,recurring_id,recurring_due_date,recurring_next_due_date,linked_transfer_id',
+  transactions: 'id,account_id,category_id,income_source_id,payment_method_id,type,amount,transaction_date,budget_month_start,description,notes,receipt_path,recurring_id,recurring_due_date,recurring_next_due_date,linked_transfer_id,split_bill_id,report_amount,cash_amount',
   account_transfers: 'id,from_account_id,to_account_id,amount,transfer_date,description,notes,fee_percent',
   categories: 'id,name,type,is_active',
   income_sources: 'id,name,is_active',
@@ -152,7 +153,7 @@ export function balances(accounts, transactions, transfers) {
     balance: money(
       transactions
         .filter(t => t.account_id === a.id)
-        .reduce((n,t) => n + (t.type === 'income' ? 1 : -1) * Number(t.amount), Number(a.opening_balance))
+        .reduce((n,t) => n + (t.type === 'income' ? 1 : -1) * Number(t.cash_amount ?? t.amount), Number(a.opening_balance))
       + transfers.reduce(
         (n,t) => n + (t.from_account_id === a.id ? -Number(t.amount) : t.to_account_id === a.id ? Number(t.amount) : 0),
         0
@@ -245,7 +246,7 @@ export function reader(db, userId) {
     for (let offset = 0; offset < 100000; offset += 100) {
       const { data, error, count } = await filter(query(table)).range(offset, offset + 99);
       if (error) throw new Error('Database read failed');
-      rows.push(...data);
+      rows.push(...(table === 'transactions' ? data.map(normalizeTransaction) : data));
       if (data.length < 100) {
         if (count != null && rows.length < count) throw new Error('Database row cap prevents complete aggregation');
         return rows;
@@ -487,6 +488,7 @@ export function reader(db, userId) {
     const transactions = await all('transactions');
     const existing = transactions.find(x => x.id === args.transaction_id);
     if (!existing) throw inputError('Transaction not found for this Kira user.');
+    if (existing.split_bill_id) throw inputError('Manage this transaction in Kira Split Bill.');
     if (existing.linked_transfer_id) {
       throw inputError('Automatic transfer-fee transactions cannot have receipts attached directly.');
     }
@@ -538,6 +540,7 @@ export function reader(db, userId) {
 
     const existing = transactions.find(x => x.id === args.transaction_id);
     if (!existing) throw inputError('Transaction not found for this Kira user.');
+    if (existing.split_bill_id) throw inputError('Manage this transaction in Kira Split Bill.');
     if (existing.linked_transfer_id) throw inputError('Automatic transfer-fee transactions cannot be edited directly.');
     if (existing.recurring_id) throw inputError('Recurring-generated transactions cannot be edited through ChatGPT yet.');
 
@@ -629,6 +632,7 @@ export function reader(db, userId) {
     const transactions = await all('transactions');
     const existing = transactions.find(x => x.id === args.transaction_id);
     if (!existing) throw inputError('Transaction not found for this Kira user.');
+    if (existing.split_bill_id) throw inputError('Manage this transaction in Kira Split Bill.');
     if (existing.linked_transfer_id) throw inputError('Automatic transfer-fee transactions cannot be deleted directly.');
     if (existing.recurring_id) throw inputError('Recurring-generated transactions cannot be deleted through ChatGPT yet.');
 
@@ -787,7 +791,7 @@ export function reader(db, userId) {
       if (args.to) q = q.lte('transaction_date',args.to);
       const {data,error} = await q.range(args.offset,args.offset+args.limit);
       if (error) throw new Error('Database read failed');
-      return { transactions:data.slice(0,args.limit), next_offset:data.length>args.limit?args.offset+args.limit:null };
+      return { transactions:data.slice(0,args.limit).map(normalizeTransaction), next_offset:data.length>args.limit?args.offset+args.limit:null };
     }
 
     const [year,m] = args.month.split('-').map(Number);

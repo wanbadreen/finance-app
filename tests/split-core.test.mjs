@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { cents, allocate, totals, suggestPlan, validatePlan, progress, reportPayment, decidePayment, normalizeTransaction } from '../split-core.mjs';
+
+import { pizza } from './fixtures/split-bill.mjs';
+
+test('mixed pizza shares match the agreed example',()=>assert.deepEqual(totals(pizza()).people.map(p=>p.share),[3000,3000,3000,2000,1500]));
+test('two people fronting the bill both receive their correct balances',()=>{const b=pizza();b.paid=[{id:'a',participantId:'a',cents:7500},{id:'b',participantId:'b',cents:5000}];const plan=suggestPlan(b);validatePlan(b,plan);assert.deepEqual(totals(b).people.map(p=>p.balance),[4500,2000,-3000,-2000,-1500]);assert.equal(plan.length,3);});
+test('person who paid own share directly owes nothing',()=>{const b=pizza();b.paid=[{id:'a',participantId:'a',cents:10500},{id:'d',participantId:'d',cents:2000}];assert.equal(suggestPlan(b).some(p=>p.from==='d'||p.to==='d'),false);});
+test('sen rounding conserves totals',()=>{assert.deepEqual(allocate(1000,[1,1,1]),[334,333,333]);for(let n=0;n<1000;n++)assert.equal(allocate(n,[3,7,11,1]).reduce((a,b)=>a+b,0),n);});
+test('discount and proportional charges conserve the total',()=>{const b=pizza();b.discountCents=123;b.chargeCents=567;b.paid[0].cents=12944;const t=totals(b);assert.equal(t.people.reduce((s,p)=>s+p.share,0),12944);});
+test('equal mode requires everyone and own items rejects sharing',()=>{const b=pizza();b.mode='equal';assert.throws(()=>totals(b),/Equal/);b.mode='items';assert.throws(()=>totals(b),/Own items/);});
+test('unassigned items and unbalanced shop payments are rejected',()=>{const b=pizza();b.items[0].participants=[];assert.throws(()=>totals(b),/Assign/);b.items[0].participants=['a'];b.paid[0].cents--;assert.throws(()=>totals(b),/shop/);});
+test('manual plan must match all debtor and creditor balances',()=>{const b=pizza();const plan=suggestPlan(b);plan[0].cents--;assert.throws(()=>validatePlan(b,plan),/match/);});
+test('pending partial payment does not settle the bill',()=>{let b=pizza();b.plan=suggestPlan(b);b=reportPayment(b,{id:'p1',from:'b',to:'a',cents:1000,date:b.date},'b');assert.equal(progress(b).remaining,9500);assert.equal(progress(b).lines.find(l=>l.from==='b').available,2000);b=decidePayment(b,'p1','confirmed','a');assert.equal(progress(b).remaining,8500);});
+test('only sender can report and recipient can confirm',()=>{let b=pizza();b.plan=suggestPlan(b);assert.throws(()=>reportPayment(b,{id:'1',from:'b',to:'a',cents:100,date:b.date},'c'),/own/);b=reportPayment(b,{id:'1',from:'b',to:'a',cents:100,date:b.date},'b');assert.throws(()=>decidePayment(b,'1','confirmed','c'),/recipient/);});
+test('duplicate reports, overpayment and repeated decisions are rejected',()=>{let b=pizza();b.plan=suggestPlan(b);const p={id:'1',from:'b',to:'a',cents:3000,date:b.date};b=reportPayment(b,p,'b');assert.throws(()=>reportPayment(b,p,'b'),/already/);assert.throws(()=>reportPayment(b,{...p,id:'2',cents:1},'b'),/exceeds/);b=decidePayment(b,'1','confirmed','a');assert.throws(()=>decidePayment(b,'1','confirmed','a'),/pending/);});
+test('rejected reports restore available balance',()=>{let b=pizza();b.plan=suggestPlan(b);b=reportPayment(b,{id:'1',from:'b',to:'a',cents:3000,date:b.date},'b');b=decidePayment(b,'1','rejected','a');assert.equal(progress(b).lines.find(l=>l.from==='b').available,3000);});
+test('all repayments confirmed marks the bill complete',()=>{let b=pizza();b.plan=suggestPlan(b);for(const [i,l]of b.plan.entries()){b=reportPayment(b,{...l,id:String(i),date:b.date},l.from);b=decidePayment(b,String(i),'confirmed',l.to);}assert.equal(progress(b).complete,true);});
+test('cash movement and spending are separate, ordinary rows remain compatible',()=>{assert.deepEqual(normalizeTransaction({amount:125,report_amount:30,cash_amount:125}),{amount:30,report_amount:30,cash_amount:125});assert.equal(normalizeTransaction({amount:95,report_amount:0,cash_amount:95}).amount,0);assert.equal(normalizeTransaction({amount:50}).cash_amount,50);});
+test('input rejects invalid decimals, negative and excessive amounts',()=>{assert.equal(cents('0.01'),1);assert.equal(cents('12.50'),1250);for(const n of ['1.001','-1','Infinity','1e2','1000001'])assert.throws(()=>cents(n));});

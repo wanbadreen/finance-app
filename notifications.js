@@ -1,3 +1,4 @@
+import { normalizeTransaction } from './split-core.mjs';
 import { isNativeApp } from "./native-platform.js";
 import { supabase } from "./supabase.js";
 
@@ -473,7 +474,7 @@ async function generateLocalNotifications() {
     const [recurringRes, budgetsRes, transactionsRes, goalsRes, accountsRes, categoriesRes, creditCardsRes, cardStatementsRes, transfersRes] = await Promise.all([
         supabase.from("recurring_transactions").select("id,name,type,amount,next_due_date,is_active,reminder_enabled,reminder_days_before").eq("is_active", true),
         supabase.from("budgets").select("id,category_id,amount,month_start").eq("month_start", currentMonthStart()),
-        supabase.from("transactions").select("id,account_id,category_id,amount,type,transaction_date").is("deleted_at", null),
+        supabase.from("transactions").select("id,account_id,category_id,amount,report_amount,cash_amount,type,transaction_date").is("deleted_at", null),
         supabase.from("savings_goals").select("id,name,target_amount,current_amount,target_date,status,created_at"),
         supabase.from("accounts").select("id,opening_balance"),
         supabase.from("categories").select("id,name"),
@@ -491,7 +492,7 @@ async function generateLocalNotifications() {
 
     const recurring = recurringRes.data || [];
     const budgets = budgetsRes.data || [];
-    const transactions = transactionsRes.data || [];
+    const transactions = (transactionsRes.data || []).map(normalizeTransaction);
     const goals = goalsRes.data || [];
     const accounts = accountsRes.data || [];
     const categories = new Map((categoriesRes.data || []).map(item => [item.id, item.name]));
@@ -728,7 +729,7 @@ async function generateLocalNotifications() {
     if (pref.cashflow_enabled) {
         const opening = accounts.reduce((sum, account) => sum + Number(account.opening_balance || 0), 0);
         const txNet = transactions.reduce((sum, tx) => {
-            const amount = Number(tx.amount || 0);
+            const amount = Number(tx.cash_amount ?? tx.amount ?? 0);
             return sum + (tx.type === "income" ? amount : -amount);
         }, 0);
         const currentBalance = opening + txNet;

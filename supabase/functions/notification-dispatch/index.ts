@@ -127,11 +127,11 @@ async function buildAlertsForUser(userId: string, pref: any) {
       .select("id,category_id,amount,month_start")
       .eq("user_id", userId).eq("month_start", monthStart),
     service.from("transactions")
-      .select("id,category_id,amount,type,transaction_date")
+      .select("id,category_id,amount,report_amount,cash_amount,type,transaction_date")
       .eq("user_id", userId).is("deleted_at", null)
       .gte("transaction_date", monthStart).lt("transaction_date", monthEnd),
     service.from("transactions")
-      .select("id,amount,type")
+      .select("id,amount,cash_amount,type")
       .eq("user_id", userId).is("deleted_at", null),
     service.from("savings_goals")
       .select("id,name,target_amount,current_amount,target_date,status,created_at")
@@ -150,7 +150,7 @@ async function buildAlertsForUser(userId: string, pref: any) {
 
   const recurring = recurringRes.data ?? [];
   const budgets = budgetRes.data ?? [];
-  const monthTransactions = monthTxRes.data ?? [];
+  const monthTransactions = (monthTxRes.data ?? []).map((tx: any) => ({ ...tx, amount: Number(tx.report_amount ?? tx.amount) }));
   const allTransactions = allTxRes.data ?? [];
   const goals = goalRes.data ?? [];
   const accounts = accountRes.data ?? [];
@@ -303,7 +303,7 @@ async function buildAlertsForUser(userId: string, pref: any) {
   if (pref.cashflow_enabled) {
     const opening = accounts.reduce((sum: number, account: any) => sum + Number(account.opening_balance || 0), 0);
     const net = allTransactions.reduce((sum: number, tx: any) => {
-      const amount = Number(tx.amount || 0);
+      const amount = Number(tx.cash_amount ?? tx.amount ?? 0);
       return sum + (tx.type === "income" ? amount : -amount);
     }, 0);
     const balance = opening + net;

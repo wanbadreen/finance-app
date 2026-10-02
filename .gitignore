@@ -1,4 +1,6 @@
 node_modules/
+supabase/.temp/
+work/
 dist/
 .env
 .env.local

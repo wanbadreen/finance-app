@@ -270,7 +270,7 @@ async function buildReport(userId: string, pref: any, manualMonthStart?: string 
   const [txRes, accountsRes, categoriesRes, sourcesRes, paymentMethodsRes, budgetsRes] = await Promise.all([
     service
       .from("transactions")
-      .select("id,account_id,payment_method_id,category_id,income_source_id,description,notes,amount,type,transaction_date,recurring_id")
+      .select("id,account_id,payment_method_id,category_id,income_source_id,description,notes,amount,report_amount,type,transaction_date,recurring_id")
       .eq("user_id", userId)
       .is("deleted_at", null)
       .gte("transaction_date", period.start)
@@ -288,7 +288,7 @@ async function buildReport(userId: string, pref: any, manualMonthStart?: string 
     if (response.error) throw response.error;
   }
 
-  const transactions = txRes.data ?? [];
+  const transactions = (txRes.data ?? []).map((tx: any) => ({ ...tx, amount: Number(tx.report_amount ?? tx.amount) }));
   const accounts = new Map((accountsRes.data ?? []).map((x: any) => [x.id, x.name]));
   const categories = new Map((categoriesRes.data ?? []).map((x: any) => [x.id, x.name]));
   const sources = new Map((sourcesRes.data ?? []).map((x: any) => [x.id, x.name]));

@@ -1,5 +1,7 @@
 import { isNativeApp } from "./native-platform.js";
 import { supabase } from "./supabase.js";
+import { normalizeTransaction } from "./split-core.mjs";
+import { mountSplitUI } from "./split-ui.js";
 import {
     cleanupDeletedAccountTransfers,
     fetchAccountTransfers,
@@ -1042,6 +1044,11 @@ let tags = [];
 let transactionTagLinks = [];
 
 let transactions = [];
+const splitUI = mountSplitUI({
+    get: () => ({ accounts, categories, transactions }),
+    navigate: () => navigateToPage("transactions"),
+    refresh: () => loadTransactions(true)
+});
 let deletedTransactions = [];
 let transfers = [];
 
@@ -3214,6 +3221,7 @@ function showLoggedOutState() {
     transactionTagLinks = [];
 
     transactions = [];
+    splitUI.reset();
     deletedTransactions = [];
     transfers = [];
 
@@ -3852,7 +3860,7 @@ function calculateAccountBalanceAsOf(
 
                 const amount =
                     Number(
-                        transaction.amount
+                        transaction.cash_amount ?? transaction.amount
                     );
 
                 balance +=
@@ -9440,7 +9448,7 @@ async function loadTransactions(throwOnError = false) {
 
     transactions =
         attachTagIdsToTransactions(
-            data || []
+            (data || []).map(normalizeTransaction)
         );
 
 
@@ -19999,9 +20007,7 @@ function createTransactionActivityRow(
                 : "-"
         )
         +
-        formatMoney(
-            transaction.amount
-        );
+        formatMoney(transaction.cash_amount ?? transaction.amount);
 
     const buttons =
         document.createElement(
@@ -20043,9 +20049,19 @@ function createTransactionActivityRow(
         }
     );
 
-    if (
-        !transaction.linked_transfer_id
-    ) {
+    if (transaction.split_bill_id) {
+        const openSplit = createTextButton("Open Split", "edit-button");
+        openSplit.addEventListener("click", () => splitUI.open(transaction.split_bill_id));
+        buttons.append(openSplit);
+        const splitNote = document.createElement("p");
+        splitNote.className = "transaction-date";
+        splitNote.textContent = "Split Bill · Your share " + formatMoney(transaction.amount) + " · Account movement " + formatMoney(transaction.cash_amount);
+        left.append(splitNote);
+    } else if (!transaction.linked_transfer_id && !transaction.recurring_id && transaction.type === "expense") {
+        const splitButton = createTextButton("Split", "edit-button");
+        splitButton.addEventListener("click", () => splitUI.start(transaction));
+        buttons.append(editButton, deleteButton, splitButton);
+    } else if (!transaction.linked_transfer_id) {
 
         buttons.append(
             editButton,
@@ -21045,6 +21061,8 @@ async function undoPendingDelete() {
 // ======================================================
 
 function editTransaction(id) {
+    const splitId = transactions.find(item => item.id === id)?.split_bill_id;
+    if (splitId) { splitUI.open(splitId); return; }
     if (financeSavePending(transactionForm)) return;
     clearFinanceFeedback(transactionForm);
 
@@ -21590,6 +21608,9 @@ function showTransactionUndoSnackbar(
 
 
 async function deleteTransaction(id) {
+    if (transactions.find(item => item.id === id)?.split_bill_id) {
+        alert("This transaction is managed by Split Bill and cannot be deleted separately."); return;
+    }
 
     const transaction =
         transactions.find(
@@ -22068,7 +22089,7 @@ function calculateAccountBalance(
 
                 const amount =
                     Number(
-                        transaction.amount
+                        transaction.cash_amount ?? transaction.amount
                     );
 
                 if (

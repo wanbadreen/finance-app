@@ -7,6 +7,7 @@ export default defineConfig({
       input: {
         main: resolve(process.cwd(), 'index.html'),
         consent: resolve(process.cwd(), 'oauth-consent.html'),
+        split: resolve(process.cwd(), 'split.html'),
       },
     },
   },
