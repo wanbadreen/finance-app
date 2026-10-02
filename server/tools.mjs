@@ -1,4 +1,5 @@
 import { normalizeTransaction } from '../split-core.mjs';
+import { createSplitRunner, splitDescriptions, splitSchemas } from './split-mcp.mjs';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
@@ -110,6 +111,7 @@ export const schemas = {
     amount: moneyInput,
     confirmed: z.literal(true)
   }).strict(),
+  ...splitSchemas,
 };
 
 export const descriptions = {
@@ -128,6 +130,7 @@ export const descriptions = {
   create_account_transfer: 'Record one transfer between two of the user’s own active Kira accounts. This records a Kira balance transfer; it does not move real bank money. Resolve account IDs first and only call after the user explicitly confirms source, destination, amount, date and any fee.',
   delete_account_transfer: 'Delete one existing Kira account-transfer record by soft-deleting it. First identify the exact transfer, show source, destination, amount and date, and only call after explicit user confirmation. This reverses its effect on Kira balances; if the transfer created an automatic fee transaction, the existing database trigger soft-deletes that fee too. It does not move real money at a bank or wallet provider.',
   create_budget: 'Create one Kira monthly category budget. Budgets are category-specific, not a single overall monthly limit. Resolve an active expense/both category first, show month/category/amount to the user, and only call after explicit confirmation. Duplicate category budgets for the same month are rejected.',
+  ...splitDescriptions,
 };
 
 const columns = {
@@ -163,6 +166,7 @@ export function balances(accounts, transactions, transfers) {
 }
 
 export function reader(db, userId) {
+  const runSplit = createSplitRunner(db);
   function receiptMime(bytes) {
     if (bytes.length >= 5
       && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44
@@ -757,6 +761,7 @@ export function reader(db, userId) {
 
   return async (name, input) => {
     const args = schemas[name].parse(input);
+    if (Object.prototype.hasOwnProperty.call(splitSchemas,name)) return runSplit(name,args);
 
     if (name === 'get_accounts') return { accounts: await accounts() };
     if (name === 'get_recurring_payments') return recurringPayments(args);
