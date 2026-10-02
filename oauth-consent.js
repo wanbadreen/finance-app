@@ -11,7 +11,12 @@ async function load() {
   const {data:{user}} = await supabase.auth.getUser();
   if (!user) {status.textContent='Sign in to Kira, then return here and check sign-in.';return;}
   const {data,error} = await supabase.auth.oauth.getAuthorizationDetails(authorizationId);
-  if (error || !data || !('authorization_id' in data)) {status.textContent='Request unavailable or already approved. Restart the connection in ChatGPT.';return;}
+  if (error || !data) {status.textContent='Request unavailable. Restart the connection in ChatGPT.';return;}
+  if (!('authorization_id' in data)) {
+    status.textContent='Access was already approved. Returning to ChatGPT…';
+    location.assign(data.redirect_url);
+    return;
+  }
   document.querySelector('#details').textContent = `Client: ${data.client.name}\nRedirect: ${data.redirect_uri}\nScopes: ${data.scope || ''}`;
   deny.disabled=false;
   const requestedScopes = (data.scope || '').split(/\s+/).filter(Boolean);
