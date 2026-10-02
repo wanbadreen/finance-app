@@ -2,14 +2,16 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { configuration, authenticator } from './auth.mjs';
 import { schemas, descriptions, reader } from './tools.mjs';
+import { splitDestructiveTools, splitFileParams, splitWriteTools } from './split-mcp.mjs';
 
-const writeTools = new Set(['create_transaction','attach_receipt_to_transaction','edit_transaction','delete_transaction','create_account_transfer','delete_account_transfer','create_budget']);
+const writeTools = new Set(['create_transaction','attach_receipt_to_transaction','edit_transaction','delete_transaction','create_account_transfer','delete_account_transfer','create_budget',...splitWriteTools]);
 const fileParams = new Map([
   ['create_transaction',['receipt']],
-  ['attach_receipt_to_transaction',['receipt']]
+  ['attach_receipt_to_transaction',['receipt']],
+  ...splitFileParams
 ]);
 const isWriteTool = name => writeTools.has(name);
-const isDestructiveTool = name => ['delete_transaction','delete_account_transfer'].includes(name);
+const isDestructiveTool = name => ['delete_transaction','delete_account_transfer'].includes(name) || splitDestructiveTools.has(name);
 
 export function handler(config = configuration(), authenticate = authenticator(config)) {
   const metadataUrl = `${new URL(config.resource).origin}/.well-known/oauth-protected-resource`;
@@ -26,7 +28,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
         authorization_servers:[config.issuer],
         scopes_supported:['openid'],
         bearer_methods_supported:['header'],
-        kira_mcp_version:'1.5.0'
+        kira_mcp_version:'1.6.0'
       }));
     }
 
@@ -57,7 +59,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
       return res.end();
     }
 
-    const server = new McpServer({name:'kira',version:'1.5.0'});
+    const server = new McpServer({name:'kira',version:'1.6.0'});
     const run = reader(context.db,context.userId);
 
     for (const [name,schema] of Object.entries(schemas)) {
