@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
 
 export function configuration(env = process.env) {
   const url = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
@@ -22,10 +22,34 @@ export function validateClaims(claims, config) {
 }
 
 export async function verifyAccessToken(token, config, key) {
-  const { payload } = await jwtVerify(token, key, {
-    issuer: config.issuer, audience: config.resource, algorithms: ['ES256', 'RS256'], requiredClaims: ['exp', 'sub', 'iat'],
-  });
-  return validateClaims(payload, config);
+  try {
+    const { payload } = await jwtVerify(token, key, {
+      issuer: config.issuer, audience: config.resource, algorithms: ['ES256', 'RS256'], requiredClaims: ['exp', 'sub', 'iat'],
+    });
+    return validateClaims(payload, config);
+  } catch (error) {
+    let claims = {};
+    try {
+      const decoded = decodeJwt(token);
+      claims = {
+        iss: decoded.iss || null,
+        aud: decoded.aud || null,
+        client_id: decoded.client_id || null,
+        scope: decoded.scope || null,
+        role: decoded.role || null,
+        is_anonymous: decoded.is_anonymous ?? null,
+      };
+    } catch {}
+    console.warn('Kira MCP access token rejected', {
+      code: error?.code || null,
+      message: error?.message || 'Unknown token validation failure',
+      expected_issuer: config.issuer,
+      expected_audience: config.resource,
+      allowed_client_ids: config.clients,
+      claims,
+    });
+    throw error;
+  }
 }
 
 export function authenticator(config) {
