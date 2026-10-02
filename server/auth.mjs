@@ -5,9 +5,10 @@ export function configuration(env = process.env) {
   const url = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
   const key = env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY;
   const resource = env.MCP_RESOURCE_URL || (env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}/mcp` : undefined);
-  const clients = (env.MCP_CLIENT_IDS || '7bc4b0df-7ece-4168-a44a-5fb7c625593c').split(',').map(x => x.trim()).filter(Boolean);
+  const configuredClients = String(env.MCP_CLIENT_IDS || '').split(',').map(x => x.trim()).filter(Boolean);
+  const clients = configuredClients.length ? configuredClients : ['7bc4b0df-7ece-4168-a44a-5fb7c625593c'];
   if (!url || !key?.startsWith('sb_publishable_') || !resource) {
-    throw new Error('Set SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, MCP_RESOURCE_URL. Configure MCP_CLIENT_IDS to enable client access.');
+    throw new Error('Set SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and MCP_RESOURCE_URL.');
   }
   const u = new URL(resource);
   if (u.protocol !== 'https:' && !(u.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(u.hostname))) throw new Error('HTTPS required');
