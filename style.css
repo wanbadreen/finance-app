@@ -24,7 +24,10 @@
 
     --border-color: var(--border-color);
     --border-strong: #cbd5e1;
-    --info-border: #dbeafe;
+    --info-border: #bfdbfe;
+    --success-border: #bbf7d0;
+    --warning-border: #fed7aa;
+    --danger-border: #fecaca;
 
     --text-primary: #111827;
     --text-secondary: #334155;
@@ -945,7 +948,7 @@ a {
 
 
 .spending-change-card.positive {
-    border-color: #bbf7d0;
+    border-color: var(--success-border);
 
     background-color: var(--success-surface);
 }
@@ -957,7 +960,7 @@ a {
 
 
 .spending-change-card.negative {
-    border-color: #fecaca;
+    border-color: var(--danger-border);
 
     background-color: var(--danger-surface);
 }
@@ -1087,11 +1090,11 @@ a {
 .dashboard-placeholder {
     padding: 22px;
 
-    border: 1px dashed #d1d5db;
+    border: 1px dashed var(--border-strong);
 
     border-radius: 14px;
 
-    background-color: rgba(255, 255, 255, 0.55);
+    background-color: var(--surface-muted);
 
     color: var(--text-muted);
 
@@ -1420,7 +1423,7 @@ a {
 
 
 .budget-insight.insight-warning {
-    border-color: #fed7aa;
+    border-color: var(--warning-border);
 
     background-color: var(--warning-surface);
 
@@ -1928,7 +1931,7 @@ a {
 }
 
 .more-hub-link:hover {
-    border-color: #bfdbfe;
+    border-color: var(--info-border);
     box-shadow:
         0 8px 22px
         rgba(15, 23, 42, 0.06);
@@ -2638,7 +2641,7 @@ a {
 }
 
 .saved-receipt-panel.marked-for-removal {
-    border-color: #fecaca;
+    border-color: var(--danger-border);
     background-color: var(--danger-surface);
 }
 
@@ -2776,7 +2779,7 @@ a {
 .receipt-ocr-result {
     margin-top: 12px;
     padding: 13px;
-    border: 1px solid #bfdbfe;
+    border: 1px solid var(--info-border);
     border-radius: 11px;
     background-color: var(--card-bg);
 }
@@ -3008,7 +3011,7 @@ a {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    border: 1px solid #fed7aa;
+    border: 1px solid var(--warning-border);
     border-radius: 10px;
     background-color: var(--warning-surface);
 }
@@ -3489,7 +3492,7 @@ a {
 }
 
 .recurring-actions .danger-text-button {
-    border-color: #fecaca;
+    border-color: var(--danger-border);
     color: var(--danger-text);
 }
 
@@ -4106,13 +4109,13 @@ a {
 }
 
 .dashboard-upcoming-status-button.active.pending {
-    border-color: #fde68a;
+    border-color: var(--warning-border);
     background-color: var(--warning-surface);
     color: var(--warning-text);
 }
 
 .dashboard-upcoming-status-button.active.paid {
-    border-color: #a7f3d0;
+    border-color: var(--success-border);
     background-color: var(--success-surface);
     color: var(--success-text);
 }
@@ -4203,9 +4206,9 @@ a {
 .recurring-reminder-center {
     margin-bottom: 20px;
     padding: 16px;
-    border: 1px solid #fed7aa;
+    border: 1px solid var(--warning-border);
     border-radius: 14px;
-    background-color: #fffaf5;
+    background-color: var(--warning-surface);
 }
 
 .recurring-reminder-list {
@@ -4230,7 +4233,7 @@ a {
         34px minmax(0, 1fr) auto auto;
     align-items: center;
     gap: 10px;
-    border: 1px solid #fed7aa;
+    border: 1px solid var(--warning-border);
     border-radius: 11px;
     background-color: var(--card-bg);
 }
@@ -4927,7 +4930,7 @@ a {
     align-items: center;
     gap: 12px;
 
-    border: 1px solid #bbf7d0;
+    border: 1px solid var(--success-border);
     border-radius: 14px;
 
     background-color: var(--success-surface);
@@ -5092,7 +5095,7 @@ a {
 }
 
 .goal-card[data-status="completed"] {
-    border-color: #bbf7d0;
+    border-color: var(--success-border);
     background-color: var(--success-surface);
 }
 
@@ -5358,7 +5361,7 @@ a {
     margin-top: 13px;
     padding: 13px;
 
-    border: 1px solid #bfdbfe;
+    border: 1px solid var(--info-border);
     border-radius: 12px;
 
     background-color: var(--info-surface);
@@ -5617,17 +5620,17 @@ a {
 .inline-action-button.status-button,
 .status-button,
 .neutral-action-button {
-    border-color: #cbd5e1 !important;
-    background-color: #f8fafc !important;
-    color: #334155 !important;
+    border-color: var(--border-strong) !important;
+    background-color: var(--surface-muted) !important;
+    color: var(--text-secondary) !important;
 }
 
 .inline-action-button.status-button:hover,
 .status-button:hover,
 .neutral-action-button:hover {
-    border-color: #94a3b8 !important;
-    background-color: #f1f5f9 !important;
-    color: #0f172a !important;
+    border-color: var(--border-strong) !important;
+    background-color: var(--surface-subtle) !important;
+    color: var(--text-primary) !important;
 }
 
 
@@ -6906,12 +6909,12 @@ a {
 }
 
 .more-hub-install-card:hover {
-    border-color: #93c5fd;
+    border-color: var(--info-border);
     background-color: #f8fbff;
 }
 
 .more-hub-install-card.installed {
-    border-color: #bbf7d0;
+    border-color: var(--success-border);
     background-color: var(--success-surface);
 }
 
@@ -6936,12 +6939,12 @@ a {
 }
 
 .more-hub-logout-card:hover {
-    border-color: #fecaca;
-    background-color: #fffafa;
+    border-color: var(--danger-border);
+    background-color: var(--danger-surface);
 }
 
 .more-hub-logout-card:focus-visible {
-    outline: 3px solid #fee2e2;
+    outline: 3px solid var(--danger-border);
     border-color: #ef4444;
 }
 
@@ -7199,7 +7202,7 @@ a {
 }
 
 .settings-avatar-option:hover {
-    border-color: #93c5fd;
+    border-color: var(--info-border);
 
     transform: translateY(-1px);
 }
@@ -7411,6 +7414,9 @@ body[data-theme="dark"] {
     --border-color: #26344c;
     --border-strong: #334155;
     --info-border: #285ea8;
+    --success-border: #166534;
+    --warning-border: #8a5a16;
+    --danger-border: #7f1d1d;
 
     --text-primary: #f8fafc;
     --text-secondary: #dbeafe;
@@ -8206,7 +8212,7 @@ body[data-theme="dark"] .recurring-actions .positive-action-button {
         12px
         14px;
 
-    border: 1px solid #86efac;
+    border: 1px solid var(--success-border);
     border-radius: 12px;
 
     background-color: var(--success-surface);
@@ -8245,7 +8251,7 @@ body[data-theme="dark"] .recurring-actions .positive-action-button {
 
 .privacy-panel {
     background-color: var(--success-surface);
-    border-color: #bbf7d0;
+    border-color: var(--success-border);
 }
 
 .privacy-status-badge {
@@ -8269,10 +8275,10 @@ body[data-theme="dark"] .recurring-actions .positive-action-button {
 
     padding: 20px;
 
-    border: 1px solid #fecaca;
+    border: 1px solid var(--danger-border);
     border-radius: 16px;
 
-    background-color: #fff7f7;
+    background-color: var(--danger-surface);
 }
 
 .settings-danger-heading {
@@ -9694,7 +9700,7 @@ body.kira-onboarding-open {
     height: 28px;
     display: grid;
     place-items: center;
-    border: 2px solid #cbd5e1;
+    border: 2px solid var(--border-strong);
     border-radius: 50%;
     color: white;
     font-size: 14px;
