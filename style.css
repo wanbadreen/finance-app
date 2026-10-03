@@ -610,9 +610,9 @@ a {
 
     border-radius: 10px;
 
-    background-color: var(--text-primary);
+    background-color: var(--primary-action-bg);
 
-    color: white;
+    color: var(--primary-action-text);
 
     font-size: 13px;
 
@@ -2378,9 +2378,9 @@ a {
 
         border-radius: 50%;
 
-        background-color: var(--text-primary);
+        background-color: var(--primary-action-bg);
 
-        color: white;
+        color: var(--primary-action-text);
 
         font-size: 25px;
 
