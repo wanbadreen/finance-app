@@ -1,4 +1,4 @@
-# Kira MCP v1.5 — implementation and setup
+# Kira MCP v1.7 — implementation and setup
 
 ## Status
 
@@ -49,9 +49,21 @@ Kira MCP now exposes `get_recurring_payments` and `create_budget`.
 - `create_budget` creates one confirmed monthly category budget. Kira budgets are category-specific. The tool validates that the category belongs to the user, is active, and is an expense/both category; it rejects duplicate category budgets for the same month and returns current month spending/remaining amount after creation.
 - No new table or RLS policy is created. Existing user-scoped RLS on `recurring_transactions`, `recurring_occurrence_statuses`, `budgets`, and related reference tables remains in force.
 
+## v1.7 recurring payment writes
+
+Kira MCP now exposes `pay_recurring_payment`.
+
+- The tool records the exact confirmed due occurrence of an active recurring item as a normal Kira transaction linked with `recurring_id`, `recurring_due_date`, and `recurring_next_due_date`.
+- It uses the recurring item's account/category/income source/payment method by default, allows a confirmed account/payment-method override, and can attach one JPG/PNG/WebP/PDF receipt.
+- The caller must provide the confirmed `due_date`; a new write is rejected if that date no longer matches the recurring item's current `next_due_date`. This protects against stale confirmations.
+- The next due date follows the existing Kira rules: weekly +7 days, monthly preserving day-of-month where possible, yearly preserving month/day where possible, then advances past a late payment date.
+- After the linked transaction is created, the occurrence is marked `paid` and the recurring schedule advances. If that follow-up schedule step fails, the transaction remains linked and the response returns a repair warning.
+- Retrying the same `recurring_id` + `due_date` is duplicate-safe: an existing linked transaction is returned rather than creating a second expense/income, and the retry can repair an unadvanced occurrence status/schedule.
+- No new table, RPC, service-role credential, or RLS policy is required; writes continue through the authenticated user's Supabase token and existing RLS.
+
 ## Audit and design
 
-The app is plain JavaScript + Vite, with Capacitor Android and Supabase JS 2.116.0. Existing web authentication and supabase.js remain unchanged. Server modules use Node ESM, MCP SDK Streamable HTTP, jose JWT verification, and a fresh user-scoped Supabase client per request. There is no service_role client, arbitrary SQL tool, storage download or RPC call. Eight tools are read-only. Seven write tools are available: create_transaction, attach_receipt_to_transaction, edit_transaction, delete_transaction, create_account_transfer, delete_account_transfer, and create_budget. Every write requires confirmed=true and remains behind the authenticated user's RLS.
+The app is plain JavaScript + Vite, with Capacitor Android and Supabase JS 2.116.0. Existing web authentication and supabase.js remain unchanged. Server modules use Node ESM, MCP SDK Streamable HTTP, jose JWT verification, and a fresh user-scoped Supabase client per request. There is no service_role client, arbitrary SQL tool, storage download or arbitrary RPC call. The MCP includes read tools plus confirmed write tools for transactions, receipts, recurring occurrences, budgets, account transfers and Split Bills. Every write requires confirmed=true and remains behind the authenticated user's RLS.
 
 All queries use a fixed table/column allowlist, the verified JWT subject as user_id, and the same bearer token for Supabase RLS. Missing/bad tokens return 401 and OAuth discovery metadata. JWT signatures, expiry, issuer, exact MCP resource audience, authenticated role, non-anonymous identity, client allowlist and openid scope are checked; getUser confirms identity server-side. ID tokens lacking the authenticated role are rejected.
 
@@ -64,7 +76,7 @@ No database migration or grant/policy changes are included. Existing public-tabl
 ## Changed files
 
 - server/auth.mjs: configuration and token validation.
-- server/tools.mjs: fifteen tools: eight read tools plus confirmed create/attach-receipt/edit/delete transaction actions, internal account transfer creation/deletion, and monthly category budget creation, with schemas, file validation, aggregation, ownership validation and user filters.
+- server/tools.mjs: Kira read/write tool schemas and implementations, including confirmed transaction, receipt, recurring-occurrence, transfer, budget and Split Bill support with ownership validation and user filters.
 - server/handler.mjs, server/local.mjs: MCP HTTP transport and local launcher.
 - server/oauth-claims.mjs: pure audience transform to integrate into an existing trusted Auth hook; not a deployed hook.
 - api/mcp.mjs, api/oauth-resource.mjs: Vercel entry points.
