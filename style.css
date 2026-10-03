@@ -38,14 +38,28 @@
     --focus-ring: #dbeafe;
     --accent: #2563eb;
 
+    --primary-action-bg: #111827;
+    --primary-action-text: #ffffff;
+    --primary-action-border: #111827;
+    --primary-action-hover: #1f2937;
+
     --info-surface: #eff6ff;
     --info-text: #1d4ed8;
+    --info-surface-hover: #dbeafe;
+    --info-border-hover: #93c5fd;
+    --info-text-hover: #1e40af;
     --success-surface: #ecfdf5;
     --success-text: #047857;
+    --success-surface-hover: #dcfce7;
+    --success-border-hover: #86efac;
+    --success-text-hover: #166534;
     --warning-surface: #fffbeb;
     --warning-text: #a16207;
     --danger-surface: #fef2f2;
     --danger-text: #b42318;
+    --danger-surface-hover: #fee2e2;
+    --danger-border-hover: #fca5a5;
+    --danger-text-hover: #b91c1c;
     --violet-surface: #f5f3ff;
     --violet-text: #6d28d9;
 }
@@ -1365,14 +1379,14 @@ a {
 .primary-button {
     border: none;
 
-    background-color: var(--text-primary);
+    background-color: var(--primary-action-bg);
 
-    color: white;
+    color: var(--primary-action-text);
 }
 
 
 .primary-button:hover {
-    background-color: var(--text-primary);
+    background-color: var(--primary-action-hover);
 }
 
 
@@ -3486,9 +3500,9 @@ a {
 }
 
 .recurring-actions .recurring-primary-action {
-    border-color: var(--text-primary);
-    background: #111827;
-    color: white;
+    border-color: var(--primary-action-border);
+    background: var(--primary-action-bg);
+    color: var(--primary-action-text);
 }
 
 .recurring-actions .danger-text-button {
@@ -3998,7 +4012,7 @@ a {
 
 #cancel-edit-button:hover {
     background-color: var(--surface-muted);
-    border-color: var(--text-muted);
+    border-color: var(--border-strong);
     color: var(--text-primary);
 }
 
@@ -4326,9 +4340,9 @@ a {
 }
 
 .recurring-reminder-actions .recurring-reminder-log-button {
-    border-color: var(--text-primary);
-    background-color: var(--text-primary);
-    color: #ffffff;
+    border-color: var(--primary-action-border);
+    background-color: var(--primary-action-bg);
+    color: var(--primary-action-text);
 }
 
 .recurring-reminder-actions button:disabled {
@@ -5603,16 +5617,16 @@ a {
 /* Edit / info */
 .inline-action-button.edit-button,
 .edit-button {
-    border-color: #bfdbfe !important;
-    background-color: #eff6ff !important;
-    color: #1d4ed8 !important;
+    border-color: var(--info-border) !important;
+    background-color: var(--info-surface) !important;
+    color: var(--info-text) !important;
 }
 
 .inline-action-button.edit-button:hover,
 .edit-button:hover {
-    border-color: #93c5fd !important;
-    background-color: #dbeafe !important;
-    color: #1e40af !important;
+    border-color: var(--info-border-hover) !important;
+    background-color: var(--info-surface-hover) !important;
+    color: var(--info-text-hover) !important;
 }
 
 
@@ -5638,17 +5652,17 @@ a {
 .inline-action-button.positive-action-button,
 .positive-action-button,
 .restore-button {
-    border-color: #bbf7d0 !important;
-    background-color: #f0fdf4 !important;
-    color: #15803d !important;
+    border-color: var(--success-border) !important;
+    background-color: var(--success-surface) !important;
+    color: var(--success-text) !important;
 }
 
 .inline-action-button.positive-action-button:hover,
 .positive-action-button:hover,
 .restore-button:hover {
-    border-color: #86efac !important;
-    background-color: #dcfce7 !important;
-    color: #166534 !important;
+    border-color: var(--success-border-hover) !important;
+    background-color: var(--success-surface-hover) !important;
+    color: var(--success-text-hover) !important;
 }
 
 
@@ -5658,9 +5672,9 @@ a {
 .delete-button,
 .recurring-delete-button,
 .danger-text-button {
-    border-color: #fecaca !important;
-    background-color: #fef2f2 !important;
-    color: #dc2626 !important;
+    border-color: var(--danger-border) !important;
+    background-color: var(--danger-surface) !important;
+    color: var(--danger-text) !important;
 }
 
 .inline-action-button.delete-permanently-button:hover,
@@ -5668,9 +5682,9 @@ a {
 .delete-button:hover,
 .recurring-delete-button:hover,
 .danger-text-button:hover {
-    border-color: #fca5a5 !important;
-    background-color: #fee2e2 !important;
-    color: #b91c1c !important;
+    border-color: var(--danger-border-hover) !important;
+    background-color: var(--danger-surface-hover) !important;
+    color: var(--danger-text-hover) !important;
 }
 
 
@@ -6330,7 +6344,7 @@ a {
 }
 
 #report-month:hover {
-    border-color: var(--text-muted);
+    border-color: var(--border-strong);
 }
 
 #report-month:focus {
@@ -7349,7 +7363,7 @@ a {
 
 .settings-theme-preview-dark {
     background: #0b1220;
-    border-color: var(--text-secondary);
+    border-color: #334155;
 }
 
 .settings-theme-preview-dark span:first-child {
@@ -7427,14 +7441,28 @@ body[data-theme="dark"] {
     --focus-ring: #1e3a5f;
     --accent: #60a5fa;
 
+    --primary-action-bg: #f8fafc;
+    --primary-action-text: #0f172a;
+    --primary-action-border: #f8fafc;
+    --primary-action-hover: #e2e8f0;
+
     --info-surface: #10264a;
     --info-text: #93c5fd;
+    --info-surface-hover: #17365f;
+    --info-border-hover: #3b82f6;
+    --info-text-hover: #bfdbfe;
     --success-surface: #052e16;
     --success-text: #86efac;
+    --success-surface-hover: #0d2a1b;
+    --success-border-hover: #22c55e;
+    --success-text-hover: #bbf7d0;
     --warning-surface: #2a1d08;
     --warning-text: #fdba74;
     --danger-surface: #311619;
     --danger-text: #fca5a5;
+    --danger-surface-hover: #3f1d1d;
+    --danger-border-hover: #ef4444;
+    --danger-text-hover: #fecaca;
     --violet-surface: #2e1065;
     --violet-text: #c4b5fd;
 
@@ -7572,7 +7600,7 @@ body[data-theme="dark"] .settings-field input,
 body[data-theme="dark"] .month-picker {
     background-color: #0b1220;
 
-    border-color: var(--text-secondary);
+    border-color: var(--border-strong);
 
     color: var(--dark-text);
 }
@@ -7610,15 +7638,15 @@ body[data-theme="dark"] .settings-theme-option:has(input:checked) {
 
 body[data-theme="dark"] .primary-button,
 body[data-theme="dark"] .quick-add-button {
-    background-color: var(--surface-muted);
+    background-color: var(--primary-action-bg);
 
-    color: var(--text-primary);
+    color: var(--primary-action-text);
 }
 
 body[data-theme="dark"] .neutral-action-button,
 body[data-theme="dark"] .edit-button,
 body[data-theme="dark"] .inline-action-button {
-    border-color: var(--text-secondary);
+    border-color: var(--border-strong);
 
     background-color: #172033;
 
@@ -7811,7 +7839,7 @@ body[data-theme="dark"] .dashboard-insight {
 body[data-theme="dark"] .transaction-reset-button,
 body[data-theme="dark"] .secondary-button,
 body[data-theme="dark"] .view-all-button {
-    border-color: var(--text-secondary);
+    border-color: var(--border-strong);
     background-color: #172033;
     color: #dbeafe;
 }
@@ -7835,7 +7863,7 @@ body[data-theme="dark"] .budget-insight.insight-warning {
 
 body[data-theme="dark"] .spending-change-card.positive {
     background-color: #092313;
-    border-color: var(--success-text);
+    border-color: var(--success-border);
 }
 
 body[data-theme="dark"] .spending-change-card.positive p {
@@ -8033,9 +8061,9 @@ body[data-theme="dark"] .recurring-notes {
 
 /* Dark-mode semantic action buttons. */
 body[data-theme="dark"] .recurring-actions .recurring-primary-action {
-    background-color: #e2e8f0;
-    border-color: var(--border-color);
-    color: var(--text-primary);
+    background-color: var(--primary-action-bg);
+    border-color: var(--primary-action-border);
+    color: var(--primary-action-text);
 }
 
 body[data-theme="dark"] .recurring-actions .edit-button {
@@ -8350,14 +8378,14 @@ body[data-theme="dark"] .settings-subsection {
 body[data-theme="dark"] .settings-security-banner {
     background-color: #0b2b1a;
 
-    border-color: var(--success-text);
+    border-color: var(--success-border);
     color: #86efac;
 }
 
 body[data-theme="dark"] .privacy-panel {
     background-color: #0d251b;
 
-    border-color: var(--success-text);
+    border-color: var(--success-border);
 }
 
 body[data-theme="dark"] .privacy-status-badge {
@@ -9797,7 +9825,7 @@ body[data-theme="dark"] .setup-checklist-progress-label {
 /* Phase 14C: consistent invalid-field feedback, including the budget month picker. */
 :is(#account-form, #category-form, #income-source-form, #budget-form, #goal-form, #recurring-form, #transaction-form) [aria-invalid="true"],
 #budget-month[aria-invalid="true"] {
-    border-color: var(--danger-text);
+    border-color: var(--danger-border);
     outline: 2px solid #b91c1c;
     outline-offset: 2px;
 }
