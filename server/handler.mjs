@@ -4,10 +4,11 @@ import { configuration, authenticator } from './auth.mjs';
 import { schemas, descriptions, reader } from './tools.mjs';
 import { splitDestructiveTools, splitFileParams, splitWriteTools } from './split-mcp.mjs';
 
-const writeTools = new Set(['create_transaction','attach_receipt_to_transaction','edit_transaction','delete_transaction','create_account_transfer','delete_account_transfer','create_budget',...splitWriteTools]);
+const writeTools = new Set(['create_transaction','attach_receipt_to_transaction','edit_transaction','delete_transaction','create_account_transfer','delete_account_transfer','create_budget','pay_recurring_payment',...splitWriteTools]);
 const fileParams = new Map([
   ['create_transaction',['receipt']],
   ['attach_receipt_to_transaction',['receipt']],
+  ['pay_recurring_payment',['receipt']],
   ...splitFileParams
 ]);
 const isWriteTool = name => writeTools.has(name);
@@ -28,7 +29,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
         authorization_servers:[config.issuer],
         scopes_supported:['openid'],
         bearer_methods_supported:['header'],
-        kira_mcp_version:'1.6.1'
+        kira_mcp_version:'1.7.0'
       }));
     }
 
@@ -59,7 +60,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
       return res.end();
     }
 
-    const server = new McpServer({name:'kira',version:'1.6.1'});
+    const server = new McpServer({name:'kira',version:'1.7.0'});
     const run = reader(context.db,context.userId);
 
     for (const [name,schema] of Object.entries(schemas)) {
