@@ -247,6 +247,54 @@ test('recurring payment reader returns own enriched rows, statuses and monthly e
   assert.equal(r.active_summary.annual_expense_equivalent,1560);
 });
 
+test('pay recurring payment links the exact due occurrence, advances schedule and is retry-safe',async()=>{
+  const recurringId='00000000-0000-4000-8000-000000000052';
+  const db=database({
+    accounts:[
+      {id:accountId,user_id:user,name:'Maybank',account_type:'bank',opening_balance:0,is_active:true}
+    ],
+    categories:[
+      {id:categoryId,user_id:user,name:'Bills',type:'expense',is_active:true}
+    ],
+    income_sources:[],
+    payment_methods:[],
+    transactions:[],
+    recurring_occurrence_statuses:[],
+    recurring_transactions:[
+      {
+        id:recurringId,user_id:user,name:'Sewa Rumah',kind:'recurring',type:'expense',
+        account_id:accountId,category_id:categoryId,income_source_id:null,payment_method_id:null,
+        amount:500,frequency:'monthly',next_due_date:'2026-09-30',notes:null,is_active:true,
+        reminder_enabled:true,reminder_days_before:3,created_at:'2026-01-01T00:00:00Z',updated_at:'2026-01-01T00:00:00Z'
+      }
+    ]
+  });
+
+  const input={
+    recurring_id:recurringId,
+    due_date:'2026-09-30',
+    transaction_date:'2026-10-03',
+    amount:500,
+    description:'Sewa rumah',
+    confirmed:true
+  };
+
+  const first=await reader(db,user)('pay_recurring_payment',input);
+  assert.equal(first.created,true);
+  assert.equal(first.transaction.amount,500);
+  assert.equal(first.transaction.recurring_id,recurringId);
+  assert.equal(first.transaction.recurring_due_date,'2026-09-30');
+  assert.equal(first.transaction.recurring_next_due_date,'2026-10-30');
+  assert.equal(db.tables.recurring_transactions[0].next_due_date,'2026-10-30');
+  assert.equal(db.tables.recurring_occurrence_statuses[0].status,'paid');
+  assert.equal(db.tables.transactions.length,1);
+
+  const retry=await reader(db,user)('pay_recurring_payment',input);
+  assert.equal(retry.created,false);
+  assert.equal(retry.already_recorded,true);
+  assert.equal(db.tables.transactions.length,1);
+});
+
 test('create budget requires confirmation, validates category ownership/type and rejects duplicates',async()=>{
   assert.throws(()=>schemas.create_budget.parse({
     month:'2026-10',category_id:categoryId,amount:300
@@ -624,8 +672,8 @@ test('HTTP discovery, auth challenges, MCP initialize, tool metadata and dispatc
   );
 
   const list=(await call('tools/list')).result.tools;
-  assert.equal(list.length,15);
-  assert.equal(list.filter(x=>!x.annotations.readOnlyHint).length,7);
+  assert.equal(list.length,26);
+  assert.equal(list.filter(x=>!x.annotations.readOnlyHint).length,15);
   assert.equal(list.find(x=>x.name==='create_transaction').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='edit_transaction').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='create_account_transfer').annotations.destructiveHint,false);
@@ -634,6 +682,9 @@ test('HTTP discovery, auth challenges, MCP initialize, tool metadata and dispatc
   assert.equal(list.find(x=>x.name==='attach_receipt_to_transaction').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='create_budget').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='get_recurring_payments').annotations.readOnlyHint,true);
+  assert.equal(list.find(x=>x.name==='pay_recurring_payment').annotations.readOnlyHint,false);
+  assert.equal(list.find(x=>x.name==='pay_recurring_payment').annotations.destructiveHint,false);
+  assert.deepEqual(list.find(x=>x.name==='pay_recurring_payment')._meta['openai/fileParams'],['receipt']);
   assert.deepEqual(list.find(x=>x.name==='create_transaction')._meta['openai/fileParams'],['receipt']);
   assert.deepEqual(list.find(x=>x.name==='attach_receipt_to_transaction')._meta['openai/fileParams'],['receipt']);
   assert.equal(list.find(x=>x.name==='create_transaction').annotations.idempotentHint,false);
