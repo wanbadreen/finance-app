@@ -51,6 +51,18 @@ export const schemas = {
     limit: z.number().int().min(1).max(100).default(50),
     offset: z.number().int().min(0).max(100000).default(0)
   }).strict(),
+  pay_recurring_payment: z.object({
+    recurring_id: id,
+    due_date: date,
+    transaction_date: date,
+    amount: moneyInput.optional(),
+    account_id: id.optional(),
+    payment_method_id: id.nullable().optional(),
+    description: z.string().trim().min(1).max(200).optional(),
+    notes: z.string().trim().max(1000).nullable().optional(),
+    receipt: openAIFile.optional(),
+    confirmed: z.literal(true)
+  }).strict(),
   get_transaction_options: z.object({ type: transactionType.optional() }).strict(),
   create_transaction: z.object({
     type: transactionType,
@@ -122,6 +134,7 @@ export const descriptions = {
   get_credit_cards: 'Read card profiles, computed outstanding balances and recorded statements. Statement amounts are historical, not remaining due.',
   get_debts: 'Read tracked credit-card debt only. Kira has no persisted general-loan/debt ledger; this is not a complete debt inventory.',
   get_recurring_payments: 'Read the authenticated user’s Kira recurring payments and subscriptions, including next due date/status, account/category/payment method names, monthly equivalents, and active recurring cash-flow summary. Supports active/type/kind filters and pagination.',
+  pay_recurring_payment: 'Record one confirmed payment or receipt of income for the exact due occurrence of an active recurring item. This creates a transaction linked by recurring_id and recurring_due_date, marks that occurrence paid, advances next_due_date using Kira’s existing schedule rules, and can attach one JPG/PNG/WebP/PDF receipt. Read get_recurring_payments first and show the recurring item, due date, actual transaction date, amount/account/payment method and receipt before calling. due_date must match the current occurrence unless that occurrence was already recorded, in which case the call is safe to retry without creating a duplicate.',
   get_transaction_options: 'Read active Kira accounts, categories, income sources and payment methods needed to prepare a transaction or transfer. Use this to resolve names to IDs before any write.',
   create_transaction: 'Create one Kira income or expense transaction, optionally attaching one user-provided receipt image/PDF. Never use for transfers, edits or deletes. Call get_transaction_options first to resolve IDs. If a receipt is attached, preserve the exact user-provided file in the receipt field. Only call after the user explicitly confirms the exact transaction details and receipt attachment; set confirmed=true only after that confirmation.',
   attach_receipt_to_transaction: 'Attach or replace one receipt on an existing ordinary Kira transaction. Accepts JPG, PNG, WebP or PDF up to 5 MB. First identify the exact transaction, tell the user if an existing receipt will be replaced, and only call after explicit confirmation.',
@@ -303,6 +316,42 @@ export function reader(db, userId) {
     return money(amount);
   }
 
+  function addRecurringInterval(dateValue, frequency) {
+    const [year,month,day] = String(dateValue).split('-').map(Number);
+    const base = new Date(Date.UTC(year,month-1,day,12,0,0));
+
+    if (frequency === 'weekly') {
+      base.setUTCDate(base.getUTCDate()+7);
+    } else if (frequency === 'yearly') {
+      const originalMonth = base.getUTCMonth();
+      base.setUTCFullYear(base.getUTCFullYear()+1);
+      if (base.getUTCMonth() !== originalMonth) base.setUTCDate(0);
+    } else {
+      const originalDay = base.getUTCDate();
+      base.setUTCDate(1);
+      base.setUTCMonth(base.getUTCMonth()+1);
+      const lastDay = new Date(Date.UTC(base.getUTCFullYear(),base.getUTCMonth()+1,0,12,0,0)).getUTCDate();
+      base.setUTCDate(Math.min(originalDay,lastDay));
+    }
+
+    return [
+      base.getUTCFullYear(),
+      String(base.getUTCMonth()+1).padStart(2,'0'),
+      String(base.getUTCDate()).padStart(2,'0')
+    ].join('-');
+  }
+
+  function nextRecurringDateAfter(item, dueDate, transactionDate) {
+    let next = addRecurringInterval(dueDate,item.frequency);
+    let guard = 0;
+    while (next <= transactionDate && guard < 60) {
+      next = addRecurringInterval(next,item.frequency);
+      guard += 1;
+    }
+    if (next <= transactionDate) throw inputError('Unable to calculate the next recurring due date safely.');
+    return next;
+  }
+
   async function recurringPayments(args) {
     const [rows,statuses,a,categories,incomeSources,paymentMethods] = await Promise.all([
       all('recurring_transactions'),
@@ -351,6 +400,216 @@ export function reader(db, userId) {
         monthly_net_equivalent: money(monthlyIncome-monthlyExpense),
         annual_expense_equivalent: money(monthlyExpense*12)
       }
+    };
+  }
+
+  async function payRecurringPayment(args) {
+    const [recurringRows,statuses,transactions,a,c,i,p] = await Promise.all([
+      all('recurring_transactions'),
+      all('recurring_occurrence_statuses'),
+      all('transactions'),
+      all('accounts'),
+      all('categories'),
+      all('income_sources'),
+      all('payment_methods')
+    ]);
+
+    const recurring = recurringRows.find(x=>x.id===args.recurring_id);
+    if (!recurring) throw inputError('Recurring item not found for this Kira user.');
+    if (!recurring.is_active) throw inputError('This recurring item is inactive.');
+
+    const already = transactions.find(
+      x=>x.recurring_id===recurring.id && x.recurring_due_date===args.due_date
+    );
+    const recordedNextDue = already?.recurring_next_due_date || null;
+
+    if (already) {
+      const existingStatus = statuses.find(
+        x=>x.recurring_id===recurring.id && x.due_date===args.due_date
+      );
+
+      if (!existingStatus || existingStatus.status !== 'paid') {
+        const statusPayload = {
+          user_id:userId,
+          recurring_id:recurring.id,
+          due_date:args.due_date,
+          status:'paid'
+        };
+        const statusResult = existingStatus
+          ? await db.from('recurring_occurrence_statuses')
+              .update({status:'paid'})
+              .eq('id',existingStatus.id)
+              .eq('user_id',userId)
+              .select('id')
+              .single()
+          : await db.from('recurring_occurrence_statuses')
+              .insert(statusPayload)
+              .select('id')
+              .single();
+        if (statusResult.error) throw new Error('Database write failed');
+      }
+
+      if (recordedNextDue && recurring.next_due_date === args.due_date) {
+        const {error} = await db
+          .from('recurring_transactions')
+          .update({next_due_date:recordedNextDue})
+          .eq('id',recurring.id)
+          .eq('user_id',userId)
+          .eq('next_due_date',args.due_date)
+          .select('id')
+          .single();
+        if (error) throw new Error('Database write failed');
+      }
+
+      return {
+        created:false,
+        already_recorded:true,
+        recurring_id:recurring.id,
+        due_date:args.due_date,
+        next_due_date:recordedNextDue || recurring.next_due_date,
+        transaction:{
+          id:already.id,
+          type:already.type,
+          amount:money(Number(already.amount)),
+          transaction_date:already.transaction_date,
+          description:already.description,
+          account_id:already.account_id,
+          category_id:already.category_id,
+          payment_method_id:already.payment_method_id,
+          recurring_id:already.recurring_id,
+          recurring_due_date:already.recurring_due_date,
+          recurring_next_due_date:already.recurring_next_due_date,
+          receipt_attached:Boolean(already.receipt_path)
+        }
+      };
+    }
+
+    if (recurring.next_due_date !== args.due_date) {
+      throw inputError(`The confirmed due date is stale. Current next due date is ${recurring.next_due_date}.`);
+    }
+
+    const accountId = args.account_id || recurring.account_id;
+    const account = a.find(x=>x.id===accountId && x.is_active);
+    if (!account) throw inputError('Choose an active account that belongs to this Kira user.');
+
+    const category = c.find(x=>x.id===recurring.category_id && x.is_active);
+    if (!category) throw inputError('The recurring item category is inactive or unavailable.');
+    if (![recurring.type,'both'].includes(category.type)) {
+      throw inputError(`Category "${category.name}" does not match recurring type "${recurring.type}".`);
+    }
+
+    let incomeSource = null;
+    if (recurring.type === 'income') {
+      incomeSource = i.find(x=>x.id===recurring.income_source_id && x.is_active);
+      if (!incomeSource) throw inputError('The recurring income source is inactive or unavailable.');
+    }
+
+    const requestedPaymentMethod = Object.prototype.hasOwnProperty.call(args,'payment_method_id')
+      ? args.payment_method_id
+      : recurring.payment_method_id;
+    let paymentMethod = null;
+    if (requestedPaymentMethod) {
+      paymentMethod = p.find(x=>x.id===requestedPaymentMethod && x.is_active);
+      if (!paymentMethod) throw inputError('Choose an active payment method that belongs to this Kira user.');
+    }
+
+    const amount = money(Number(args.amount ?? recurring.amount));
+    const nextDueDate = nextRecurringDateAfter(recurring,args.due_date,args.transaction_date);
+
+    let uploadedReceipt = null;
+    if (args.receipt) uploadedReceipt = await uploadReceiptFile(args.receipt);
+
+    const payload = {
+      user_id:userId,
+      account_id:account.id,
+      payment_method_id:paymentMethod?.id || null,
+      category_id:category.id,
+      income_source_id:incomeSource?.id || null,
+      description:(args.description || recurring.name).trim(),
+      notes:Object.prototype.hasOwnProperty.call(args,'notes')
+        ? (args.notes?.trim() || null)
+        : (recurring.notes || null),
+      amount,
+      type:recurring.type,
+      transaction_date:args.transaction_date,
+      receipt_path:uploadedReceipt?.path || null,
+      recurring_id:recurring.id,
+      recurring_due_date:args.due_date,
+      recurring_next_due_date:nextDueDate,
+      linked_transfer_id:null
+    };
+
+    const {data,error} = await db
+      .from('transactions')
+      .insert(payload)
+      .select('id,account_id,category_id,income_source_id,payment_method_id,description,notes,amount,type,transaction_date,receipt_path,recurring_id,recurring_due_date,recurring_next_due_date')
+      .single();
+
+    if (error || !data) {
+      if (uploadedReceipt?.path) await deleteReceiptFile(uploadedReceipt.path);
+      throw new Error('Database write failed');
+    }
+
+    let scheduleWarning = null;
+    try {
+      const existingStatus = statuses.find(
+        x=>x.recurring_id===recurring.id && x.due_date===args.due_date
+      );
+      const statusResult = existingStatus
+        ? await db.from('recurring_occurrence_statuses')
+            .update({status:'paid'})
+            .eq('id',existingStatus.id)
+            .eq('user_id',userId)
+            .select('id')
+            .single()
+        : await db.from('recurring_occurrence_statuses')
+            .insert({
+              user_id:userId,
+              recurring_id:recurring.id,
+              due_date:args.due_date,
+              status:'paid'
+            })
+            .select('id')
+            .single();
+
+      if (statusResult.error) throw new Error('Occurrence status update failed');
+
+      const scheduleResult = await db
+        .from('recurring_transactions')
+        .update({next_due_date:nextDueDate})
+        .eq('id',recurring.id)
+        .eq('user_id',userId)
+        .eq('next_due_date',args.due_date)
+        .select('id')
+        .single();
+
+      if (scheduleResult.error) throw new Error('Recurring schedule update failed');
+    } catch {
+      scheduleWarning = 'Payment transaction was saved and linked to the recurring occurrence, but the recurring status/schedule could not be fully advanced. A retry with the same recurring_id and due_date will not create a duplicate and can repair the schedule.';
+    }
+
+    return {
+      created:true,
+      already_recorded:false,
+      recurring:{
+        id:recurring.id,
+        name:recurring.name,
+        kind:recurring.kind,
+        due_date:args.due_date,
+        next_due_date:nextDueDate
+      },
+      transaction:{
+        ...data,
+        amount:money(Number(data.amount)),
+        account_name:account.name,
+        category_name:category.name,
+        income_source_name:incomeSource?.name || null,
+        payment_method_name:paymentMethod?.name || null,
+        receipt_attached:Boolean(uploadedReceipt),
+        receipt_file_name:uploadedReceipt?.file_name || null,
+        receipt_mime_type:uploadedReceipt?.mime_type || null
+      },
+      schedule_warning:scheduleWarning
     };
   }
 
@@ -765,6 +1024,7 @@ export function reader(db, userId) {
 
     if (name === 'get_accounts') return { accounts: await accounts() };
     if (name === 'get_recurring_payments') return recurringPayments(args);
+    if (name === 'pay_recurring_payment') return payRecurringPayment(args);
     if (name === 'get_transaction_options') return transactionOptions(args.type);
     if (name === 'create_transaction') return createTransaction(args);
     if (name === 'attach_receipt_to_transaction') return attachReceipt(args);
