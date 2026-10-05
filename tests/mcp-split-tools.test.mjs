@@ -52,7 +52,7 @@ function mockDb() {
 test('Split Bill schemas expose complete creator controls',()=>{
   for(const name of [
     'get_split_bill_options','list_split_bills','get_split_bill','create_split_bill',
-    'update_split_bill_participant','set_split_bill_repayment_plan',
+    'create_split_bill_with_percent','update_split_bill_participant','set_split_bill_repayment_plan',
     'create_split_bill_participant_link','report_split_bill_payment',
     'decide_split_bill_payment','cancel_split_bill'
   ]) assert.ok(splitSchemas[name],name);
@@ -88,6 +88,32 @@ test('create maps MYR values to backend cents',async()=>{
   assert.equal(body.bill.discountCents,500);
   assert.equal(body.bill.chargeCents,1000);
   assert.equal(body.bill.paid[0].cents,10500);
+});
+
+test('percent create calculates discount from subtotal and charge after discount',async()=>{
+  const {db,calls}=mockDb();
+  const run=createSplitRunner(db,{appOrigin:'https://kira.example'});
+  await run('create_split_bill_with_percent',{
+    name:'Dinner Percent',date:'2026-10-02',mode:'mixed',
+    participants:[
+      {id:'me',name:'Me',is_self:true,payment_instructions:''},
+      {id:'aina',name:'Aina',is_self:false,payment_instructions:''}
+    ],
+    items:[{id:'food',name:'Food',amount:100,participant_ids:['me','aina']}],
+    discount_percent:10,extra_charge_percent:8,charge_split:'proportional',
+    shop_payments:[{id:'shop',participant_id:'me',amount:97.2,account_id:accountId}],
+    category_id:categoryId,account_id:accountId,
+    confirmed:true
+  });
+  const body=calls.at(-1);
+  assert.equal(body.action,'create');
+  assert.equal(body.bill.discountType,'percent');
+  assert.equal(body.bill.discountValue,10);
+  assert.equal(body.bill.discountCents,1000);
+  assert.equal(body.bill.chargeType,'percent');
+  assert.equal(body.bill.chargeValue,8);
+  assert.equal(body.bill.chargeCents,720);
+  assert.equal(body.bill.paid[0].cents,9720);
 });
 
 test('participant edit and repayment plan map to service actions',async()=>{
