@@ -29,7 +29,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
         authorization_servers:[config.issuer],
         scopes_supported:['openid'],
         bearer_methods_supported:['header'],
-        kira_mcp_version:'1.7.0'
+        kira_mcp_version:'1.8.0'
       }));
     }
 
@@ -60,7 +60,7 @@ export function handler(config = configuration(), authenticate = authenticator(c
       return res.end();
     }
 
-    const server = new McpServer({name:'kira',version:'1.7.0'});
+    const server = new McpServer({name:'kira',version:'1.8.0'});
     const run = reader(context.db,context.userId);
 
     for (const [name,schema] of Object.entries(schemas)) {
