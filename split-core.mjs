@@ -6,6 +6,16 @@ export function cents(value) {
   if (!Number.isSafeInteger(n) || n > MAX_CENTS) throw new Error('Amount is too large.');
   return n;
 }
+export function adjustmentCents(value, type='fixed', baseCents=0, label='Adjustment') {
+  if (type === 'fixed') return cents(value);
+  if (type !== 'percent') throw new Error(`${label} type is invalid.`);
+  const raw=String(value).trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(raw)) throw new Error(`${label} percentage must be between 0 and 100 with up to two decimals.`);
+  const percent=Number(raw);
+  if (!Number.isFinite(percent) || percent < 0 || percent > 100) throw new Error(`${label} percentage must be between 0 and 100.`);
+  if (!Number.isSafeInteger(baseCents) || baseCents < 0 || baseCents > MAX_CENTS) throw new Error(`${label} base is invalid.`);
+  return Math.round(baseCents * percent / 100);
+}
 export function money(n) { return new Intl.NumberFormat('en-MY', { style:'currency', currency:'MYR' }).format(n / 100); }
 function integer(n, name, positive = false) {
   if (!Number.isSafeInteger(n) || n < (positive ? 1 : 0) || n > MAX_CENTS) throw new Error(`${name} is invalid.`);

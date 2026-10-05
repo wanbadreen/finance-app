@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cents, allocate, totals, suggestPlan, validatePlan, progress, reportPayment, decidePayment, normalizeTransaction } from '../split-core.mjs';
+import { cents, adjustmentCents, allocate, totals, suggestPlan, validatePlan, progress, reportPayment, decidePayment, normalizeTransaction } from '../split-core.mjs';
 
 import { pizza } from './fixtures/split-bill.mjs';
 
@@ -18,4 +18,5 @@ test('duplicate reports, overpayment and repeated decisions are rejected',()=>{l
 test('rejected reports restore available balance',()=>{let b=pizza();b.plan=suggestPlan(b);b=reportPayment(b,{id:'1',from:'b',to:'a',cents:3000,date:b.date},'b');b=decidePayment(b,'1','rejected','a');assert.equal(progress(b).lines.find(l=>l.from==='b').available,3000);});
 test('all repayments confirmed marks the bill complete',()=>{let b=pizza();b.plan=suggestPlan(b);for(const [i,l]of b.plan.entries()){b=reportPayment(b,{...l,id:String(i),date:b.date},l.from);b=decidePayment(b,String(i),'confirmed',l.to);}assert.equal(progress(b).complete,true);});
 test('cash movement and spending are separate, ordinary rows remain compatible',()=>{assert.deepEqual(normalizeTransaction({amount:125,report_amount:30,cash_amount:125}),{amount:30,report_amount:30,cash_amount:125});assert.equal(normalizeTransaction({amount:95,report_amount:0,cash_amount:95}).amount,0);assert.equal(normalizeTransaction({amount:50}).cash_amount,50);});
+test('percentage adjustments calculate from the supplied base',()=>{assert.equal(adjustmentCents('10','percent',15000,'Discount'),1500);assert.equal(adjustmentCents('6.5','percent',13500,'Charges'),878);assert.equal(adjustmentCents('12.34','fixed',9999,'Discount'),1234);assert.throws(()=>adjustmentCents('100.01','percent',10000,'Discount'),/between 0 and 100/);});
 test('input rejects invalid decimals, negative and excessive amounts',()=>{assert.equal(cents('0.01'),1);assert.equal(cents('12.50'),1250);for(const n of ['1.001','-1','Infinity','1e2','1000001'])assert.throws(()=>cents(n));});
