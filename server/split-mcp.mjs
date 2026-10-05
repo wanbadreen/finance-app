@@ -10,6 +10,10 @@ const money = z.number().finite().min(0).max(1000000).refine(
   { message: 'Amount must have at most two decimal places' }
 );
 const positiveMoney = money.refine(value => value > 0, { message: 'Amount must be greater than zero' });
+const percentage = z.number().finite().min(0).max(100).refine(
+  value => Math.abs(value * 100 - Math.round(value * 100)) < 1e-8,
+  { message: 'Percentage must have at most two decimal places' }
+);
 const participantToken = z.string().regex(/^[a-f0-9]{64}$/i);
 const openAIFile = z.object({
   download_url: z.url(),
@@ -79,6 +83,22 @@ export const splitSchemas = {
     repayment_plan: z.array(planLineSchema).max(2500).optional(),
     confirmed: z.literal(true)
   }).strict(),
+  create_split_bill_with_percent: z.object({
+    name: z.string().trim().min(1).max(120),
+    date,
+    mode: z.enum(['equal','items','mixed']),
+    participants: z.array(participantSchema).min(2).max(50),
+    items: z.array(itemSchema).min(1).max(200),
+    discount_percent: percentage.default(0),
+    extra_charge_percent: percentage.default(0),
+    charge_split: z.enum(['proportional','equal']).default('proportional'),
+    shop_payments: z.array(shopPaymentSchema).min(1).max(100),
+    category_id: uuid,
+    account_id: uuid,
+    linked_transaction_id: uuid.optional(),
+    repayment_plan: z.array(planLineSchema).max(2500).optional(),
+    confirmed: z.literal(true)
+  }).strict(),
   update_split_bill_participant: z.object({
     bill_id: uuid,
     revision: z.number().int().min(1),
@@ -131,7 +151,8 @@ export const splitDescriptions = {
   get_split_bill_options: 'Read the active Kira accounts, expense categories, and recent ordinary expenses that can be used when preparing a Split Bill. Read this before creating or linking a split bill.',
   list_split_bills: 'List the authenticated user’s active Split Bills as compact summaries. Use get_split_bill for full details, current revision, participant IDs, repayment lines, and payment history.',
   get_split_bill: 'Read one Split Bill. Without participant_token this returns the creator view. With a participant capability token it returns only that participant’s scoped view.',
-  create_split_bill: 'Create a Kira Split Bill and its accounting projections. Amount inputs are in MYR, not sen. Participant IDs are short stable labels such as me, aina, zairul and are used by items, shop payments and repayment plans. Financial allocations become immutable after save. Read get_split_bill_options first, show the exact bill breakdown, shop payers, account/category and any linked expense, then only call after explicit user confirmation.',
+  create_split_bill: 'Create a Kira Split Bill and its accounting projections using fixed RM discount and charge amounts. Amount inputs are in MYR, not sen. Participant IDs are short stable labels such as me, aina, zairul and are used by items, shop payments and repayment plans. Financial allocations become immutable after save. Read get_split_bill_options first, show the exact bill breakdown, shop payers, account/category and any linked expense, then only call after explicit user confirmation.',
+  create_split_bill_with_percent: 'Create a Kira Split Bill using percentage-based whole-bill discount and extra charge. discount_percent is calculated from the item subtotal. extra_charge_percent is calculated from the subtotal after discount, matching the Kira app UI. Show the subtotal, percentage calculations, final total, shop payers, account/category and any linked expense, then only call after explicit user confirmation.',
   update_split_bill_participant: 'Edit a Split Bill participant name and payment instructions. Read the latest bill first and use its current revision. This does not change financial allocations. Only call after explicit user confirmation.',
   set_split_bill_repayment_plan: 'Replace the repayment routing for a Split Bill before any non-rejected repayment has been reported. The plan must exactly settle every participant balance. Read the latest bill first, show the proposed routes, and only call after explicit user confirmation.',
   create_split_bill_participant_link: 'Create or rotate a private participant capability link. Creating a new link for a participant invalidates that participant’s previous link. Read the latest bill first, warn if a link already exists, and only call after explicit user confirmation.',
@@ -142,6 +163,7 @@ export const splitDescriptions = {
 
 export const splitWriteTools = new Set([
   'create_split_bill',
+  'create_split_bill_with_percent',
   'update_split_bill_participant',
   'set_split_bill_repayment_plan',
   'create_split_bill_participant_link',
@@ -168,6 +190,43 @@ function planInput(lines) {
     to:line.to_participant_id,
     cents:toCents(line.amount)
   }));
+}
+
+function createBillDocument(args,{discountCents,chargeCents,discountType='fixed',discountValue=0,chargeType='fixed',chargeValue=0}) {
+  return {
+    name:args.name,
+    date:args.date,
+    mode:args.mode,
+    participants:args.participants.map(person=>({
+      id:person.id,
+      name:person.name,
+      isSelf:person.is_self === true,
+      instructions:person.payment_instructions || ''
+    })),
+    items:args.items.map(item=>({
+      id:item.id || randomId('item'),
+      name:item.name,
+      cents:toCents(item.amount),
+      participants:item.participant_ids
+    })),
+    discountCents,
+    discountType,
+    discountValue,
+    chargeCents,
+    chargeType,
+    chargeValue,
+    chargeMode:args.charge_split,
+    paid:args.shop_payments.map(payment=>({
+      id:payment.id || randomId('shop'),
+      participantId:payment.participant_id,
+      cents:toCents(payment.amount),
+      accountId:payment.account_id || null
+    })),
+    categoryId:args.category_id,
+    accountId:args.account_id,
+    ...(args.linked_transaction_id ? {linkedTransactionId:args.linked_transaction_id} : {}),
+    ...(args.repayment_plan ? {plan:planInput(args.repayment_plan)} : {})
+  };
 }
 
 function summarizeBill(bill) {
@@ -315,36 +374,30 @@ export function createSplitRunner(db, options = {}) {
     }
 
     if (name === 'create_split_bill') {
-      const bill = {
-        name:args.name,
-        date:args.date,
-        mode:args.mode,
-        participants:args.participants.map(person=>({
-          id:person.id,
-          name:person.name,
-          isSelf:person.is_self === true,
-          instructions:person.payment_instructions || ''
-        })),
-        items:args.items.map(item=>({
-          id:item.id || randomId('item'),
-          name:item.name,
-          cents:toCents(item.amount),
-          participants:item.participant_ids
-        })),
+      const bill = createBillDocument(args,{
         discountCents:toCents(args.discount_amount),
         chargeCents:toCents(args.extra_charge_amount),
-        chargeMode:args.charge_split,
-        paid:args.shop_payments.map(payment=>({
-          id:payment.id || randomId('shop'),
-          participantId:payment.participant_id,
-          cents:toCents(payment.amount),
-          accountId:payment.account_id || null
-        })),
-        categoryId:args.category_id,
-        accountId:args.account_id,
-        ...(args.linked_transaction_id ? {linkedTransactionId:args.linked_transaction_id} : {}),
-        ...(args.repayment_plan ? {plan:planInput(args.repayment_plan)} : {})
-      };
+        discountType:'fixed',
+        discountValue:Number(args.discount_amount || 0),
+        chargeType:'fixed',
+        chargeValue:Number(args.extra_charge_amount || 0)
+      });
+      return invokeSplit(db,{action:'create',bill});
+    }
+
+    if (name === 'create_split_bill_with_percent') {
+      const subtotalCents=args.items.reduce((sum,item)=>sum+toCents(item.amount),0);
+      const discountCents=Math.round(subtotalCents * Number(args.discount_percent || 0) / 100);
+      const chargeBaseCents=subtotalCents-discountCents;
+      const chargeCents=Math.round(chargeBaseCents * Number(args.extra_charge_percent || 0) / 100);
+      const bill = createBillDocument(args,{
+        discountCents,
+        chargeCents,
+        discountType:'percent',
+        discountValue:Number(args.discount_percent || 0),
+        chargeType:'percent',
+        chargeValue:Number(args.extra_charge_percent || 0)
+      });
       return invokeSplit(db,{action:'create',bill});
     }
 
