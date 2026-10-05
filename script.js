@@ -49,6 +49,7 @@ const authForm = document.getElementById("auth-form");
 
 const registerButton = document.getElementById("register-button");
 const loginButton = document.getElementById("login-button");
+const googleLoginButton = document.getElementById("google-login-button");
 const logoutButton = document.getElementById("logout-button");
 const mobileLogoutButton = document.getElementById("mobile-logout-button");
 
@@ -3412,6 +3413,54 @@ registerButton.addEventListener(
         await showLoggedInState(
             data.user
         );
+    }
+);
+
+
+// ======================================================
+// GOOGLE LOGIN
+// ======================================================
+
+googleLoginButton?.addEventListener(
+    "click",
+    async function () {
+
+        if (isNativeApp) {
+
+            authMessage.textContent =
+                "Google sign-in is being enabled for Kira web first. Native app deep-link login will be added separately.";
+
+            return;
+        }
+
+        googleLoginButton.disabled = true;
+
+        authMessage.textContent =
+            "Opening Google sign-in...";
+
+        const {
+            error
+        } =
+            await supabase.auth.signInWithOAuth({
+
+                provider: "google",
+
+                options: {
+                    redirectTo:
+                        window.location.origin
+                }
+
+            });
+
+        if (error) {
+
+            googleLoginButton.disabled = false;
+
+            authMessage.textContent =
+                error.message;
+
+            return;
+        }
     }
 );
 
