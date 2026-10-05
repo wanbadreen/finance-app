@@ -49,6 +49,19 @@ const authForm = document.getElementById("auth-form");
 
 const registerButton = document.getElementById("register-button");
 const loginButton = document.getElementById("login-button");
+const googleLoginButton = document.getElementById("google-login-button");
+const authDivider = document.getElementById("auth-divider");
+const googleAuthEnabled =
+    import.meta.env.VITE_GOOGLE_AUTH_ENABLED === "true"
+    && !isNativeApp;
+
+if (googleLoginButton) {
+    googleLoginButton.hidden = !googleAuthEnabled;
+}
+
+if (authDivider) {
+    authDivider.hidden = !googleAuthEnabled;
+}
 const logoutButton = document.getElementById("logout-button");
 const mobileLogoutButton = document.getElementById("mobile-logout-button");
 
@@ -3412,6 +3425,50 @@ registerButton.addEventListener(
         await showLoggedInState(
             data.user
         );
+    }
+);
+
+
+// ======================================================
+// GOOGLE LOGIN
+// ======================================================
+
+googleLoginButton?.addEventListener(
+    "click",
+    async function () {
+
+        if (!googleAuthEnabled) {
+            return;
+        }
+
+        googleLoginButton.disabled = true;
+
+        authMessage.textContent =
+            "Opening Google sign-in...";
+
+        const {
+            error
+        } =
+            await supabase.auth.signInWithOAuth({
+
+                provider: "google",
+
+                options: {
+                    redirectTo:
+                        window.location.origin
+                }
+
+            });
+
+        if (error) {
+
+            googleLoginButton.disabled = false;
+
+            authMessage.textContent =
+                error.message;
+
+            return;
+        }
     }
 );
 

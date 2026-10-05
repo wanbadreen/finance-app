@@ -25,7 +25,8 @@ function adjustmentMetadata(raw) {
   return {discountType,discountValue:Number(discountValue),chargeType,chargeValue:Number(chargeValue)};
 }
 function cleanOwner(b) {
-  return {...b,participants:b.participants.map(({tokenHash,...p})=>({...p,hasLink:Boolean(tokenHash)}))};
+  const {groupTokenHash,...safe}=b;
+  return {...safe,hasGroupLink:Boolean(groupTokenHash),participants:b.participants.map(({tokenHash,...p})=>({...p,hasLink:Boolean(tokenHash)}))};
 }
 export function participantView(b,id) {
   const t=totals(b),state=progress(b), lines=state.lines.filter(l=>l.from===id || l.to===id);
@@ -134,17 +135,30 @@ export function createSplitService(db) {
       if(error) throw new Error('Unable to remove payment QR.');
       return {profile:{hasQr:false,qrUrl:null}};
     }
-        const {owner,b}=await read(input.id);
-    let actor;
-    if(userId===owner && !input.token) actor='owner';
-    else {
+    const {owner,b}=await read(input.id);
+    let actor,access='participant';
+    if(userId===owner && !input.token && !input.groupToken) {
+      actor='owner';
+      access='owner';
+    } else if(input.groupToken) {
+      if(typeof input.groupToken!=='string' || !/^[a-f0-9]{64}$/.test(input.groupToken)) throw new Error('This group link is invalid or has expired.');
+      const groupHash=await hashToken(input.groupToken);
+      if(!b.groupTokenHash || groupHash!==b.groupTokenHash) throw new Error('This group link is invalid or has expired.');
+      if(b.cancelled) throw new Error('This bill has been cancelled.');
+      if(input.action==='group-get') {
+        return {group:{id:b.id,name:b.name,date:b.date,revision:b.revision,participants:b.participants.filter(p=>!p.isSelf).map(p=>({id:p.id,name:p.name}))}};
+      }
+      actor=b.participants.find(p=>p.id===input.participantId && !p.isSelf)?.id;
+      if(!actor) throw new Error('Choose your name from this group bill.');
+      access='group';
+    } else {
       if(typeof input.token!=='string' || !/^[a-f0-9]{64}$/.test(input.token)) throw new Error('This participant link is invalid or has expired.');
       const hash=await hashToken(input.token);
       actor=b.participants.find(p=>p.tokenHash===hash)?.id;
       if(!actor) throw new Error('This participant link is invalid or has expired.');
     }
     if(b.cancelled) throw new Error('This bill has been cancelled.');
-    const view=value=>actor==='owner' ? {bill:cleanOwner(value)} : {view:participantView(value,actor)};
+    const view=value=>actor==='owner' ? {bill:cleanOwner(value)} : {view:{...participantView(value,actor),access}};
     if(input.action==='get') {
       const result=view(b),payments=result.bill?.payments || result.view?.payments || [];
       for(const p of payments) if(p.proofPath) {
@@ -191,6 +205,18 @@ export function createSplitService(db) {
       const updated=await save({...b,participants:b.participants.map(p=>p.id===input.participantId ? {...p,tokenHash} : p)},owner,b.revision);
       return {...view(updated),token};
     }
+    if(input.action==='group-link') {
+      if(actor!=='owner') throw new Error('Only the bill creator can share a group link.');
+      const bytes=crypto.getRandomValues(new Uint8Array(32)),groupToken=[...bytes].map(n=>n.toString(16).padStart(2,'0')).join('');
+      const groupTokenHash=await hashToken(groupToken);
+      const updated=await save({...b,groupTokenHash},owner,b.revision);
+      return {...view(updated),groupToken};
+    }
+    if(input.action==='group-disable') {
+      if(actor!=='owner') throw new Error('Only the bill creator can disable a group link.');
+      const {groupTokenHash,...next}=b;
+      return view(await save(next,owner,b.revision));
+    }
     if(input.action==='report') {
       let next=reportPayment(b,{...input.payment,proofPath:null},actor),path=null;
       if(input.proof) {
@@ -216,6 +242,7 @@ export function createSplitService(db) {
       catch(error) {if(path) await db.storage.from('receipts').remove([path]);throw error;}
     }
     if(input.action==='decision') {
+      if(access==='group') throw new Error('Group links cannot confirm or reject payments. Use your private participant link or ask the bill creator.');
       const next=decidePayment(b,input.paymentId,input.decision,actor),p=next.payments.find(p=>p.id===input.paymentId),self=b.participants.find(p=>p.isSelf),rows=[];
       if(input.decision==='confirmed' && (p.from===self.id || p.to===self.id)) {
         const accountId=await account(actor==='owner' ? (input.accountId || b.accountId) : b.accountId,owner);
