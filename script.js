@@ -50,6 +50,18 @@ const authForm = document.getElementById("auth-form");
 const registerButton = document.getElementById("register-button");
 const loginButton = document.getElementById("login-button");
 const googleLoginButton = document.getElementById("google-login-button");
+const authDivider = document.getElementById("auth-divider");
+const googleAuthEnabled =
+    import.meta.env.VITE_GOOGLE_AUTH_ENABLED === "true"
+    && !isNativeApp;
+
+if (googleLoginButton) {
+    googleLoginButton.hidden = !googleAuthEnabled;
+}
+
+if (authDivider) {
+    authDivider.hidden = !googleAuthEnabled;
+}
 const logoutButton = document.getElementById("logout-button");
 const mobileLogoutButton = document.getElementById("mobile-logout-button");
 
@@ -3425,11 +3437,7 @@ googleLoginButton?.addEventListener(
     "click",
     async function () {
 
-        if (isNativeApp) {
-
-            authMessage.textContent =
-                "Google sign-in is being enabled for Kira web first. Native app deep-link login will be added separately.";
-
+        if (!googleAuthEnabled) {
             return;
         }
 
