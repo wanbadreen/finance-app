@@ -1,9 +1,28 @@
-import { totals, validateBill, suggestPlan, validatePlan, progress, reportPayment, decidePayment } from '../../../split-core.mjs';
+import { totals, validateBill, suggestPlan, validatePlan, progress, reportPayment, decidePayment, adjustmentCents } from '../../../split-core.mjs';
 
 const uuid = value => typeof value==='string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 export async function hashToken(token) {
   const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
   return [...new Uint8Array(bytes)].map(n=>n.toString(16).padStart(2,'0')).join('');
+}
+function qrBytes(qr) {
+  if(!qr || !['image/jpeg','image/png','image/webp'].includes(qr.type) || typeof qr.base64!=='string' || qr.base64.length>2796204) throw new Error('Use a JPG, PNG or WebP QR image up to 2 MB.');
+  const bytes=Uint8Array.from(atob(qr.base64),c=>c.charCodeAt(0));
+  const png=bytes[0]===137 && bytes[1]===80 && bytes[2]===78 && bytes[3]===71;
+  const jpg=bytes[0]===255 && bytes[1]===216 && bytes[2]===255;
+  const webp=new TextDecoder().decode(bytes.slice(0,4))==='RIFF' && new TextDecoder().decode(bytes.slice(8,12))==='WEBP';
+  if(!bytes.length || bytes.length>2097152 || !({ 'image/png':png,'image/jpeg':jpg,'image/webp':webp }[qr.type])) throw new Error('Invalid QR image.');
+  return bytes;
+}
+function adjustmentMetadata(raw) {
+  const subtotal=raw.items.reduce((sum,item)=>sum+item.cents,0);
+  const discountType=raw.discountType || 'fixed', chargeType=raw.chargeType || 'fixed';
+  if(!['fixed','percent'].includes(discountType) || !['fixed','percent'].includes(chargeType)) throw new Error('Invalid discount or charge type.');
+  const discountValue=raw.discountValue ?? raw.discountCents/100;
+  const chargeValue=raw.chargeValue ?? raw.chargeCents/100;
+  if(discountType==='percent' && adjustmentCents(discountValue,'percent',subtotal,'Discount')!==raw.discountCents) throw new Error('Discount percentage does not match the calculated amount.');
+  if(chargeType==='percent' && adjustmentCents(chargeValue,'percent',subtotal-raw.discountCents,'Charges')!==raw.chargeCents) throw new Error('Charge percentage does not match the calculated amount.');
+  return {discountType,discountValue:Number(discountValue),chargeType,chargeValue:Number(chargeValue)};
 }
 function cleanOwner(b) {
   return {...b,participants:b.participants.map(({tokenHash,...p})=>({...p,hasLink:Boolean(tokenHash)}))};
@@ -59,6 +78,7 @@ export function createSplitService(db) {
       if(!userId) throw new Error('Sign in to Kira.');
       const raw=input.bill;
       validateBill(raw);
+      const adjustment=adjustmentMetadata(raw);
       if(raw.id && !uuid(raw.id)) throw new Error('Invalid draft ID.');
       if(raw.id) {
         const {data:existing}=await db.from('split_bills').select('id,user_id,revision,document').eq('id',raw.id).eq('user_id',userId).single();
@@ -67,7 +87,8 @@ export function createSplitService(db) {
       const b={id:raw.id || crypto.randomUUID(),name:raw.name.trim(),date:raw.date,mode:raw.mode,
         participants:raw.participants.map(p=>({id:p.id,name:p.name.trim(),isSelf:p.isSelf===true,instructions:p.instructions || ''})),
         items:raw.items.map(i=>({id:i.id,name:i.name.trim(),cents:i.cents,participants:i.participants})),
-        discountCents:raw.discountCents,chargeCents:raw.chargeCents,chargeMode:raw.chargeMode,
+        discountCents:raw.discountCents,discountType:adjustment.discountType,discountValue:adjustment.discountValue,
+        chargeCents:raw.chargeCents,chargeType:adjustment.chargeType,chargeValue:adjustment.chargeValue,chargeMode:raw.chargeMode,
         paid:raw.paid.map(p=>({id:p.id,participantId:p.participantId,cents:p.cents,accountId:p.accountId || null})),
         categoryId:await category(raw.categoryId,userId),accountId:await account(raw.accountId,userId),payments:[],revision:0};
       b.plan=raw.plan || suggestPlan(b); validatePlan(b,b.plan);
@@ -85,7 +106,35 @@ export function createSplitService(db) {
       } else if(self.share>0) rows.push(row(b,b.accountId,self.share,self.share,0,'expense',b.date,`Split: ${b.name}`));
       return {bill:cleanOwner(await save(b,userId,0,rows,linked,self.share/100))};
     }
-    const {owner,b}=await read(input.id);
+    if(input.action==='profile-get') {
+      if(!userId) throw new Error('Sign in to Kira.');
+      const {data}=await db.from('split_payment_profiles').select('qr_path').eq('user_id',userId).maybeSingle();
+      let qrUrl=null;
+      if(data?.qr_path) {
+        const {data:signed}=await db.storage.from('receipts').createSignedUrl(data.qr_path,300);
+        qrUrl=signed?.signedUrl || null;
+      }
+      return {profile:{hasQr:Boolean(data?.qr_path),qrUrl}};
+    }
+    if(input.action==='profile-save') {
+      if(!userId) throw new Error('Sign in to Kira.');
+      const bytes=qrBytes(input.qr),path=`${userId}/split/profile-payment-qr`;
+      const {error:uploadError}=await db.storage.from('receipts').upload(path,bytes,{contentType:input.qr.type,upsert:true});
+      if(uploadError) throw new Error('Unable to upload payment QR.');
+      const {error}=await db.from('split_payment_profiles').upsert({user_id:userId,qr_path:path,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+      if(error) throw new Error('Unable to save payment QR.');
+      const {data:signed}=await db.storage.from('receipts').createSignedUrl(path,300);
+      return {profile:{hasQr:true,qrUrl:signed?.signedUrl || null}};
+    }
+    if(input.action==='profile-delete') {
+      if(!userId) throw new Error('Sign in to Kira.');
+      const {data}=await db.from('split_payment_profiles').select('qr_path').eq('user_id',userId).maybeSingle();
+      if(data?.qr_path) await db.storage.from('receipts').remove([data.qr_path]);
+      const {error}=await db.from('split_payment_profiles').delete().eq('user_id',userId);
+      if(error) throw new Error('Unable to remove payment QR.');
+      return {profile:{hasQr:false,qrUrl:null}};
+    }
+        const {owner,b}=await read(input.id);
     let actor;
     if(userId===owner && !input.token) actor='owner';
     else {
@@ -101,6 +150,17 @@ export function createSplitService(db) {
       for(const p of payments) if(p.proofPath) {
         const {data}=await db.storage.from('receipts').createSignedUrl(p.proofPath,300);
         p.proofUrl=data?.signedUrl || null;
+      }
+      if(result.view) {
+        const self=b.participants.find(p=>p.isSelf);
+        const owesSelf=self && result.view.lines.some(l=>l.from===actor && l.to===self.id && l.available>0);
+        if(owesSelf) {
+          const {data:profile}=await db.from('split_payment_profiles').select('qr_path').eq('user_id',owner).maybeSingle();
+          if(profile?.qr_path) {
+            const {data:signed}=await db.storage.from('receipts').createSignedUrl(profile.qr_path,300);
+            if(signed?.signedUrl) result.view.paymentProfile={recipientId:self.id,qrUrl:signed.signedUrl};
+          }
+        }
       }
       return result;
     }
