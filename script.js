@@ -3388,6 +3388,8 @@ async function showLoggedInState(user) {
 
     await loadSavingsGoals();
 
+    await loadSavingsMovements();
+
     await loadReportEmailPreference();
 
     refreshTransactionDropdowns();
@@ -3395,6 +3397,8 @@ async function showLoggedInState(user) {
     refreshRecurringFormOptions();
 
     refreshGoalAccountOptions();
+
+    refreshSavingsMovementOptions();
 
     renderPlanningTools();
 
