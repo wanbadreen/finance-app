@@ -20925,6 +20925,23 @@ function editTransfer(
         return;
     }
 
+    if (
+        getSavingsMovementByTransferId(
+            transfer.id
+        )
+    ) {
+
+        alert(
+            "This transfer is linked to Savings. Manage it from the Savings page instead."
+        );
+
+        navigateToPage(
+            "goals"
+        );
+
+        return;
+    }
+
     editingTransactionId =
         null;
 
@@ -21113,6 +21130,23 @@ async function deleteTransfer(
         );
 
     if (!transfer) {
+        return;
+    }
+
+    if (
+        getSavingsMovementByTransferId(
+            transfer.id
+        )
+    ) {
+
+        alert(
+            "This transfer is linked to Savings and cannot be deleted from Transactions."
+        );
+
+        navigateToPage(
+            "goals"
+        );
+
         return;
     }
 
