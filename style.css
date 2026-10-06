@@ -5120,6 +5120,177 @@ a {
 
 
 /* ======================================================
+   SAVINGS MOVEMENTS
+====================================================== */
+
+.savings-movement-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.savings-movement-form {
+    margin: 0;
+}
+
+.savings-transfer-account-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.savings-movement-preview {
+    padding: 12px 14px;
+
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+
+    background-color: var(--surface-muted);
+    color: var(--text-muted);
+
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+.savings-movement-preview strong {
+    color: var(--text-primary);
+}
+
+.savings-activity-panel {
+    min-width: 0;
+    padding: 16px;
+
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+
+    background-color: var(--card-bg);
+}
+
+.savings-activity-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-bottom: 12px;
+}
+
+.savings-activity-heading h3 {
+    margin: 0;
+
+    color: var(--text-primary);
+
+    font-size: 13px;
+}
+
+.savings-activity-heading p {
+    margin: 4px 0 0;
+
+    color: var(--text-muted);
+
+    font-size: 9px;
+}
+
+.savings-movement-list {
+    display: grid;
+    gap: 9px;
+}
+
+.savings-movement-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+
+    padding: 11px 12px;
+
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+
+    background-color: var(--surface-muted);
+}
+
+.savings-movement-copy {
+    min-width: 0;
+}
+
+.savings-movement-copy strong {
+    display: block;
+
+    overflow: hidden;
+
+    color: var(--text-primary);
+
+    font-size: 11px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.savings-movement-copy span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--text-muted);
+
+    font-size: 8px;
+    line-height: 1.45;
+}
+
+.savings-movement-amount {
+    margin: 0;
+
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.savings-movement-amount.add {
+    color: var(--success-text);
+}
+
+.savings-movement-amount.withdraw {
+    color: var(--danger-text);
+}
+
+.goal-savings-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+
+    margin-top: 12px;
+}
+
+.goal-savings-actions button {
+    width: auto;
+    min-height: 34px;
+    padding: 0 11px;
+
+    font-size: 9px;
+}
+
+body[data-theme="dark"] .savings-movement-preview,
+body[data-theme="dark"] .savings-movement-row {
+    background-color: var(--dark-surface-2);
+    border-color: var(--dark-border);
+}
+
+@media (max-width: 900px) {
+    .savings-movement-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .savings-transfer-account-group {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ======================================================
    GOALS & PLANNING
 ====================================================== */
 
