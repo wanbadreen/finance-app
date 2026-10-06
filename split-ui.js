@@ -299,6 +299,75 @@ function decisionDialog(b,paymentId,decision,accounts,save) {
   d.querySelector('[data-split-action]').onclick=()=>busy(d,async()=>{await save({action:'decision',paymentId,decision,accountId:d.querySelector('[name=account]')?.value});d.close();},d.querySelector('.split-message'));
 }
 
+function participantBankDialog(line,people,profile,onReport) {
+  const recipient=people.find(p=>p.id===line.to)?.name || 'recipient';
+  const d=openDialog(`Pay ${recipient}`,`<p>You need to pay <strong>${money(line.available)}</strong>.</p><div class="split-bank-picker" role="group" aria-label="Choose your bank"></div><div data-bank-payment></div>`);
+  let bankId=savedBank();
+
+  function render() {
+    const picker=d.querySelector('.split-bank-picker');
+    picker.innerHTML=splitBanks.map(bank=>`<button type="button" class="split-bank-option ${bank.id===bankId?'selected':''}" data-bank="${bank.id}"><strong>${escape(bank.name)}</strong><span>${bank.auto?'Auto amount supported':'Standard QR'}</span></button>`).join('');
+    const bank=splitBanks.find(x=>x.id===bankId) || splitBanks[3];
+    const panel=d.querySelector('[data-bank-payment]');
+    let payload=null,autoReady=false;
+    if(bank.auto && profile?.qrPayload) {
+      try {payload=amountQrPayload(profile.qrPayload,line.available);autoReady=true;} catch {}
+    }
+    const amountText=money(line.available);
+    const helper=autoReady
+      ? `<div class="split-pay-note success"><strong>No manual amount entry needed.</strong><span>This QR already includes ${amountText}. Scan it from ${escape(bank.name)} and confirm the payment.</span></div>`
+      : bank.id==='maybank'
+        ? `<div class="split-pay-note"><strong>Maybank needs manual amount entry for this personal QR.</strong><span>Kira can copy ${amountText} for you, so you only need to paste or enter it when prompted.</span></div>`
+        : bank.id==='other'
+          ? `<div class="split-pay-note"><strong>Pay with another bank.</strong><span>Use the standard QR below. If your bank asks for an amount, enter ${amountText}.</span></div>`
+          : `<div class="split-pay-note"><strong>Auto amount is not available for this QR yet.</strong><span>Use the standard QR and enter ${amountText} when prompted.</span></div>`;
+    panel.innerHTML=`${helper}<div class="split-qr-wrap"><strong>${autoReady?'Amount QR':'Payment QR'} · ${amountText}</strong>${autoReady?'<div class="split-generated-qr" data-generated-qr></div>':`<img class="split-qr" src="${escape(profile.qrUrl)}" alt="Payment QR for ${escape(recipient)}">`}</div><div class="split-row split-pay-actions"><button type="button" class="split-button primary" data-bank-action="save-qr">Save / Share QR</button><button type="button" class="split-button" data-bank-action="copy-amount">Copy ${amountText}</button><button type="button" class="split-button" data-bank-action="reported">I've paid</button></div><p class="split-muted">You can still choose a different bank above at any time.</p>`;
+    if(autoReady) qrCanvas(panel.querySelector('[data-generated-qr]'),payload);
+    panel.dataset.autoReady=String(autoReady);
+  }
+
+  d.addEventListener('click',async event=>{
+    const bankButton=event.target.closest('[data-bank]');
+    if(bankButton) {
+      bankId=bankButton.dataset.bank;
+      rememberBank(bankId);
+      render();
+      return;
+    }
+    const actionButton=event.target.closest('[data-bank-action]');
+    if(!actionButton) return;
+    const message=d.querySelector('.split-message');
+    try {
+      if(actionButton.dataset.bankAction==='copy-amount') {
+        await copyAmount(line.available);
+        message.textContent=`${money(line.available)} copied.`;
+        return;
+      }
+      if(actionButton.dataset.bankAction==='save-qr') {
+        actionButton.disabled=true;
+        let blob;
+        if(d.querySelector('[data-bank-payment]').dataset.autoReady==='true') {
+          blob=await qrBlobFromCanvas(d.querySelector('[data-generated-qr] canvas'));
+        } else {
+          blob=await staticQrBlob(profile.qrUrl);
+        }
+        message.textContent=await shareQrBlob(blob,`kira-payment-${(line.available/100).toFixed(2).replace('.','-')}.png`);
+        actionButton.disabled=false;
+        return;
+      }
+      if(actionButton.dataset.bankAction==='reported') {
+        d.close();
+        onReport();
+      }
+    } catch(error) {
+      actionButton.disabled=false;
+      message.textContent=error?.message || 'Unable to prepare this payment.';
+    }
+  });
+  render();
+  return d;
+}
+
 export async function mountParticipantPortal(root) {
   const hash=location.hash.slice(1);
   const privateMatch=hash.match(/^([a-f0-9-]{36})\.([a-f0-9]{64})$/);
@@ -322,7 +391,7 @@ export async function mountParticipantPortal(root) {
   function draw(){
     const name=id=>view.participants.find(p=>p.id===id)?.name || '',outgoing=view.lines.filter(l=>l.from===view.participantId),incoming=view.lines.filter(l=>l.to===view.participantId);
     const incomingDecisions=!groupMode ? view.payments.filter(p=>p.status==='pending' && p.to===view.participantId).map(p=>`<section class="split-card"><p>${escape(name(p.from))} reported ${money(p.cents)}.</p>${button('Confirm received',`confirm:${p.id}`,true)} ${button('Not received',`reject:${p.id}`)}</section>`).join('') : '';
-    root.innerHTML=`<header><strong>Kira · Split Bill</strong><h1>${escape(view.name)}</h1><p>Hi ${escape(view.person.name)} · ${escape(view.date)}</p>${groupMode?button('Not you? Choose another name','choose-another'):''}</header><p class="split-message" role="alert"></p><section class="split-card"><div class="split-toolbar"><h3>Your share: ${money(view.person.share)}</h3>${button('Refresh','refresh')}</div><p>Already paid to the shop: ${money(view.person.paid)}</p>${view.items.map(i=>`<div class="split-toolbar"><span>${escape(i.name)}</span><strong>${money(i.cents)}</strong></div>`).join('')}<p class="split-muted">Your discount: ${money(view.person.discount)} · Extra charges: ${money(view.person.charge)}</p></section><section class="split-card"><h3>Your repayments</h3>${outgoing.map(l=>`<div><p>Pay <strong>${escape(name(l.to))}</strong> · Remaining <strong>${money(l.remaining)}</strong></p><p class="split-muted">${money(l.confirmed)} confirmed · ${money(l.pending)} awaiting confirmation</p>${view.participants.find(p=>p.id===l.to)?.instructions?.trim()?`<p style="white-space:pre-wrap">${escape(view.participants.find(p=>p.id===l.to).instructions.trim())}</p>`:(l.available>0 && !(view.paymentProfile?.recipientId===l.to && view.paymentProfile?.qrUrl)?'<p>Ask the recipient for their bank or e-wallet details.</p>':'')}${l.available>0 && view.paymentProfile?.recipientId===l.to && view.paymentProfile?.qrUrl?`<div class="split-qr-wrap"><strong>Scan to pay ${escape(name(l.to))}</strong><img class="split-qr" src="${escape(view.paymentProfile.qrUrl)}" alt="Payment QR for ${escape(name(l.to))}"></div>`:''}${l.available>0?button('I have paid',`pay:${l.id}`,true):''}</div>`).join('')}${incoming.map(l=>`<p>Receive from <strong>${escape(name(l.from))}</strong> · Remaining ${money(l.remaining)}</p>`).join('')}${!view.lines.length?'<p>You are settled. No repayments needed.</p>':''}</section>${history(view.payments,name,false)}${incomingDecisions}<p class="split-muted">${view.lines.every(l=>l.remaining===0) && !view.payments.some(p=>p.status==='pending')?'Your payments are settled ✓':'Your payments are still being tracked.'} ${groupMode?'Group links can report payments but cannot confirm or reject them.':'Keep this link private. Payment reports require recipient confirmation.'}</p>`;
+    root.innerHTML=`<header><strong>Kira · Split Bill</strong><h1>${escape(view.name)}</h1><p>Hi ${escape(view.person.name)} · ${escape(view.date)}</p>${groupMode?button('Not you? Choose another name','choose-another'):''}</header><p class="split-message" role="alert"></p><section class="split-card"><div class="split-toolbar"><h3>Your share: ${money(view.person.share)}</h3>${button('Refresh','refresh')}</div><p>Already paid to the shop: ${money(view.person.paid)}</p>${view.items.map(i=>`<div class="split-toolbar"><span>${escape(i.name)}</span><strong>${money(i.cents)}</strong></div>`).join('')}<p class="split-muted">Your discount: ${money(view.person.discount)} · Extra charges: ${money(view.person.charge)}</p></section><section class="split-card"><h3>Your repayments</h3>${outgoing.map(l=>{const recipient=view.participants.find(p=>p.id===l.to),hasQr=l.available>0 && view.paymentProfile?.recipientId===l.to && view.paymentProfile?.qrUrl;return `<div class="split-repayment"><p>Pay <strong>${escape(name(l.to))}</strong> · Remaining <strong>${money(l.remaining)}</strong></p><p class="split-muted">${money(l.confirmed)} confirmed · ${money(l.pending)} awaiting confirmation</p>${recipient?.instructions?.trim()?`<p style="white-space:pre-wrap">${escape(recipient.instructions.trim())}</p>`:(!hasQr && l.available>0?'<p>Ask the recipient for their bank or e-wallet details.</p>':'')}${l.available>0?(hasQr?button('Pay now',`bankpay:${l.id}`,true):button('I have paid',`pay:${l.id}`,true)):''}</div>`;}).join('')}${incoming.map(l=>`<p>Receive from <strong>${escape(name(l.from))}</strong> · Remaining ${money(l.remaining)}</p>`).join('')}${!view.lines.length?'<p>You are settled. No repayments needed.</p>':''}</section>${history(view.payments,name,false)}${incomingDecisions}<p class="split-muted">${view.lines.every(l=>l.remaining===0) && !view.payments.some(p=>p.status==='pending')?'Your payments are settled ✓':'Your payments are still being tracked.'} ${groupMode?'Group links can report payments but cannot confirm or reject them.':'Keep this link private. Payment reports require recipient confirmation.'}</p>`;
   }
   root.onclick=e=>{
     const btn=e.target.closest('[data-split-action]');if(!btn)return;
@@ -330,6 +399,10 @@ export async function mountParticipantPortal(root) {
     if(action==='choose'){participantId=arg;view=null;return busy(root,refresh,root.querySelector('.split-message'));}
     if(action==='choose-another'){participantId=null;view=null;return loadGroup();}
     if(action==='refresh')return busy(root,refresh,root.querySelector('.split-message'));
+    if(action==='bankpay'){
+      const line=view.lines.find(l=>l.id===arg);
+      return participantBankDialog(line,view.participants,view.paymentProfile,()=>paymentDialog(line,view.participants,async data=>{await request({action:'report',payment:data.payment,proof:data.proof});await refresh();}));
+    }
     if(action==='pay')return paymentDialog(view.lines.find(l=>l.id===arg),view.participants,async data=>{await request({action:'report',payment:data.payment,proof:data.proof});await refresh();});
     if(action==='confirm' || action==='reject'){
       if(groupMode){root.querySelector('.split-message').textContent='Use your private participant link or ask the bill creator to confirm this payment.';return;}
