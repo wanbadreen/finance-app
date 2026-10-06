@@ -9,122 +9,26 @@ const uid=()=>crypto.randomUUID();
 const button=(text,action,primary=false)=>`<button type="button" class="split-button ${primary?'primary':''}" data-split-action="${action}">${escape(text)}</button>`;
 function options(rows,value){return rows.map(x=>`<option value="${escape(x.id)}" ${x.id===value?'selected':''}>${escape(x.name)}</option>`).join('');}
 
-const SPLIT_BANK_PREF='kira_split_payer_bank_v1';
-const splitBanks=[
-  {id:'cimb',name:'CIMB OCTO',auto:true},
-  {id:'uob',name:'UOB TMRW',auto:true},
-  {id:'maybank',name:'Maybank / MAE',auto:false},
-  {id:'other',name:'Other bank',auto:false}
-];
-function tlvFields(payload) {
-  const rows=[];let i=0;
-  while(i+4<=payload.length) {
-    const id=payload.slice(i,i+2),lenText=payload.slice(i+2,i+4),len=Number(lenText);
-    if(!/^\d{2}$/.test(id) || !/^\d{2}$/.test(lenText) || !Number.isInteger(len) || i+4+len>payload.length) throw new Error('Unsupported DuitNow QR format.');
-    rows.push({id,value:payload.slice(i+4,i+4+len)});
-    i+=4+len;
-  }
-  if(i!==payload.length) throw new Error('Unsupported DuitNow QR format.');
-  return rows;
-}
-function crc16(value) {
-  let crc=0xffff;
-  for(const byte of new TextEncoder().encode(value)) {
-    crc^=byte<<8;
-    for(let bit=0;bit<8;bit++) crc=(crc&0x8000) ? ((crc<<1)^0x1021)&0xffff : (crc<<1)&0xffff;
-  }
-  return crc.toString(16).toUpperCase().padStart(4,'0');
-}
-function amountQrPayload(basePayload,amountCents) {
-  if(!basePayload) throw new Error('Amount QR is not enabled for this recipient.');
-  const fields=tlvFields(basePayload);
-  const byId=new Map(fields.map(x=>[x.id,x.value]));
-  if(byId.get('53')!=='458' || byId.get('58')!=='MY' || byId.get('52')!=='0000') throw new Error('This payment QR is not a supported personal DuitNow QR.');
-  if(byId.has('82')) throw new Error('This DuitNow QR has integrity protection and cannot be adjusted safely.');
-  const amount=(amountCents/100).toFixed(2);
-  const out=[];
-  let amountAdded=false;
-  for(const field of fields) {
-    if(field.id==='63' || field.id==='54') continue;
-    const value=field.id==='01' ? '12' : field.value;
-    out.push(field.id+String(value.length).padStart(2,'0')+value);
-    if(field.id==='53') {
-      out.push('54'+String(amount.length).padStart(2,'0')+amount);
-      amountAdded=true;
-    }
-  }
-  if(!amountAdded) throw new Error('Unsupported DuitNow QR format.');
-  const body=out.join('')+'6304';
-  return body+crc16(body);
-}
-let qrLibraryPromise=null;
-function loadQrLibrary() {
-  if(window.QRCode) return Promise.resolve(window.QRCode);
-  if(qrLibraryPromise) return qrLibraryPromise;
-  qrLibraryPromise=new Promise((resolve,reject)=>{
-    const existing=document.querySelector('script[data-kira-qr-lib]');
-    if(existing) {
-      existing.addEventListener('load',()=>window.QRCode?resolve(window.QRCode):reject(new Error('QR generator failed to load.')),{once:true});
-      existing.addEventListener('error',()=>reject(new Error('QR generator failed to load.')),{once:true});
-      return;
-    }
-    const script=document.createElement('script');
-    script.src='/qrcode-vendor.js';
-    script.async=true;
-    script.dataset.kiraQrLib='true';
-    script.onload=()=>window.QRCode?resolve(window.QRCode):reject(new Error('QR generator failed to load.'));
-    script.onerror=()=>reject(new Error('QR generator failed to load.'));
-    document.head.append(script);
-  }).catch(error=>{qrLibraryPromise=null;throw error;});
-  return qrLibraryPromise;
-}
-async function qrCanvas(holder,payload) {
-  const QRCode=await loadQrLibrary();
-  holder.innerHTML='';
-  new QRCode(holder,{text:payload,width:280,height:280,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
-  return holder.querySelector('canvas');
-}
 async function copyAmount(amountCents) {
   const value=(amountCents/100).toFixed(2);
   await navigator.clipboard.writeText(value);
   return value;
 }
-async function qrBlobFromCanvas(canvas) {
-  if(!canvas) throw new Error('QR image is not ready yet.');
-  return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Unable to prepare QR image.')),'image/png'));
-}
 async function shareQrBlob(blob,filename) {
   const file=new File([blob],filename,{type:blob.type || 'image/png'});
   if(navigator.share && navigator.canShare?.({files:[file]})) {
     await navigator.share({files:[file],title:'Kira payment QR'});
-    return 'Share sheet opened. Choose Save Image if you want it in Photos.';
+    return 'QR share sheet opened. The repayment amount is already copied.';
   }
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
-  return 'QR downloaded. Open it from your files or gallery in your banking app.';
+  return 'QR downloaded. The repayment amount is already copied.';
 }
 async function staticQrBlob(url) {
   const response=await fetch(url);
   if(!response.ok) throw new Error('Unable to load the payment QR.');
   return response.blob();
-}
-async function detectQrPayload(fileOrBlob) {
-  if(!('BarcodeDetector' in window)) return null;
-  const detector=new BarcodeDetector({formats:['qr_code']});
-  const bitmap=await createImageBitmap(fileOrBlob);
-  try {
-    const result=await detector.detect(bitmap);
-    return result[0]?.rawValue || null;
-  } finally {
-    bitmap.close?.();
-  }
-}
-function savedBank() {
-  try {return localStorage.getItem(SPLIT_BANK_PREF) || 'maybank';} catch {return 'maybank';}
-}
-function rememberBank(id) {
-  try {localStorage.setItem(SPLIT_BANK_PREF,id);} catch {}
 }
 async function proof(file) {
   if(!file) return null;
@@ -252,15 +156,9 @@ export function mountSplitUI(context) {
 
   async function paymentProfile() {
     const data=await splitRequest({action:'profile-get'}),profile=data.profile || {};
-    const d=openDialog('Your payment QR',`<p>Upload your DuitNow, bank or e-wallet QR once. Kira will show it to participants who still need to repay you.</p>${profile.qrUrl?`<div class="split-qr-wrap"><img class="split-qr" src="${escape(profile.qrUrl)}" alt="Your payment QR"></div>`:''}<div class="split-auto-status ${profile.hasAmountQr?'ready':''}"><strong>${profile.hasAmountQr?'Auto amount enabled':'Standard QR'}</strong><span>${profile.hasAmountQr?'Supported banks can receive a QR with the repayment amount already filled in.':'Participants can still pay with this QR. Auto amount can be enabled when Kira can read a compatible personal DuitNow QR.'}</span></div><form><label>Payment QR image<input name="qr" type="file" accept="image/jpeg,image/png,image/webp" ${profile.hasQr?'':'required'}></label><div class="split-row"><button class="split-button primary">Save QR</button>${profile.hasQr && !profile.hasAmountQr?button('Try enable auto amount','detect-profile-qr'):''}${profile.hasQr?button('Remove QR','remove-profile-qr'):''}</div></form>`);
+    const d=openDialog('Your payment QR',`<p>Upload your personal DuitNow, bank or e-wallet QR once. Kira will show this same original QR to participants who need to repay you.</p>${profile.qrUrl?`<div class="split-qr-wrap"><img class="split-qr" src="${escape(profile.qrUrl)}" alt="Your payment QR"></div>`:''}<div class="split-auto-status"><strong>Standard QR</strong><span>Participants enter the repayment amount in their banking app. Kira helps by copying the exact amount for them.</span></div><form><label>Payment QR image<input name="qr" type="file" accept="image/jpeg,image/png,image/webp" ${profile.hasQr?'':'required'}></label><div class="split-row"><button class="split-button primary">Save QR</button>${profile.hasQr?button('Remove QR','remove-profile-qr'):''}</div></form>`);
     const form=d.querySelector('form');
-    form.onsubmit=e=>{e.preventDefault();busy(d,async()=>{const file=form.elements.qr.files[0];if(!file && profile.hasQr){d.close();return;}let payload=null;try{payload=await detectQrPayload(file);}catch{}await splitRequest({action:'profile-save',qr:await qrImage(file),qrPayload:payload});d.close();},d.querySelector('.split-message'));};
-    d.querySelector('[data-split-action=detect-profile-qr]')?.addEventListener('click',()=>busy(d,async()=>{
-      const blob=await staticQrBlob(profile.qrUrl),payload=await detectQrPayload(blob);
-      if(!payload) throw new Error('This browser could not read the QR automatically. Your standard QR still works.');
-      await splitRequest({action:'profile-payload',qrPayload:payload});
-      d.querySelector('.split-message').textContent='Auto amount enabled. Reopen Payment QR to see the updated status.';
-    },d.querySelector('.split-message')));
+    form.onsubmit=e=>{e.preventDefault();busy(d,async()=>{const file=form.elements.qr.files[0];if(!file && profile.hasQr){d.close();return;}await splitRequest({action:'profile-save',qr:await qrImage(file)});d.close();},d.querySelector('.split-message'));};
     d.querySelector('[data-split-action=remove-profile-qr]')?.addEventListener('click',()=>busy(d,async()=>{await splitRequest({action:'profile-delete'});d.close();},d.querySelector('.split-message')));
   }
   function editPerson(id) {
@@ -322,66 +220,44 @@ function decisionDialog(b,paymentId,decision,accounts,save) {
 
 function participantBankDialog(line,people,profile,onReport) {
   const recipient=people.find(p=>p.id===line.to)?.name || 'recipient';
-  const d=openDialog(`Pay ${recipient}`,`<p>You need to pay <strong>${money(line.available)}</strong>.</p><div class="split-bank-picker" role="group" aria-label="Choose your bank"></div><div data-bank-payment></div>`);
-  let bankId=savedBank();
-
-  function render() {
-    const picker=d.querySelector('.split-bank-picker');
-    picker.innerHTML=splitBanks.map(bank=>`<button type="button" class="split-bank-option ${bank.id===bankId?'selected':''}" data-bank="${bank.id}"><strong>${escape(bank.name)}</strong><span>${bank.auto?'Auto amount supported':'Standard QR'}</span></button>`).join('');
-    const bank=splitBanks.find(x=>x.id===bankId) || splitBanks[3];
-    const panel=d.querySelector('[data-bank-payment]');
-    let payload=null,autoReady=false;
-    if(bank.auto && profile?.qrPayload) {
-      try {payload=amountQrPayload(profile.qrPayload,line.available);autoReady=true;} catch {}
-    }
-    const amountText=money(line.available);
-    const helper=autoReady
-      ? `<div class="split-pay-note success"><strong>No manual amount entry needed.</strong><span>This QR already includes ${amountText}. Scan it from ${escape(bank.name)} and confirm the payment.</span></div>`
-      : bank.id==='maybank'
-        ? `<div class="split-pay-note"><strong>Maybank needs manual amount entry for this personal QR.</strong><span>Kira can copy ${amountText} for you, so you only need to paste or enter it when prompted.</span></div>`
-        : bank.id==='other'
-          ? `<div class="split-pay-note"><strong>Pay with another bank.</strong><span>Use the standard QR below. If your bank asks for an amount, enter ${amountText}.</span></div>`
-          : `<div class="split-pay-note"><strong>Auto amount is not available for this QR yet.</strong><span>Use the standard QR and enter ${amountText} when prompted.</span></div>`;
-    panel.innerHTML=`${helper}<div class="split-qr-wrap"><strong>${autoReady?'Amount QR':'Payment QR'} · ${amountText}</strong>${autoReady?'<div class="split-generated-qr" data-generated-qr></div>':`<img class="split-qr" src="${escape(profile.qrUrl)}" alt="Payment QR for ${escape(recipient)}">`}</div><div class="split-row split-pay-actions"><button type="button" class="split-button primary" data-bank-action="save-qr">Save / Share QR</button><button type="button" class="split-button" data-bank-action="copy-amount">Copy ${amountText}</button><button type="button" class="split-button" data-bank-action="reported">I've paid</button></div><p class="split-muted">You can still choose a different bank above at any time.</p>`;
-    if(autoReady) {
-      panel.dataset.generatedPayload=payload;
-      qrCanvas(panel.querySelector('[data-generated-qr]'),payload).catch(error=>{
-        const message=d.querySelector('.split-message');
-        if(message) message.textContent=error?.message || 'Unable to generate amount QR.';
-      });
-    }
-    panel.dataset.autoReady=String(autoReady);
-  }
+  const amountText=money(line.available);
+  const d=openDialog(`Pay ${recipient}`,`
+    <p>You need to pay <strong>${amountText}</strong>.</p>
+    <div class="split-pay-note">
+      <strong>Use this QR with any supported banking app.</strong>
+      <span>Save or share the QR, then enter ${amountText} when your bank asks for the amount. Kira can copy the amount for you.</span>
+    </div>
+    <div class="split-qr-wrap">
+      <strong>Payment QR · ${amountText}</strong>
+      <img class="split-qr" src="${escape(profile.qrUrl)}" alt="Payment QR for ${escape(recipient)}">
+    </div>
+    <div class="split-row split-pay-actions">
+      <button type="button" class="split-button primary" data-bank-action="save-qr">Save / Share QR</button>
+      <button type="button" class="split-button" data-bank-action="copy-amount">Copy ${amountText}</button>
+      <button type="button" class="split-button" data-bank-action="reported">I've paid</button>
+    </div>
+    <p class="split-muted">The same QR works across supported DuitNow QR banking apps. The amount is entered manually.</p>
+  `);
 
   d.addEventListener('click',async event=>{
-    const bankButton=event.target.closest('[data-bank]');
-    if(bankButton) {
-      bankId=bankButton.dataset.bank;
-      rememberBank(bankId);
-      render();
-      return;
-    }
     const actionButton=event.target.closest('[data-bank-action]');
     if(!actionButton) return;
     const message=d.querySelector('.split-message');
     try {
       if(actionButton.dataset.bankAction==='copy-amount') {
         await copyAmount(line.available);
-        message.textContent=`${money(line.available)} copied.`;
+        message.textContent=`${amountText} copied.`;
         return;
       }
       if(actionButton.dataset.bankAction==='save-qr') {
         actionButton.disabled=true;
-        let blob;
-        if(d.querySelector('[data-bank-payment]').dataset.autoReady==='true') {
-          let canvas=d.querySelector('[data-generated-qr] canvas');
-          if(!canvas) canvas=await qrCanvas(d.querySelector('[data-generated-qr]'),d.querySelector('[data-bank-payment]').dataset.generatedPayload);
-          blob=await qrBlobFromCanvas(canvas);
-        } else {
-          blob=await staticQrBlob(profile.qrUrl);
+        try {
+          await copyAmount(line.available);
+          const blob=await staticQrBlob(profile.qrUrl);
+          message.textContent=await shareQrBlob(blob,`kira-payment-${(line.available/100).toFixed(2).replace('.','-')}.png`);
+        } finally {
+          actionButton.disabled=false;
         }
-        message.textContent=await shareQrBlob(blob,`kira-payment-${(line.available/100).toFixed(2).replace('.','-')}.png`);
-        actionButton.disabled=false;
         return;
       }
       if(actionButton.dataset.bankAction==='reported') {
@@ -393,7 +269,6 @@ function participantBankDialog(line,people,profile,onReport) {
       message.textContent=error?.message || 'Unable to prepare this payment.';
     }
   });
-  render();
   return d;
 }
 
