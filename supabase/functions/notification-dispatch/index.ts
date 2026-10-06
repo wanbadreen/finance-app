@@ -421,7 +421,7 @@ async function sendPushForUser(userId: string) {
 
   const [{ data: subscriptions, error: subError }, { data: notifications, error: claimError }] = await Promise.all([
     service.from("push_subscriptions")
-      .select("id,endpoint,p256dh,auth,last_seen_at")
+      .select("id,endpoint,p256dh,auth,last_seen_at,device_id")
       .eq("user_id", userId)
       .eq("is_active", true)
       .order("last_seen_at", { ascending: false }),
@@ -445,6 +445,7 @@ async function sendPushForUser(userId: string) {
     return { pushed: 0, configured: true };
   }
 
+  const hasTrackedDevice = subscriptions.some((sub: any) => Boolean(sub.device_id));
   let pushed = 0;
 
   for (const notification of notifications) {
@@ -465,7 +466,12 @@ async function sendPushForUser(userId: string) {
           keys: { p256dh: sub.p256dh, auth: sub.auth },
         }, payload, { TTL: 3600 });
 
-        delivered = true;
+        // Once at least one installation has registered a stable device id,
+        // legacy rows may still receive a best-effort copy but cannot by
+        // themselves mark delivery as complete.
+        if (!hasTrackedDevice || sub.device_id) {
+          delivered = true;
+        }
         await service.from("push_subscriptions")
           .update({
             last_success_at: new Date().toISOString(),
