@@ -1,6 +1,7 @@
 import { splitRequest } from './split-api.js';
 import { cents, money, totals, suggestPlan, validatePlan, progress, adjustmentCents } from './split-core.mjs';
 import { isNativeApp } from './native-platform.js';
+import QRCode from './qrcode-vendor.js';
 import './split.css';
 
 const escape = value=>String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8,6 +9,102 @@ const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMon
 const uid=()=>crypto.randomUUID();
 const button=(text,action,primary=false)=>`<button type="button" class="split-button ${primary?'primary':''}" data-split-action="${action}">${escape(text)}</button>`;
 function options(rows,value){return rows.map(x=>`<option value="${escape(x.id)}" ${x.id===value?'selected':''}>${escape(x.name)}</option>`).join('');}
+
+const SPLIT_BANK_PREF='kira_split_payer_bank_v1';
+const splitBanks=[
+  {id:'cimb',name:'CIMB OCTO',auto:true},
+  {id:'uob',name:'UOB TMRW',auto:true},
+  {id:'maybank',name:'Maybank / MAE',auto:false},
+  {id:'other',name:'Other bank',auto:false}
+];
+function tlvFields(payload) {
+  const rows=[];let i=0;
+  while(i+4<=payload.length) {
+    const id=payload.slice(i,i+2),lenText=payload.slice(i+2,i+4),len=Number(lenText);
+    if(!/^\d{2}$/.test(id) || !/^\d{2}$/.test(lenText) || !Number.isInteger(len) || i+4+len>payload.length) throw new Error('Unsupported DuitNow QR format.');
+    rows.push({id,value:payload.slice(i+4,i+4+len)});
+    i+=4+len;
+  }
+  if(i!==payload.length) throw new Error('Unsupported DuitNow QR format.');
+  return rows;
+}
+function crc16(value) {
+  let crc=0xffff;
+  for(const byte of new TextEncoder().encode(value)) {
+    crc^=byte<<8;
+    for(let bit=0;bit<8;bit++) crc=(crc&0x8000) ? ((crc<<1)^0x1021)&0xffff : (crc<<1)&0xffff;
+  }
+  return crc.toString(16).toUpperCase().padStart(4,'0');
+}
+function amountQrPayload(basePayload,amountCents) {
+  if(!basePayload) throw new Error('Amount QR is not enabled for this recipient.');
+  const fields=tlvFields(basePayload);
+  const byId=new Map(fields.map(x=>[x.id,x.value]));
+  if(byId.get('53')!=='458' || byId.get('58')!=='MY' || byId.get('52')!=='0000') throw new Error('This payment QR is not a supported personal DuitNow QR.');
+  if(byId.has('82')) throw new Error('This DuitNow QR has integrity protection and cannot be adjusted safely.');
+  const amount=(amountCents/100).toFixed(2);
+  const out=[];
+  let amountAdded=false;
+  for(const field of fields) {
+    if(field.id==='63' || field.id==='54') continue;
+    const value=field.id==='01' ? '12' : field.value;
+    out.push(field.id+String(value.length).padStart(2,'0')+value);
+    if(field.id==='53') {
+      out.push('54'+String(amount.length).padStart(2,'0')+amount);
+      amountAdded=true;
+    }
+  }
+  if(!amountAdded) throw new Error('Unsupported DuitNow QR format.');
+  const body=out.join('')+'6304';
+  return body+crc16(body);
+}
+function qrCanvas(holder,payload) {
+  holder.innerHTML='';
+  new QRCode(holder,{text:payload,width:280,height:280,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+  return holder.querySelector('canvas');
+}
+async function copyAmount(amountCents) {
+  const value=(amountCents/100).toFixed(2);
+  await navigator.clipboard.writeText(value);
+  return value;
+}
+async function qrBlobFromCanvas(canvas) {
+  if(!canvas) throw new Error('QR image is not ready yet.');
+  return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Unable to prepare QR image.')),'image/png'));
+}
+async function shareQrBlob(blob,filename) {
+  const file=new File([blob],filename,{type:blob.type || 'image/png'});
+  if(navigator.share && navigator.canShare?.({files:[file]})) {
+    await navigator.share({files:[file],title:'Kira payment QR'});
+    return 'Share sheet opened. Choose Save Image if you want it in Photos.';
+  }
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  return 'QR downloaded. Open it from your files or gallery in your banking app.';
+}
+async function staticQrBlob(url) {
+  const response=await fetch(url);
+  if(!response.ok) throw new Error('Unable to load the payment QR.');
+  return response.blob();
+}
+async function detectQrPayload(fileOrBlob) {
+  if(!('BarcodeDetector' in window)) return null;
+  const detector=new BarcodeDetector({formats:['qr_code']});
+  const bitmap=await createImageBitmap(fileOrBlob);
+  try {
+    const result=await detector.detect(bitmap);
+    return result[0]?.rawValue || null;
+  } finally {
+    bitmap.close?.();
+  }
+}
+function savedBank() {
+  try {return localStorage.getItem(SPLIT_BANK_PREF) || 'maybank';} catch {return 'maybank';}
+}
+function rememberBank(id) {
+  try {localStorage.setItem(SPLIT_BANK_PREF,id);} catch {}
+}
 async function proof(file) {
   if(!file) return null;
   if(file.size>5242880 || !['image/jpeg','image/png','image/webp','application/pdf'].includes(file.type)) throw new Error('Use JPG, PNG, WebP or PDF up to 5 MB.');
@@ -134,9 +231,15 @@ export function mountSplitUI(context) {
 
   async function paymentProfile() {
     const data=await splitRequest({action:'profile-get'}),profile=data.profile || {};
-    const d=openDialog('Your payment QR',`<p>Upload your DuitNow, bank or e-wallet QR once. Kira will show it to participants who still need to repay you.</p>${profile.qrUrl?`<div class="split-qr-wrap"><img class="split-qr" src="${escape(profile.qrUrl)}" alt="Your payment QR"></div>`:''}<form><label>Payment QR image<input name="qr" type="file" accept="image/jpeg,image/png,image/webp" ${profile.hasQr?'':'required'}></label><div class="split-row"><button class="split-button primary">Save QR</button>${profile.hasQr?button('Remove QR','remove-profile-qr'):''}</div></form>`);
+    const d=openDialog('Your payment QR',`<p>Upload your DuitNow, bank or e-wallet QR once. Kira will show it to participants who still need to repay you.</p>${profile.qrUrl?`<div class="split-qr-wrap"><img class="split-qr" src="${escape(profile.qrUrl)}" alt="Your payment QR"></div>`:''}<div class="split-auto-status ${profile.hasAmountQr?'ready':''}"><strong>${profile.hasAmountQr?'Auto amount enabled':'Standard QR'}</strong><span>${profile.hasAmountQr?'Supported banks can receive a QR with the repayment amount already filled in.':'Participants can still pay with this QR. Auto amount can be enabled when Kira can read a compatible personal DuitNow QR.'}</span></div><form><label>Payment QR image<input name="qr" type="file" accept="image/jpeg,image/png,image/webp" ${profile.hasQr?'':'required'}></label><div class="split-row"><button class="split-button primary">Save QR</button>${profile.hasQr && !profile.hasAmountQr?button('Try enable auto amount','detect-profile-qr'):''}${profile.hasQr?button('Remove QR','remove-profile-qr'):''}</div></form>`);
     const form=d.querySelector('form');
-    form.onsubmit=e=>{e.preventDefault();busy(d,async()=>{const file=form.elements.qr.files[0];if(!file && profile.hasQr){d.close();return;}await splitRequest({action:'profile-save',qr:await qrImage(file)});d.close();},d.querySelector('.split-message'));};
+    form.onsubmit=e=>{e.preventDefault();busy(d,async()=>{const file=form.elements.qr.files[0];if(!file && profile.hasQr){d.close();return;}let payload=null;try{payload=await detectQrPayload(file);}catch{}await splitRequest({action:'profile-save',qr:await qrImage(file),qrPayload:payload});d.close();},d.querySelector('.split-message'));};
+    d.querySelector('[data-split-action=detect-profile-qr]')?.addEventListener('click',()=>busy(d,async()=>{
+      const blob=await staticQrBlob(profile.qrUrl),payload=await detectQrPayload(blob);
+      if(!payload) throw new Error('This browser could not read the QR automatically. Your standard QR still works.');
+      await splitRequest({action:'profile-payload',qrPayload:payload});
+      d.querySelector('.split-message').textContent='Auto amount enabled. Reopen Payment QR to see the updated status.';
+    },d.querySelector('.split-message')));
     d.querySelector('[data-split-action=remove-profile-qr]')?.addEventListener('click',()=>busy(d,async()=>{await splitRequest({action:'profile-delete'});d.close();},d.querySelector('.split-message')));
   }
   function editPerson(id) {
@@ -196,6 +299,75 @@ function decisionDialog(b,paymentId,decision,accounts,save) {
   d.querySelector('[data-split-action]').onclick=()=>busy(d,async()=>{await save({action:'decision',paymentId,decision,accountId:d.querySelector('[name=account]')?.value});d.close();},d.querySelector('.split-message'));
 }
 
+function participantBankDialog(line,people,profile,onReport) {
+  const recipient=people.find(p=>p.id===line.to)?.name || 'recipient';
+  const d=openDialog(`Pay ${recipient}`,`<p>You need to pay <strong>${money(line.available)}</strong>.</p><div class="split-bank-picker" role="group" aria-label="Choose your bank"></div><div data-bank-payment></div>`);
+  let bankId=savedBank();
+
+  function render() {
+    const picker=d.querySelector('.split-bank-picker');
+    picker.innerHTML=splitBanks.map(bank=>`<button type="button" class="split-bank-option ${bank.id===bankId?'selected':''}" data-bank="${bank.id}"><strong>${escape(bank.name)}</strong><span>${bank.auto?'Auto amount supported':'Standard QR'}</span></button>`).join('');
+    const bank=splitBanks.find(x=>x.id===bankId) || splitBanks[3];
+    const panel=d.querySelector('[data-bank-payment]');
+    let payload=null,autoReady=false;
+    if(bank.auto && profile?.qrPayload) {
+      try {payload=amountQrPayload(profile.qrPayload,line.available);autoReady=true;} catch {}
+    }
+    const amountText=money(line.available);
+    const helper=autoReady
+      ? `<div class="split-pay-note success"><strong>No manual amount entry needed.</strong><span>This QR already includes ${amountText}. Scan it from ${escape(bank.name)} and confirm the payment.</span></div>`
+      : bank.id==='maybank'
+        ? `<div class="split-pay-note"><strong>Maybank needs manual amount entry for this personal QR.</strong><span>Kira can copy ${amountText} for you, so you only need to paste or enter it when prompted.</span></div>`
+        : bank.id==='other'
+          ? `<div class="split-pay-note"><strong>Pay with another bank.</strong><span>Use the standard QR below. If your bank asks for an amount, enter ${amountText}.</span></div>`
+          : `<div class="split-pay-note"><strong>Auto amount is not available for this QR yet.</strong><span>Use the standard QR and enter ${amountText} when prompted.</span></div>`;
+    panel.innerHTML=`${helper}<div class="split-qr-wrap"><strong>${autoReady?'Amount QR':'Payment QR'} · ${amountText}</strong>${autoReady?'<div class="split-generated-qr" data-generated-qr></div>':`<img class="split-qr" src="${escape(profile.qrUrl)}" alt="Payment QR for ${escape(recipient)}">`}</div><div class="split-row split-pay-actions"><button type="button" class="split-button primary" data-bank-action="save-qr">Save / Share QR</button><button type="button" class="split-button" data-bank-action="copy-amount">Copy ${amountText}</button><button type="button" class="split-button" data-bank-action="reported">I've paid</button></div><p class="split-muted">You can still choose a different bank above at any time.</p>`;
+    if(autoReady) qrCanvas(panel.querySelector('[data-generated-qr]'),payload);
+    panel.dataset.autoReady=String(autoReady);
+  }
+
+  d.addEventListener('click',async event=>{
+    const bankButton=event.target.closest('[data-bank]');
+    if(bankButton) {
+      bankId=bankButton.dataset.bank;
+      rememberBank(bankId);
+      render();
+      return;
+    }
+    const actionButton=event.target.closest('[data-bank-action]');
+    if(!actionButton) return;
+    const message=d.querySelector('.split-message');
+    try {
+      if(actionButton.dataset.bankAction==='copy-amount') {
+        await copyAmount(line.available);
+        message.textContent=`${money(line.available)} copied.`;
+        return;
+      }
+      if(actionButton.dataset.bankAction==='save-qr') {
+        actionButton.disabled=true;
+        let blob;
+        if(d.querySelector('[data-bank-payment]').dataset.autoReady==='true') {
+          blob=await qrBlobFromCanvas(d.querySelector('[data-generated-qr] canvas'));
+        } else {
+          blob=await staticQrBlob(profile.qrUrl);
+        }
+        message.textContent=await shareQrBlob(blob,`kira-payment-${(line.available/100).toFixed(2).replace('.','-')}.png`);
+        actionButton.disabled=false;
+        return;
+      }
+      if(actionButton.dataset.bankAction==='reported') {
+        d.close();
+        onReport();
+      }
+    } catch(error) {
+      actionButton.disabled=false;
+      message.textContent=error?.message || 'Unable to prepare this payment.';
+    }
+  });
+  render();
+  return d;
+}
+
 export async function mountParticipantPortal(root) {
   const hash=location.hash.slice(1);
   const privateMatch=hash.match(/^([a-f0-9-]{36})\.([a-f0-9]{64})$/);
@@ -219,7 +391,7 @@ export async function mountParticipantPortal(root) {
   function draw(){
     const name=id=>view.participants.find(p=>p.id===id)?.name || '',outgoing=view.lines.filter(l=>l.from===view.participantId),incoming=view.lines.filter(l=>l.to===view.participantId);
     const incomingDecisions=!groupMode ? view.payments.filter(p=>p.status==='pending' && p.to===view.participantId).map(p=>`<section class="split-card"><p>${escape(name(p.from))} reported ${money(p.cents)}.</p>${button('Confirm received',`confirm:${p.id}`,true)} ${button('Not received',`reject:${p.id}`)}</section>`).join('') : '';
-    root.innerHTML=`<header><strong>Kira · Split Bill</strong><h1>${escape(view.name)}</h1><p>Hi ${escape(view.person.name)} · ${escape(view.date)}</p>${groupMode?button('Not you? Choose another name','choose-another'):''}</header><p class="split-message" role="alert"></p><section class="split-card"><div class="split-toolbar"><h3>Your share: ${money(view.person.share)}</h3>${button('Refresh','refresh')}</div><p>Already paid to the shop: ${money(view.person.paid)}</p>${view.items.map(i=>`<div class="split-toolbar"><span>${escape(i.name)}</span><strong>${money(i.cents)}</strong></div>`).join('')}<p class="split-muted">Your discount: ${money(view.person.discount)} · Extra charges: ${money(view.person.charge)}</p></section><section class="split-card"><h3>Your repayments</h3>${outgoing.map(l=>`<div><p>Pay <strong>${escape(name(l.to))}</strong> · Remaining <strong>${money(l.remaining)}</strong></p><p class="split-muted">${money(l.confirmed)} confirmed · ${money(l.pending)} awaiting confirmation</p>${view.participants.find(p=>p.id===l.to)?.instructions?.trim()?`<p style="white-space:pre-wrap">${escape(view.participants.find(p=>p.id===l.to).instructions.trim())}</p>`:(l.available>0 && !(view.paymentProfile?.recipientId===l.to && view.paymentProfile?.qrUrl)?'<p>Ask the recipient for their bank or e-wallet details.</p>':'')}${l.available>0 && view.paymentProfile?.recipientId===l.to && view.paymentProfile?.qrUrl?`<div class="split-qr-wrap"><strong>Scan to pay ${escape(name(l.to))}</strong><img class="split-qr" src="${escape(view.paymentProfile.qrUrl)}" alt="Payment QR for ${escape(name(l.to))}"></div>`:''}${l.available>0?button('I have paid',`pay:${l.id}`,true):''}</div>`).join('')}${incoming.map(l=>`<p>Receive from <strong>${escape(name(l.from))}</strong> · Remaining ${money(l.remaining)}</p>`).join('')}${!view.lines.length?'<p>You are settled. No repayments needed.</p>':''}</section>${history(view.payments,name,false)}${incomingDecisions}<p class="split-muted">${view.lines.every(l=>l.remaining===0) && !view.payments.some(p=>p.status==='pending')?'Your payments are settled ✓':'Your payments are still being tracked.'} ${groupMode?'Group links can report payments but cannot confirm or reject them.':'Keep this link private. Payment reports require recipient confirmation.'}</p>`;
+    root.innerHTML=`<header><strong>Kira · Split Bill</strong><h1>${escape(view.name)}</h1><p>Hi ${escape(view.person.name)} · ${escape(view.date)}</p>${groupMode?button('Not you? Choose another name','choose-another'):''}</header><p class="split-message" role="alert"></p><section class="split-card"><div class="split-toolbar"><h3>Your share: ${money(view.person.share)}</h3>${button('Refresh','refresh')}</div><p>Already paid to the shop: ${money(view.person.paid)}</p>${view.items.map(i=>`<div class="split-toolbar"><span>${escape(i.name)}</span><strong>${money(i.cents)}</strong></div>`).join('')}<p class="split-muted">Your discount: ${money(view.person.discount)} · Extra charges: ${money(view.person.charge)}</p></section><section class="split-card"><h3>Your repayments</h3>${outgoing.map(l=>{const recipient=view.participants.find(p=>p.id===l.to),hasQr=l.available>0 && view.paymentProfile?.recipientId===l.to && view.paymentProfile?.qrUrl;return `<div class="split-repayment"><p>Pay <strong>${escape(name(l.to))}</strong> · Remaining <strong>${money(l.remaining)}</strong></p><p class="split-muted">${money(l.confirmed)} confirmed · ${money(l.pending)} awaiting confirmation</p>${recipient?.instructions?.trim()?`<p style="white-space:pre-wrap">${escape(recipient.instructions.trim())}</p>`:(!hasQr && l.available>0?'<p>Ask the recipient for their bank or e-wallet details.</p>':'')}${l.available>0?(hasQr?button('Pay now',`bankpay:${l.id}`,true):button('I have paid',`pay:${l.id}`,true)):''}</div>`;}).join('')}${incoming.map(l=>`<p>Receive from <strong>${escape(name(l.from))}</strong> · Remaining ${money(l.remaining)}</p>`).join('')}${!view.lines.length?'<p>You are settled. No repayments needed.</p>':''}</section>${history(view.payments,name,false)}${incomingDecisions}<p class="split-muted">${view.lines.every(l=>l.remaining===0) && !view.payments.some(p=>p.status==='pending')?'Your payments are settled ✓':'Your payments are still being tracked.'} ${groupMode?'Group links can report payments but cannot confirm or reject them.':'Keep this link private. Payment reports require recipient confirmation.'}</p>`;
   }
   root.onclick=e=>{
     const btn=e.target.closest('[data-split-action]');if(!btn)return;
@@ -227,6 +399,10 @@ export async function mountParticipantPortal(root) {
     if(action==='choose'){participantId=arg;view=null;return busy(root,refresh,root.querySelector('.split-message'));}
     if(action==='choose-another'){participantId=null;view=null;return loadGroup();}
     if(action==='refresh')return busy(root,refresh,root.querySelector('.split-message'));
+    if(action==='bankpay'){
+      const line=view.lines.find(l=>l.id===arg);
+      return participantBankDialog(line,view.participants,view.paymentProfile,()=>paymentDialog(line,view.participants,async data=>{await request({action:'report',payment:data.payment,proof:data.proof});await refresh();}));
+    }
     if(action==='pay')return paymentDialog(view.lines.find(l=>l.id===arg),view.participants,async data=>{await request({action:'report',payment:data.payment,proof:data.proof});await refresh();});
     if(action==='confirm' || action==='reject'){
       if(groupMode){root.querySelector('.split-message').textContent='Use your private participant link or ask the bill creator to confirm this payment.';return;}

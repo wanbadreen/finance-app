@@ -12,3 +12,86 @@
   justify-content: center;
   min-height: 46px;
 }
+
+
+/* Bank-aware participant payment flow */
+.split-bank-picker{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin:14px 0 16px;
+}
+.split-bank-option{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:3px;
+  min-height:62px;
+  padding:11px 12px;
+  border:1px solid var(--border-color,#dbe3ea);
+  border-radius:12px;
+  background:var(--card-bg,#fff);
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+  font:inherit;
+}
+.split-bank-option span{
+  font-size:12px;
+  color:var(--text-muted,#64748b);
+}
+.split-bank-option.selected{
+  border-color:var(--success-text,#0f766e);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--success-text,#0f766e) 18%,transparent);
+}
+.split-pay-note,
+.split-auto-status{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  padding:12px 14px;
+  border:1px solid var(--border-color,#e2e8f0);
+  border-radius:12px;
+  background:var(--surface-subtle,#f8fafc);
+  margin:12px 0;
+}
+.split-pay-note span,
+.split-auto-status span{
+  font-size:13px;
+  color:var(--text-muted,#64748b);
+  line-height:1.45;
+}
+.split-pay-note.success,
+.split-auto-status.ready{
+  background:var(--success-surface,#f0fdfa);
+  color:var(--success-text,#134e4a);
+  border-color:color-mix(in srgb,var(--success-text,#0f766e) 24%,var(--border-color,#e2e8f0));
+}
+.split-generated-qr{
+  width:min(280px,100%);
+  min-height:280px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  border-radius:10px;
+  padding:0;
+  box-sizing:border-box;
+}
+.split-generated-qr canvas,
+.split-generated-qr img{
+  display:block;
+  width:min(280px,100%)!important;
+  height:auto!important;
+  background:#fff;
+}
+.split-pay-actions{
+  margin-top:10px;
+}
+.split-repayment{
+  padding:2px 0 12px;
+}
+@media(max-width:640px){
+  .split-bank-picker{grid-template-columns:1fr 1fr}
+  .split-pay-actions .split-button{flex:1 1 100%}
+}

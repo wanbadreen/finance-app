@@ -14,6 +14,22 @@ function qrBytes(qr) {
   if(!bytes.length || bytes.length>2097152 || !({ 'image/png':png,'image/jpeg':jpg,'image/webp':webp }[qr.type])) throw new Error('Invalid QR image.');
   return bytes;
 }
+function qrCrc16(value) {
+  let crc=0xffff;
+  for(const byte of new TextEncoder().encode(value)) {
+    crc^=byte<<8;
+    for(let bit=0;bit<8;bit++) crc=(crc&0x8000) ? ((crc<<1)^0x1021)&0xffff : (crc<<1)&0xffff;
+  }
+  return crc.toString(16).toUpperCase().padStart(4,'0');
+}
+function qrPayload(value) {
+  if(value==null || value==='') return null;
+  if(typeof value!=='string') throw new Error('Invalid DuitNow QR payload.');
+  const payload=value.trim();
+  if(payload.length<20 || payload.length>1024 || !payload.startsWith('0002') || !payload.includes('5303458') || !payload.includes('5802MY') || !/6304[0-9A-F]{4}$/i.test(payload)) throw new Error('Invalid DuitNow QR payload.');
+  if(qrCrc16(payload.slice(0,-4))!==payload.slice(-4).toUpperCase()) throw new Error('DuitNow QR checksum is invalid.');
+  return payload;
+}
 function adjustmentMetadata(raw) {
   const subtotal=raw.items.reduce((sum,item)=>sum+item.cents,0);
   const discountType=raw.discountType || 'fixed', chargeType=raw.chargeType || 'fixed';
@@ -109,23 +125,33 @@ export function createSplitService(db) {
     }
     if(input.action==='profile-get') {
       if(!userId) throw new Error('Sign in to Kira.');
-      const {data}=await db.from('split_payment_profiles').select('qr_path').eq('user_id',userId).maybeSingle();
+      const {data}=await db.from('split_payment_profiles').select('qr_path,qr_payload').eq('user_id',userId).maybeSingle();
       let qrUrl=null;
       if(data?.qr_path) {
         const {data:signed}=await db.storage.from('receipts').createSignedUrl(data.qr_path,300);
         qrUrl=signed?.signedUrl || null;
       }
-      return {profile:{hasQr:Boolean(data?.qr_path),qrUrl}};
+      return {profile:{hasQr:Boolean(data?.qr_path),hasAmountQr:Boolean(data?.qr_payload),qrUrl,qrPayload:data?.qr_payload || null}};
     }
     if(input.action==='profile-save') {
       if(!userId) throw new Error('Sign in to Kira.');
-      const bytes=qrBytes(input.qr),path=`${userId}/split/profile-payment-qr`;
+      const bytes=qrBytes(input.qr),payload=qrPayload(input.qrPayload),path=`${userId}/split/profile-payment-qr`;
       const {error:uploadError}=await db.storage.from('receipts').upload(path,bytes,{contentType:input.qr.type,upsert:true});
       if(uploadError) throw new Error('Unable to upload payment QR.');
-      const {error}=await db.from('split_payment_profiles').upsert({user_id:userId,qr_path:path,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+      const {error}=await db.from('split_payment_profiles').upsert({user_id:userId,qr_path:path,qr_payload:payload,updated_at:new Date().toISOString()},{onConflict:'user_id'});
       if(error) throw new Error('Unable to save payment QR.');
       const {data:signed}=await db.storage.from('receipts').createSignedUrl(path,300);
-      return {profile:{hasQr:true,qrUrl:signed?.signedUrl || null}};
+      return {profile:{hasQr:true,hasAmountQr:Boolean(payload),qrUrl:signed?.signedUrl || null,qrPayload:payload}};
+    }
+    if(input.action==='profile-payload') {
+      if(!userId) throw new Error('Sign in to Kira.');
+      const payload=qrPayload(input.qrPayload);
+      const {data:existing}=await db.from('split_payment_profiles').select('qr_path').eq('user_id',userId).maybeSingle();
+      if(!existing?.qr_path) throw new Error('Upload your payment QR first.');
+      const {error}=await db.from('split_payment_profiles').update({qr_payload:payload,updated_at:new Date().toISOString()}).eq('user_id',userId);
+      if(error) throw new Error('Unable to enable amount QR.');
+      const {data:signed}=await db.storage.from('receipts').createSignedUrl(existing.qr_path,300);
+      return {profile:{hasQr:true,hasAmountQr:Boolean(payload),qrUrl:signed?.signedUrl || null,qrPayload:payload}};
     }
     if(input.action==='profile-delete') {
       if(!userId) throw new Error('Sign in to Kira.');
@@ -133,7 +159,7 @@ export function createSplitService(db) {
       if(data?.qr_path) await db.storage.from('receipts').remove([data.qr_path]);
       const {error}=await db.from('split_payment_profiles').delete().eq('user_id',userId);
       if(error) throw new Error('Unable to remove payment QR.');
-      return {profile:{hasQr:false,qrUrl:null}};
+      return {profile:{hasQr:false,hasAmountQr:false,qrUrl:null,qrPayload:null}};
     }
     const {owner,b}=await read(input.id);
     let actor,access='participant';
@@ -169,10 +195,10 @@ export function createSplitService(db) {
         const self=b.participants.find(p=>p.isSelf);
         const owesSelf=self && result.view.lines.some(l=>l.from===actor && l.to===self.id && l.available>0);
         if(owesSelf) {
-          const {data:profile}=await db.from('split_payment_profiles').select('qr_path').eq('user_id',owner).maybeSingle();
+          const {data:profile}=await db.from('split_payment_profiles').select('qr_path,qr_payload').eq('user_id',owner).maybeSingle();
           if(profile?.qr_path) {
             const {data:signed}=await db.storage.from('receipts').createSignedUrl(profile.qr_path,300);
-            if(signed?.signedUrl) result.view.paymentProfile={recipientId:self.id,qrUrl:signed.signedUrl};
+            if(signed?.signedUrl) result.view.paymentProfile={recipientId:self.id,qrUrl:signed.signedUrl,qrPayload:profile.qr_payload || null};
           }
         }
       }
