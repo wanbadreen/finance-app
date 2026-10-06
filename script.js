@@ -26269,6 +26269,9 @@ function resetGoalForm(force = false) {
     goalCurrentAmountInput.value =
         "0";
 
+    goalCurrentAmountInput.disabled =
+        true;
+
     goalFormTitle.textContent =
         "Add Savings Goal";
 
@@ -26308,6 +26311,9 @@ function editSavingsGoal(
 
     goalCurrentAmountInput.value =
         goal.current_amount;
+
+    goalCurrentAmountInput.disabled =
+        true;
 
     goalTargetDateInput.value =
         goal.target_date ||
@@ -26429,6 +26435,21 @@ async function deleteSavingsGoal(
         return;
     }
 
+    if (
+        savingsMovements.some(
+            movement =>
+                movement.goal_id ===
+                goal.id
+        )
+    ) {
+
+        alert(
+            "This savings goal has movement history and cannot be permanently deleted. Keep it paused or completed instead."
+        );
+
+        return;
+    }
+
     const confirmed =
         confirm(
             `Delete savings goal "${goal.name}" permanently?\n\nThis cannot be undone.`
@@ -26473,7 +26494,7 @@ configureFinanceSubmit({
     form: goalForm, button: saveGoalButton, cancel: cancelGoalEditButton,
     message: goalMessage, label: "Goal", getEditId: () => editingGoalId,
     validate: () => financeField(goalNameInput, "Enter a goal name.")
-        || financeAmount(goalTargetAmountInput) || financeAmount(goalCurrentAmountInput, true)
+        || financeAmount(goalTargetAmountInput)
         || financeDate(goalTargetDateInput, "target date", true)
 }, async function (event, markSaved) {
 
@@ -26492,10 +26513,21 @@ configureFinanceSubmit({
                     goalTargetAmountInput.value
                 );
 
+            const existingGoal =
+                savingsGoals.find(
+                    goal =>
+                        goal.id ===
+                        editingGoalId
+                ) ||
+                null;
+
             const currentAmount =
-                Number(
-                    goalCurrentAmountInput.value
-                );
+                editingGoalId
+                    ? Number(
+                        existingGoal?.current_amount ||
+                        0
+                    )
+                    : 0;
 
             const targetDate =
                 goalTargetDateInput.value ||
