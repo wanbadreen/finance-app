@@ -1,0 +1,91 @@
+:root {
+    color-scheme: light dark;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #172033;
+    --muted: #64748b;
+    --border: #dbe3ef;
+    --accent: #2563eb;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #07101f;
+        --card: #101a2d;
+        --text: #f8fafc;
+        --muted: #a8b4c7;
+        --border: #2b3a55;
+        --accent: #8bc0ff;
+    }
+}
+
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.legal-shell {
+    width: min(860px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 40px 0 64px;
+}
+.legal-header, .legal-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+}
+.legal-header {
+    padding: 28px;
+    margin-bottom: 18px;
+}
+.legal-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.legal-brand img {
+    width: 62px;
+    height: 62px;
+    object-fit: contain;
+}
+.legal-brand h1 { margin: 0; font-size: clamp(28px, 5vw, 42px); }
+.legal-header p { color: var(--muted); margin: 14px 0 0; }
+.legal-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 20px;
+}
+.legal-nav a, .legal-card a { color: var(--accent); }
+.legal-card {
+    padding: 28px;
+}
+.legal-card h2 { margin-top: 30px; }
+.legal-card h2:first-child { margin-top: 0; }
+.legal-card p, .legal-card li { color: var(--muted); }
+.legal-card strong { color: var(--text); }
+.legal-meta {
+    color: var(--muted);
+    font-size: 14px;
+}
+.legal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+}
+.legal-button {
+    display: inline-block;
+    padding: 11px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--text) !important;
+    font-weight: 650;
+}
+.legal-button.primary {
+    background: var(--text);
+    color: var(--card) !important;
+}
