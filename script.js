@@ -26260,22 +26260,22 @@ async function updateGoalStatus(
             goal.target_amount
         );
 
-    // A fully funded goal cannot return directly to Active.
-    // Reopen it in edit mode so the user can reduce the
-    // current saved amount below the target first.
+    // A fully funded goal becomes active again after savings are withdrawn.
     if (
         status === "active" &&
         Number.isFinite(currentAmount) &&
         Number.isFinite(targetAmount) &&
         currentAmount >= targetAmount
     ) {
-        editSavingsGoal(
+        openSavingsMovement(
             goal,
-            goalCurrentAmountInput
+            "withdraw"
         );
 
-        goalMessage.textContent =
-            "Reduce the current saved amount below the target to reopen this goal.";
+        if (savingsMovementMessage) {
+            savingsMovementMessage.textContent =
+                "Withdraw part of this goal to reopen it.";
+        }
 
         return;
     }
