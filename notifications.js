@@ -3,6 +3,9 @@ import { isNativeApp } from "./native-platform.js";
 import { supabase } from "./supabase.js";
 
 const KIRA_NOTIFICATION_REFRESH_MS = 60_000;
+const KIRA_PUSH_DEVICE_ID_KEY = "kira_push_device_id_v1";
+const KIRA_PUSH_HEARTBEAT_KEY = "kira_push_heartbeat_v1";
+const KIRA_PUSH_HEARTBEAT_MS = 6 * 60 * 60 * 1000;
 const DEFAULT_NOTIFICATION_PREFERENCES = {
     recurring_enabled: true,
     credit_card_enabled: true,
@@ -24,6 +27,34 @@ const state = {
 };
 
 const els = {};
+
+function getPushDeviceId() {
+    try {
+        let value = localStorage.getItem(KIRA_PUSH_DEVICE_ID_KEY);
+        if (!value) {
+            value = crypto.randomUUID();
+            localStorage.setItem(KIRA_PUSH_DEVICE_ID_KEY, value);
+        }
+        return value;
+    } catch {
+        return null;
+    }
+}
+
+function shouldHeartbeatPush() {
+    try {
+        const last = Number(localStorage.getItem(KIRA_PUSH_HEARTBEAT_KEY) || 0);
+        return !Number.isFinite(last) || Date.now() - last >= KIRA_PUSH_HEARTBEAT_MS;
+    } catch {
+        return true;
+    }
+}
+
+function markPushHeartbeat() {
+    try {
+        localStorage.setItem(KIRA_PUSH_HEARTBEAT_KEY, String(Date.now()));
+    } catch {}
+}
 
 function qs(selector, root = document) {
     return root.querySelector(selector);
@@ -1088,11 +1119,43 @@ async function refreshCurrentDevicePushState({ registerIfMissing = false } = {})
             return null;
         }
 
-        state.currentPushSubscription = await withTimeout(
+        const browserSubscription = await withTimeout(
             registration.pushManager.getSubscription(),
             8000,
             "Kira could not check this device's push subscription in time."
         );
+
+        if (!browserSubscription || !state.user) {
+            state.currentPushSubscription = null;
+            updatePushStatus();
+            return null;
+        }
+
+        const { data: registered, error } = await supabase
+            .from("push_subscriptions")
+            .select("id,is_active")
+            .eq("user_id", state.user.id)
+            .eq("endpoint", browserSubscription.endpoint)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!registered?.is_active) {
+            state.currentPushSubscription = null;
+            updatePushStatus();
+            return null;
+        }
+
+        state.currentPushSubscription = browserSubscription;
+
+        if (shouldHeartbeatPush()) {
+            try {
+                await savePushSubscription(browserSubscription);
+                markPushHeartbeat();
+            } catch (heartbeatError) {
+                console.warn("Push subscription heartbeat warning:", heartbeatError);
+            }
+        }
 
         updatePushStatus();
         return state.currentPushSubscription;
@@ -1116,19 +1179,13 @@ async function savePushSubscription(subscription) {
         throw new Error("The browser did not return a valid push endpoint.");
     }
 
-    const { error } = await supabase
-        .from("push_subscriptions")
-        .upsert({
-            user_id: state.user.id,
-            endpoint,
-            p256dh: json.keys?.p256dh || "",
-            auth: json.keys?.auth || "",
-            user_agent: navigator.userAgent,
-            is_active: true,
-            updated_at: new Date().toISOString()
-        }, {
-            onConflict: "user_id,endpoint"
-        });
+    const { error } = await supabase.rpc("register_push_subscription", {
+        p_endpoint: endpoint,
+        p_p256dh: json.keys?.p256dh || "",
+        p_auth: json.keys?.auth || "",
+        p_user_agent: navigator.userAgent,
+        p_device_id: getPushDeviceId()
+    });
 
     if (error) {
         throw error;
@@ -1275,14 +1332,9 @@ async function deactivateCurrentPushSubscription() {
     const endpoint = subscription?.endpoint;
 
     if (endpoint) {
-        const { error } = await supabase
-            .from("push_subscriptions")
-            .update({
-                is_active: false,
-                updated_at: new Date().toISOString()
-            })
-            .eq("user_id", state.user.id)
-            .eq("endpoint", endpoint);
+        const { error } = await supabase.rpc("deactivate_push_subscription", {
+            p_endpoint: endpoint
+        });
 
         if (error) {
             throw error;
@@ -1300,6 +1352,7 @@ async function deactivateCurrentPushSubscription() {
     }
 
     state.currentPushSubscription = null;
+    try { localStorage.removeItem(KIRA_PUSH_HEARTBEAT_KEY); } catch {}
     updatePushStatus();
 
     return hasAnyActivePushSubscription();
