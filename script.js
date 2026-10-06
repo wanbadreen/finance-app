@@ -24612,6 +24612,7 @@ async function loadSavingsMovements(
     refreshSavingsMovementOptions();
     updateSavingsMovementPreview();
     updateDashboard();
+    renderTransactions();
 }
 
 
