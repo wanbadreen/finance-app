@@ -7223,7 +7223,10 @@ async function deleteAccountPermanently(
             transactionCount,
             recurringCount,
             outgoingTransferCount,
-            incomingTransferCount
+            incomingTransferCount,
+            reservedSavingsCount,
+            outgoingSavingsCount,
+            incomingSavingsCount
         ] =
             await Promise.all([
                 getReferenceCount(
@@ -7245,6 +7248,21 @@ async function deleteAccountPermanently(
                     "account_transfers",
                     "to_account_id",
                     account.id
+                ),
+                getReferenceCount(
+                    "savings_movements",
+                    "account_id",
+                    account.id
+                ),
+                getReferenceCount(
+                    "savings_movements",
+                    "from_account_id",
+                    account.id
+                ),
+                getReferenceCount(
+                    "savings_movements",
+                    "to_account_id",
+                    account.id
                 )
             ]);
 
@@ -7252,11 +7270,14 @@ async function deleteAccountPermanently(
             transactionCount > 0 ||
             recurringCount > 0 ||
             outgoingTransferCount > 0 ||
-            incomingTransferCount > 0
+            incomingTransferCount > 0 ||
+            reservedSavingsCount > 0 ||
+            outgoingSavingsCount > 0 ||
+            incomingSavingsCount > 0
         ) {
 
             alert(
-                `"${account.name}" cannot be permanently deleted because it has transaction, recurring or transfer history. Keep the account inactive instead.`
+                `"${account.name}" cannot be permanently deleted because it has transaction, recurring, transfer or savings history. Keep the account inactive instead.`
             );
 
             return;
