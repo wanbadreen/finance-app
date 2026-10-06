@@ -1,7 +1,6 @@
 import { splitRequest } from './split-api.js';
 import { cents, money, totals, suggestPlan, validatePlan, progress, adjustmentCents } from './split-core.mjs';
 import { isNativeApp } from './native-platform.js';
-import QRCode from './qrcode-vendor.js';
 import './split.css';
 
 const escape = value=>String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -58,7 +57,29 @@ function amountQrPayload(basePayload,amountCents) {
   const body=out.join('')+'6304';
   return body+crc16(body);
 }
-function qrCanvas(holder,payload) {
+let qrLibraryPromise=null;
+function loadQrLibrary() {
+  if(window.QRCode) return Promise.resolve(window.QRCode);
+  if(qrLibraryPromise) return qrLibraryPromise;
+  qrLibraryPromise=new Promise((resolve,reject)=>{
+    const existing=document.querySelector('script[data-kira-qr-lib]');
+    if(existing) {
+      existing.addEventListener('load',()=>window.QRCode?resolve(window.QRCode):reject(new Error('QR generator failed to load.')),{once:true});
+      existing.addEventListener('error',()=>reject(new Error('QR generator failed to load.')),{once:true});
+      return;
+    }
+    const script=document.createElement('script');
+    script.src='/qrcode-vendor.js';
+    script.async=true;
+    script.dataset.kiraQrLib='true';
+    script.onload=()=>window.QRCode?resolve(window.QRCode):reject(new Error('QR generator failed to load.'));
+    script.onerror=()=>reject(new Error('QR generator failed to load.'));
+    document.head.append(script);
+  }).catch(error=>{qrLibraryPromise=null;throw error;});
+  return qrLibraryPromise;
+}
+async function qrCanvas(holder,payload) {
+  const QRCode=await loadQrLibrary();
   holder.innerHTML='';
   new QRCode(holder,{text:payload,width:280,height:280,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
   return holder.querySelector('canvas');
@@ -322,7 +343,13 @@ function participantBankDialog(line,people,profile,onReport) {
           ? `<div class="split-pay-note"><strong>Pay with another bank.</strong><span>Use the standard QR below. If your bank asks for an amount, enter ${amountText}.</span></div>`
           : `<div class="split-pay-note"><strong>Auto amount is not available for this QR yet.</strong><span>Use the standard QR and enter ${amountText} when prompted.</span></div>`;
     panel.innerHTML=`${helper}<div class="split-qr-wrap"><strong>${autoReady?'Amount QR':'Payment QR'} · ${amountText}</strong>${autoReady?'<div class="split-generated-qr" data-generated-qr></div>':`<img class="split-qr" src="${escape(profile.qrUrl)}" alt="Payment QR for ${escape(recipient)}">`}</div><div class="split-row split-pay-actions"><button type="button" class="split-button primary" data-bank-action="save-qr">Save / Share QR</button><button type="button" class="split-button" data-bank-action="copy-amount">Copy ${amountText}</button><button type="button" class="split-button" data-bank-action="reported">I've paid</button></div><p class="split-muted">You can still choose a different bank above at any time.</p>`;
-    if(autoReady) qrCanvas(panel.querySelector('[data-generated-qr]'),payload);
+    if(autoReady) {
+      panel.dataset.generatedPayload=payload;
+      qrCanvas(panel.querySelector('[data-generated-qr]'),payload).catch(error=>{
+        const message=d.querySelector('.split-message');
+        if(message) message.textContent=error?.message || 'Unable to generate amount QR.';
+      });
+    }
     panel.dataset.autoReady=String(autoReady);
   }
 
@@ -347,7 +374,9 @@ function participantBankDialog(line,people,profile,onReport) {
         actionButton.disabled=true;
         let blob;
         if(d.querySelector('[data-bank-payment]').dataset.autoReady==='true') {
-          blob=await qrBlobFromCanvas(d.querySelector('[data-generated-qr] canvas'));
+          let canvas=d.querySelector('[data-generated-qr] canvas');
+          if(!canvas) canvas=await qrCanvas(d.querySelector('[data-generated-qr]'),d.querySelector('[data-bank-payment]').dataset.generatedPayload);
+          blob=await qrBlobFromCanvas(canvas);
         } else {
           blob=await staticQrBlob(profile.qrUrl);
         }
