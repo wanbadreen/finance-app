@@ -20203,6 +20203,11 @@ function createTransferActivityRow(
     transfer
 ) {
 
+    const savingsMovement =
+        getSavingsMovementByTransferId(
+            transfer.id
+        );
+
     const row =
         document.createElement(
             "div"
@@ -20240,7 +20245,9 @@ function createTransferActivityRow(
         "transaction-category";
 
     route.textContent =
-        `Transfer • ${
+        savingsMovement
+            ? `Savings • ${getSavingsGoalById(savingsMovement.goal_id)?.name || "Goal"} • ${getAccountName(transfer.from_account_id) || "Unknown Account"} → ${getAccountName(transfer.to_account_id) || "Unknown Account"}`
+            : `Transfer • ${
             getAccountName(
                 transfer.from_account_id
             ) || "Unknown Account"
@@ -20350,42 +20357,79 @@ function createTransferActivityRow(
     buttons.className =
         "action-buttons";
 
-    const editButton =
-        createTextButton(
-            "Edit",
-            "edit-button"
+    if (savingsMovement) {
+
+        const savingsButton =
+            createTextButton(
+                "View Savings",
+                "edit-button"
+            );
+
+        savingsButton.addEventListener(
+            "click",
+            function () {
+
+                const goal =
+                    getSavingsGoalById(
+                        savingsMovement.goal_id
+                    );
+
+                navigateToPage(
+                    "goals"
+                );
+
+                if (goal) {
+                    openSavingsMovement(
+                        goal,
+                        savingsMovement.direction
+                    );
+                }
+            }
         );
 
-    const deleteButton =
-        createTextButton(
-            "Delete",
-            "delete-button delete-permanently-button"
+        buttons.appendChild(
+            savingsButton
         );
 
-    editButton.addEventListener(
-        "click",
-        function () {
+    } else {
 
-            editTransfer(
-                transfer.id
+        const editButton =
+            createTextButton(
+                "Edit",
+                "edit-button"
             );
-        }
-    );
 
-    deleteButton.addEventListener(
-        "click",
-        function () {
-
-            deleteTransfer(
-                transfer.id
+        const deleteButton =
+            createTextButton(
+                "Delete",
+                "delete-button delete-permanently-button"
             );
-        }
-    );
 
-    buttons.append(
-        editButton,
-        deleteButton
-    );
+        editButton.addEventListener(
+            "click",
+            function () {
+
+                editTransfer(
+                    transfer.id
+                );
+            }
+        );
+
+        deleteButton.addEventListener(
+            "click",
+            function () {
+
+                deleteTransfer(
+                    transfer.id
+                );
+            }
+        );
+
+        buttons.append(
+            editButton,
+            deleteButton
+        );
+    }
 
     right.append(
         amount,
