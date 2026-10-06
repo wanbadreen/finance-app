@@ -82,18 +82,31 @@ async function authenticateManual(req: Request) {
 async function authenticateCron(req: Request) {
   const supplied = req.headers.get("x-cron-secret") ?? "";
   if (!supplied) return false;
-  const { data, error } = await service
-    .from("report_scheduler_config")
-    .select("secret")
-    .eq("id", true)
-    .maybeSingle();
-  if (error || !data?.secret) return false;
-  return supplied === data.secret;
+
+  // Supabase's internal REST hop can occasionally return a transient 401.
+  // Retry the secret lookup before rejecting a legitimate pg_cron request.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { data, error } = await service
+      .from("report_scheduler_config")
+      .select("secret")
+      .eq("id", true)
+      .maybeSingle();
+
+    if (!error && data?.secret) {
+      return supplied === data.secret;
+    }
+
+    if (attempt < 2) {
+      await new Promise(resolve => setTimeout(resolve, 120 * (attempt + 1)));
+    }
+  }
+
+  return false;
 }
 
 type NotificationRow = {
   user_id: string;
-  kind: "recurring" | "budget" | "goal" | "cashflow" | "system";
+  kind: "recurring" | "credit_card" | "budget" | "goal" | "cashflow" | "system";
   severity: "info" | "warning" | "critical" | "success";
   title: string;
   message: string;
@@ -119,7 +132,7 @@ async function buildAlertsForUser(userId: string, pref: any) {
   const monthEnd = nextMonthStart(today);
   const next30 = addDays(today, 30);
 
-  const [recurringRes, budgetRes, monthTxRes, allTxRes, goalRes, accountRes, categoryRes] = await Promise.all([
+  const [recurringRes, budgetRes, monthTxRes, allTxRes, goalRes, accountRes, categoryRes, creditCardRes, statementRes, transferRes] = await Promise.all([
     service.from("recurring_transactions")
       .select("id,name,type,amount,next_due_date,is_active,reminder_enabled,reminder_days_before")
       .eq("user_id", userId).eq("is_active", true),
@@ -142,9 +155,19 @@ async function buildAlertsForUser(userId: string, pref: any) {
     service.from("categories")
       .select("id,name")
       .eq("user_id", userId),
+    service.from("credit_cards")
+      .select("id,account_id,card_name,is_active")
+      .eq("user_id", userId).eq("is_active", true),
+    service.from("credit_card_statements")
+      .select("id,credit_card_id,statement_date,due_date,statement_balance,pre_tracking_paid_since_statement,minimum_payment")
+      .eq("user_id", userId)
+      .order("statement_date", { ascending: false }),
+    service.from("account_transfers")
+      .select("id,to_account_id,amount,transfer_date,deleted_at")
+      .eq("user_id", userId).is("deleted_at", null),
   ]);
 
-  for (const response of [recurringRes, budgetRes, monthTxRes, allTxRes, goalRes, accountRes, categoryRes]) {
+  for (const response of [recurringRes, budgetRes, monthTxRes, allTxRes, goalRes, accountRes, categoryRes, creditCardRes, statementRes, transferRes]) {
     if (response.error) throw response.error;
   }
 
@@ -155,6 +178,9 @@ async function buildAlertsForUser(userId: string, pref: any) {
   const goals = goalRes.data ?? [];
   const accounts = accountRes.data ?? [];
   const categories = new Map((categoryRes.data ?? []).map((row: any) => [row.id, row.name]));
+  const creditCards = creditCardRes.data ?? [];
+  const cardStatements = statementRes.data ?? [];
+  const transfers = transferRes.data ?? [];
   const rows: NotificationRow[] = [];
 
   if (pref.recurring_enabled) {
@@ -193,6 +219,64 @@ async function buildAlertsForUser(userId: string, pref: any) {
           target_page: "recurring",
           target_hash: "recurring",
           dedupe_key: `recurring:${item.id}:${item.next_due_date}:${stage}`,
+        });
+      }
+    }
+  }
+
+  if (pref.credit_card_enabled) {
+    for (const card of creditCards) {
+      const statement = cardStatements
+        .filter((item: any) => item.credit_card_id === card.id)
+        .sort((a: any, b: any) => b.statement_date.localeCompare(a.statement_date))[0];
+
+      if (!statement) continue;
+
+      const startingDue = Number(statement.statement_balance ?? 0);
+      const paidSinceStatement = transfers
+        .filter((transfer: any) =>
+          transfer.to_account_id === card.account_id &&
+          transfer.transfer_date > statement.statement_date &&
+          transfer.transfer_date <= today
+        )
+        .reduce((sum: number, transfer: any) => sum + Number(transfer.amount || 0), 0);
+      const preTrackingPaid = Math.max(0, Number(statement.pre_tracking_paid_since_statement || 0));
+      const remainingDue = Math.max(0, startingDue - preTrackingPaid - paidSinceStatement);
+      if (remainingDue <= 0.009) continue;
+
+      const days = diffDays(today, statement.due_date);
+      let stage = "";
+      let severity: NotificationRow["severity"] = "info";
+      let title = "";
+      let message = "";
+
+      if (days < 0) {
+        stage = "overdue";
+        severity = "critical";
+        title = `${card.card_name} payment is overdue`;
+        message = `${money(remainingDue)} remains unpaid from the latest statement.`;
+      } else if (days === 0) {
+        stage = "today";
+        severity = "warning";
+        title = `${card.card_name} is due today`;
+        message = `${money(remainingDue)} remains due today.`;
+      } else if (days <= 3) {
+        stage = "soon";
+        severity = "warning";
+        title = `${card.card_name} payment is due soon`;
+        message = `${money(remainingDue)} remains due in ${days} day${days === 1 ? "" : "s"}.`;
+      }
+
+      if (stage) {
+        rows.push({
+          user_id: userId,
+          kind: "credit_card",
+          severity,
+          title,
+          message,
+          target_page: "credit-cards",
+          target_hash: "credit-cards",
+          dedupe_key: `credit-card:${card.id}:${statement.statement_date}:${stage}`,
         });
       }
     }
@@ -335,27 +419,38 @@ async function sendPushForUser(userId: string) {
     return { pushed: 0, configured: false };
   }
 
-  const [{ data: subscriptions, error: subError }, { data: notifications, error: notificationError }] = await Promise.all([
+  const [{ data: subscriptions, error: subError }, { data: notifications, error: claimError }] = await Promise.all([
     service.from("push_subscriptions")
-      .select("id,endpoint,p256dh,auth")
-      .eq("user_id", userId).eq("is_active", true),
-    service.from("notifications")
-      .select("id,title,message,target_hash,target_page,severity,created_at")
+      .select("id,endpoint,p256dh,auth,last_seen_at,device_id")
       .eq("user_id", userId)
-      .is("dismissed_at", null)
-      .is("push_sent_at", null)
-      .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-      .order("created_at", { ascending: true })
-      .limit(10),
+      .eq("is_active", true)
+      .order("last_seen_at", { ascending: false }),
+    service.rpc("claim_notification_pushes", {
+      p_user_id: userId,
+      p_limit: 10,
+    }),
   ]);
 
   if (subError) throw subError;
-  if (notificationError) throw notificationError;
-  if (!subscriptions?.length || !notifications?.length) return { pushed: 0, configured: true };
+  if (claimError) throw claimError;
+  if (!notifications?.length) return { pushed: 0, configured: true };
 
+  if (!subscriptions?.length) {
+    await service.from("notifications")
+      .update({
+        push_claimed_at: null,
+        push_last_error: "No active push subscription.",
+      })
+      .in("id", notifications.map((notification: any) => notification.id));
+    return { pushed: 0, configured: true };
+  }
+
+  const hasTrackedDevice = subscriptions.some((sub: any) => Boolean(sub.device_id));
   let pushed = 0;
+
   for (const notification of notifications) {
     let delivered = false;
+    const errors: string[] = [];
     const payload = JSON.stringify({
       title: notification.title,
       body: notification.message,
@@ -370,14 +465,46 @@ async function sendPushForUser(userId: string) {
           endpoint: sub.endpoint,
           keys: { p256dh: sub.p256dh, auth: sub.auth },
         }, payload, { TTL: 3600 });
-        delivered = true;
+
+        // Once at least one installation has registered a stable device id,
+        // legacy rows may still receive a best-effort copy but cannot by
+        // themselves mark delivery as complete.
+        if (!hasTrackedDevice || sub.device_id) {
+          delivered = true;
+        }
+        await service.from("push_subscriptions")
+          .update({
+            last_success_at: new Date().toISOString(),
+            failure_count: 0,
+          })
+          .eq("id", sub.id);
       } catch (error: any) {
         const status = Number(error?.statusCode || 0);
+        const message = String(error?.message || `Push error ${status || "unknown"}`).slice(0, 500);
+        errors.push(message);
+
+        const patch: Record<string, unknown> = {
+          last_failure_at: new Date().toISOString(),
+          failure_count: 1,
+        };
+
+        const { data: current } = await service.from("push_subscriptions")
+          .select("failure_count")
+          .eq("id", sub.id)
+          .maybeSingle();
+
+        patch.failure_count = Number(current?.failure_count || 0) + 1;
+
         if (status === 404 || status === 410) {
-          await service.from("push_subscriptions")
-            .update({ is_active: false, updated_at: new Date().toISOString() })
-            .eq("id", sub.id);
-        } else {
+          patch.is_active = false;
+          patch.updated_at = new Date().toISOString();
+        }
+
+        await service.from("push_subscriptions")
+          .update(patch)
+          .eq("id", sub.id);
+
+        if (status !== 404 && status !== 410) {
           console.error("Push delivery failed", error);
         }
       }
@@ -386,7 +513,18 @@ async function sendPushForUser(userId: string) {
     if (delivered) {
       pushed += 1;
       await service.from("notifications")
-        .update({ push_sent_at: new Date().toISOString() })
+        .update({
+          push_sent_at: new Date().toISOString(),
+          push_claimed_at: null,
+          push_last_error: null,
+        })
+        .eq("id", notification.id);
+    } else {
+      await service.from("notifications")
+        .update({
+          push_claimed_at: null,
+          push_last_error: (errors.join(" | ") || "No push endpoint accepted the notification.").slice(0, 1000),
+        })
         .eq("id", notification.id);
     }
   }
@@ -409,7 +547,13 @@ Deno.serve(async (req: Request) => {
   let body: any = {};
   try { body = await req.json(); } catch { body = {}; }
 
-  const mode = body?.mode === "cron" ? "cron" : body?.mode === "test" ? "test" : "manual";
+  const mode = body?.mode === "cron"
+    ? "cron"
+    : body?.mode === "push"
+      ? "push"
+      : body?.mode === "test"
+        ? "test"
+        : "manual";
 
   try {
     if (mode === "cron") {
@@ -427,6 +571,29 @@ Deno.serve(async (req: Request) => {
       }
 
       return json({ ok: true, checked: preferences?.length ?? 0, results });
+    }
+
+    if (mode === "push") {
+      const allowed = await authenticateCron(req);
+      if (!allowed) return json({ ok: false, error: "Unauthorized push request." }, 401);
+
+      const userId = typeof body?.user_id === "string" ? body.user_id : "";
+      if (!/^[0-9a-f-]{36}$/i.test(userId)) {
+        return json({ ok: false, error: "Invalid user." }, 400);
+      }
+
+      const { data: pref, error: prefError } = await service
+        .from("notification_preferences")
+        .select("push_enabled")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (prefError) throw prefError;
+
+      if (!pref?.push_enabled) {
+        return json({ ok: true, pushed: 0, configured: Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY), skipped: "push-disabled" });
+      }
+
+      return json({ ok: true, ...(await sendPushForUser(userId)) });
     }
 
     const user = await authenticateManual(req);
