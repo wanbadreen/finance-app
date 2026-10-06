@@ -2,10 +2,25 @@
 -- Savings movements are immutable from the client; writes go through record_savings_movement()
 -- so goal progress and account transfers stay consistent.
 
+do $
+begin
+    if not exists (
+        select 1
+        from pg_constraint
+        where conrelid = 'public.savings_goals'::regclass
+          and conname = 'savings_goals_id_user_id_key'
+    ) then
+        alter table public.savings_goals
+            add constraint savings_goals_id_user_id_key
+            unique (id, user_id);
+    end if;
+end;
+$;
+
 create table if not exists public.savings_movements (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
-    goal_id uuid not null references public.savings_goals(id) on delete restrict,
+    goal_id uuid not null,
     direction text not null check (direction in ('add', 'withdraw')),
     method text not null check (method in ('reserve', 'transfer')),
     amount numeric not null check (amount > 0 and amount = round(amount, 2)),
@@ -16,6 +31,22 @@ create table if not exists public.savings_movements (
     movement_date date not null default current_date,
     notes text null,
     created_at timestamptz not null default now(),
+    constraint savings_movements_goal_owner_fk
+        foreign key (goal_id, user_id)
+        references public.savings_goals(id, user_id)
+        on delete restrict,
+    constraint savings_movements_account_owner_fk
+        foreign key (account_id, user_id)
+        references public.accounts(id, user_id)
+        on delete restrict,
+    constraint savings_movements_from_account_owner_fk
+        foreign key (from_account_id, user_id)
+        references public.accounts(id, user_id)
+        on delete restrict,
+    constraint savings_movements_to_account_owner_fk
+        foreign key (to_account_id, user_id)
+        references public.accounts(id, user_id)
+        on delete restrict,
     constraint savings_movements_shape_check check (
         (
             method = 'reserve'
