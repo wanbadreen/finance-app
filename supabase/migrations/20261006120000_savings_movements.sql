@@ -80,6 +80,40 @@ create index if not exists savings_movements_transfer_accounts_idx
     on public.savings_movements(user_id, from_account_id, to_account_id)
     where method = 'transfer';
 
+-- Preserve existing manually entered goal balances as reserved money when the
+-- old goal already pointed at a spendable account. This keeps the migration
+-- backward compatible without creating a fake expense or bank transfer.
+insert into public.savings_movements (
+    user_id,
+    goal_id,
+    direction,
+    method,
+    amount,
+    account_id,
+    movement_date,
+    notes
+)
+select
+    g.user_id,
+    g.id,
+    'add',
+    'reserve',
+    round(g.current_amount, 2),
+    g.account_id,
+    coalesce(g.created_at::date, current_date),
+    'Opening savings balance migrated from the previous Savings Goal.'
+from public.savings_goals g
+join public.accounts a
+  on a.id = g.account_id
+ and a.user_id = g.user_id
+where g.current_amount > 0
+  and a.account_type not in ('savings', 'credit_card')
+  and not exists (
+      select 1
+      from public.savings_movements sm
+      where sm.goal_id = g.id
+  );
+
 alter table public.savings_movements enable row level security;
 
 drop policy if exists savings_movements_select_own on public.savings_movements;
