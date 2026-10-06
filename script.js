@@ -22131,23 +22131,11 @@ function updateDashboard() {
 
 
     const availableFunds =
-        accounts
-            .filter(
-                account =>
-                    account.account_type !==
-                    "credit_card"
-            )
-            .reduce(
-                (
-                    total,
-                    account
-                ) =>
-                    total +
-                    calculateAccountBalance(
-                        account.id
-                    ),
-                0
-            );
+        getAvailableCash(
+            accounts,
+            calculateAccountBalance,
+            savingsMovements
+        );
 
 
     incomeElement.textContent =
