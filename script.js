@@ -24475,7 +24475,65 @@ async function loadSavingsGoals(throwOnError = false) {
 
     renderSavingsGoals();
     renderGoalsOverview();
-    renderDashboardGoalsSummary();
+    refreshSavingsMovementOptions();
+}
+
+
+async function loadSavingsMovements(
+    throwOnError = false
+) {
+
+    if (!currentUser) {
+        savingsMovements = [];
+        renderSavingsMovements();
+        return;
+    }
+
+    const {
+        data,
+        error
+    } =
+        await supabase
+            .from("savings_movements")
+            .select("*")
+            .order(
+                "movement_date",
+                {
+                    ascending: false
+                }
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+    if (error) {
+        if (throwOnError) {
+            throw error;
+        }
+
+        console.error(
+            "Load savings movements error:",
+            error
+        );
+
+        if (savingsMovementMessage) {
+            savingsMovementMessage.textContent =
+                error.message;
+        }
+
+        return;
+    }
+
+    savingsMovements =
+        data || [];
+
+    renderSavingsMovements();
+    refreshSavingsMovementOptions();
+    updateSavingsMovementPreview();
+    updateDashboard();
 }
 
 
