@@ -1123,6 +1123,7 @@ let budgets = [];
 let recurringTransactions = [];
 let recurringOccurrenceStatuses = [];
 let savingsGoals = [];
+let savingsMovements = [];
 let reportEmailPreference = null;
 
 let editingGoalId = null;
