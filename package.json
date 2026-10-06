@@ -14,7 +14,8 @@
     "mcp:dev": "node --env-file=.env.mcp server/local.mjs",
     "test:mcp": "node --test tests/mcp.test.mjs",
     "test:split": "node --test tests/split-core.test.mjs tests/split-service.test.mjs tests/split-reporting.test.mjs",
-    "test:mcp-split": "node --test tests/mcp-split-tools.test.mjs"
+    "test:mcp-split": "node --test tests/mcp-split-tools.test.mjs",
+    "test:savings": "node --test tests/savings-core.test.mjs"
   },
   "keywords": [],
   "author": "",
