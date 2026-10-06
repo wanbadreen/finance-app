@@ -291,6 +291,54 @@ const goalsTotalTarget =
 const goalsOverallProgress =
     document.getElementById("goals-overall-progress");
 
+const savingsMovementForm =
+    document.getElementById("savings-movement-form");
+
+const savingsMovementGoal =
+    document.getElementById("savings-movement-goal");
+
+const savingsMovementDirection =
+    document.getElementById("savings-movement-direction");
+
+const savingsMovementAmount =
+    document.getElementById("savings-movement-amount");
+
+const savingsMovementMethod =
+    document.getElementById("savings-movement-method");
+
+const savingsReserveAccountGroup =
+    document.getElementById("savings-reserve-account-group");
+
+const savingsReserveAccount =
+    document.getElementById("savings-reserve-account");
+
+const savingsTransferAccountGroup =
+    document.getElementById("savings-transfer-account-group");
+
+const savingsTransferFrom =
+    document.getElementById("savings-transfer-from");
+
+const savingsTransferTo =
+    document.getElementById("savings-transfer-to");
+
+const savingsMovementDate =
+    document.getElementById("savings-movement-date");
+
+const savingsMovementNotes =
+    document.getElementById("savings-movement-notes");
+
+const savingsMovementPreview =
+    document.getElementById("savings-movement-preview");
+
+const saveSavingsMovementButton =
+    document.getElementById("save-savings-movement-button");
+
+const savingsMovementMessage =
+    document.getElementById("savings-movement-message");
+
+const savingsMovementList =
+    document.getElementById("savings-movement-list");
+
 const emergencyMonthlyExpenses =
     document.getElementById("emergency-monthly-expenses");
 
