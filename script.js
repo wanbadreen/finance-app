@@ -24676,6 +24676,881 @@ function getGoalTimeText(goal) {
 }
 
 
+function getSavingsGoalById(
+    goalId
+) {
+
+    return savingsGoals.find(
+        goal =>
+            goal.id ===
+            goalId
+    ) || null;
+}
+
+
+function getSavingsMovementByTransferId(
+    transferId
+) {
+
+    return savingsMovements.find(
+        movement =>
+            movement.account_transfer_id ===
+            transferId
+    ) || null;
+}
+
+
+function refreshSavingsMovementOptions(
+    preferredGoalId = null
+) {
+
+    if (!savingsMovementForm) {
+        return;
+    }
+
+    const previousGoal =
+        preferredGoalId ||
+        savingsMovementGoal?.value ||
+        "";
+
+    const previousReserve =
+        savingsReserveAccount?.value ||
+        "";
+
+    const previousFrom =
+        savingsTransferFrom?.value ||
+        "";
+
+    const previousTo =
+        savingsTransferTo?.value ||
+        "";
+
+    if (savingsMovementGoal) {
+
+        savingsMovementGoal.innerHTML =
+            '<option value="">Select goal</option>';
+
+        savingsGoals.forEach(
+            function (goal) {
+
+                addSelectOption(
+                    savingsMovementGoal,
+                    goal.id,
+                    goal.name
+                );
+            }
+        );
+
+        savingsMovementGoal.value =
+            savingsGoals.some(
+                goal =>
+                    goal.id ===
+                    previousGoal
+            )
+                ? previousGoal
+                : "";
+    }
+
+    const goal =
+        getSavingsGoalById(
+            savingsMovementGoal?.value
+        );
+
+    const direction =
+        savingsMovementDirection?.value ||
+        "add";
+
+    const method =
+        savingsMovementMethod?.value ||
+        "reserve";
+
+    const spendableAccounts =
+        accounts.filter(
+            account =>
+                account.is_active &&
+                ![
+                    "savings",
+                    "credit_card"
+                ].includes(
+                    account.account_type
+                )
+        );
+
+    const savingsAccounts =
+        accounts.filter(
+            account =>
+                account.is_active &&
+                account.account_type ===
+                    "savings"
+        );
+
+    const populate =
+        function (
+            select,
+            items,
+            placeholder,
+            selectedValue,
+            label
+        ) {
+
+            if (!select) {
+                return;
+            }
+
+            select.innerHTML =
+                `<option value="">${placeholder}</option>`;
+
+            items.forEach(
+                function (account) {
+
+                    addSelectOption(
+                        select,
+                        account.id,
+                        label
+                            ? label(account)
+                            : account.name
+                    );
+                }
+            );
+
+            select.value =
+                items.some(
+                    account =>
+                        account.id ===
+                        selectedValue
+                )
+                    ? selectedValue
+                    : "";
+        };
+
+    let reserveAccounts =
+        spendableAccounts;
+
+    if (
+        direction ===
+            "withdraw" &&
+        goal
+    ) {
+
+        reserveAccounts =
+            spendableAccounts.filter(
+                account =>
+                    getGoalReserveBalance(
+                        savingsMovements,
+                        goal.id,
+                        account.id
+                    ) > 0
+            );
+    }
+
+    populate(
+        savingsReserveAccount,
+        reserveAccounts,
+        direction === "withdraw"
+            ? "Select reserved account"
+            : "Select account",
+        previousReserve,
+        direction === "withdraw" && goal
+            ? account =>
+                `${account.name} • ${formatMoney(
+                    getGoalReserveBalance(
+                        savingsMovements,
+                        goal.id,
+                        account.id
+                    )
+                )} reserved`
+            : null
+    );
+
+    let transferFromAccounts;
+    let transferToAccounts;
+
+    if (direction === "withdraw") {
+
+        transferFromAccounts =
+            goal
+                ? savingsAccounts.filter(
+                    account =>
+                        getGoalTransferBalance(
+                            savingsMovements,
+                            goal.id,
+                            account.id
+                        ) > 0
+                )
+                : savingsAccounts;
+
+        transferToAccounts =
+            spendableAccounts;
+
+    } else {
+
+        transferFromAccounts =
+            spendableAccounts;
+
+        transferToAccounts =
+            savingsAccounts;
+    }
+
+    populate(
+        savingsTransferFrom,
+        transferFromAccounts,
+        direction === "withdraw"
+            ? "Select Savings account"
+            : "Select source account",
+        previousFrom,
+        direction === "withdraw" && goal
+            ? account =>
+                `${account.name} • ${formatMoney(
+                    getGoalTransferBalance(
+                        savingsMovements,
+                        goal.id,
+                        account.id
+                    )
+                )} tracked`
+            : null
+    );
+
+    const preferredSavingsId =
+        direction === "add" &&
+        goal?.account_id &&
+        transferToAccounts.some(
+            account =>
+                account.id ===
+                goal.account_id
+        )
+            ? goal.account_id
+            : previousTo;
+
+    populate(
+        savingsTransferTo,
+        transferToAccounts,
+        direction === "withdraw"
+            ? "Select account to receive money"
+            : "Select Savings account",
+        preferredSavingsId
+    );
+
+    if (savingsReserveAccountGroup) {
+        savingsReserveAccountGroup.hidden =
+            method !==
+            "reserve";
+    }
+
+    if (savingsTransferAccountGroup) {
+        savingsTransferAccountGroup.hidden =
+            method !==
+            "transfer";
+    }
+
+    const reserveLabel =
+        document.querySelector(
+            'label[for="savings-reserve-account"]'
+        );
+
+    if (reserveLabel) {
+        reserveLabel.textContent =
+            direction ===
+                "withdraw"
+                ? "Release Reserved Money From"
+                : "Account Holding the Money";
+    }
+
+    const fromLabel =
+        document.querySelector(
+            'label[for="savings-transfer-from"]'
+        );
+
+    if (fromLabel) {
+        fromLabel.textContent =
+            direction ===
+                "withdraw"
+                ? "From Savings Account"
+                : "From";
+    }
+
+    const toLabel =
+        document.querySelector(
+            'label[for="savings-transfer-to"]'
+        );
+
+    if (toLabel) {
+        toLabel.textContent =
+            direction ===
+                "withdraw"
+                ? "Return To"
+                : "To Savings Account";
+    }
+
+    if (saveSavingsMovementButton) {
+        saveSavingsMovementButton.textContent =
+            direction ===
+                "withdraw"
+                ? "Withdraw Savings"
+                : "Add Savings";
+    }
+
+    if (
+        savingsMovementDate &&
+        !savingsMovementDate.value
+    ) {
+        savingsMovementDate.value =
+            getTodayDate();
+    }
+
+    updateSavingsMovementPreview();
+}
+
+
+function updateSavingsMovementPreview() {
+
+    if (!savingsMovementPreview) {
+        return;
+    }
+
+    const goal =
+        getSavingsGoalById(
+            savingsMovementGoal?.value
+        );
+
+    const direction =
+        savingsMovementDirection?.value ||
+        "add";
+
+    const method =
+        savingsMovementMethod?.value ||
+        "reserve";
+
+    const amount =
+        Number(
+            savingsMovementAmount?.value
+        );
+
+    if (
+        !goal ||
+        !Number.isFinite(amount) ||
+        amount <= 0
+    ) {
+
+        savingsMovementPreview.textContent =
+            "Choose a goal and amount to preview the effect on your savings and Available Cash.";
+
+        return;
+    }
+
+    const current =
+        Number(
+            goal.current_amount
+        ) || 0;
+
+    const target =
+        Number(
+            goal.target_amount
+        ) || 0;
+
+    if (
+        direction ===
+            "add" &&
+        amount >
+            Math.max(
+                0,
+                target -
+                current
+            )
+    ) {
+
+        savingsMovementPreview.textContent =
+            `Only ${formatMoney(
+                Math.max(
+                    0,
+                    target -
+                    current
+                )
+            )} remains before this goal reaches its target.`;
+
+        return;
+    }
+
+    if (
+        direction ===
+            "withdraw" &&
+        amount >
+            current
+    ) {
+
+        savingsMovementPreview.textContent =
+            `This goal currently has ${formatMoney(
+                current
+            )} saved.`;
+
+        return;
+    }
+
+    const availableCash =
+        getAvailableCash(
+            accounts,
+            calculateAccountBalance,
+            savingsMovements
+        );
+
+    const nextAvailableCash =
+        availableCash +
+        (
+            direction ===
+                "withdraw"
+                ? amount
+                : -amount
+        );
+
+    const nextSaved =
+        current +
+        (
+            direction ===
+                "withdraw"
+                ? -amount
+                : amount
+        );
+
+    const methodText =
+        method ===
+            "reserve"
+            ? (
+                direction ===
+                    "withdraw"
+                    ? "release reserved money"
+                    : "reserve money without moving it"
+            )
+            : (
+                direction ===
+                    "withdraw"
+                    ? "transfer money out of a Savings account"
+                    : "transfer money into a Savings account"
+            );
+
+    savingsMovementPreview.innerHTML =
+        `<strong>${formatMoney(amount)}</strong> will ${methodText}. ` +
+        `${goal.name} will be <strong>${formatMoney(nextSaved)}</strong>. ` +
+        `Available Cash: <strong>${formatMoney(availableCash)}</strong> → <strong>${formatMoney(nextAvailableCash)}</strong>. ` +
+        "This is not counted as income or an expense.";
+}
+
+
+function renderSavingsMovements() {
+
+    if (!savingsMovementList) {
+        return;
+    }
+
+    savingsMovementList.innerHTML =
+        "";
+
+    if (!savingsMovements.length) {
+
+        renderEmptyState(
+            savingsMovementList,
+            "No savings activity yet."
+        );
+
+        return;
+    }
+
+    savingsMovements
+        .slice(
+            0,
+            12
+        )
+        .forEach(
+            function (movement) {
+
+                const row =
+                    document.createElement(
+                        "div"
+                    );
+
+                row.className =
+                    "savings-movement-row";
+
+                const copy =
+                    document.createElement(
+                        "div"
+                    );
+
+                copy.className =
+                    "savings-movement-copy";
+
+                const goal =
+                    getSavingsGoalById(
+                        movement.goal_id
+                    );
+
+                const title =
+                    document.createElement(
+                        "strong"
+                    );
+
+                title.textContent =
+                    goal?.name ||
+                    "Savings";
+
+                const detail =
+                    document.createElement(
+                        "span"
+                    );
+
+                let route;
+
+                if (
+                    movement.method ===
+                    "reserve"
+                ) {
+
+                    route =
+                        movement.direction ===
+                            "withdraw"
+                            ? `Released from ${getAccountName(movement.account_id) || "account"}`
+                            : `Reserved in ${getAccountName(movement.account_id) || "account"}`;
+
+                } else {
+
+                    route =
+                        `${getAccountName(movement.from_account_id) || "Account"} → ${getAccountName(movement.to_account_id) || "Account"}`;
+                }
+
+                detail.textContent =
+                    `${route} • ${formatDate(
+                        movement.movement_date
+                    )}`;
+
+                copy.append(
+                    title,
+                    detail
+                );
+
+                const amount =
+                    document.createElement(
+                        "p"
+                    );
+
+                amount.className =
+                    `savings-movement-amount ${movement.direction}`;
+
+                amount.textContent =
+                    `${movement.direction === "withdraw" ? "−" : "+"} ${formatMoney(movement.amount)}`;
+
+                row.append(
+                    copy,
+                    amount
+                );
+
+                savingsMovementList.appendChild(
+                    row
+                );
+            }
+        );
+}
+
+
+function openSavingsMovement(
+    goal,
+    direction = "add"
+) {
+
+    if (!goal) {
+        return;
+    }
+
+    navigateToPage(
+        "goals"
+    );
+
+    if (savingsMovementGoal) {
+        savingsMovementGoal.value =
+            goal.id;
+    }
+
+    if (savingsMovementDirection) {
+        savingsMovementDirection.value =
+            direction;
+    }
+
+    refreshSavingsMovementOptions(
+        goal.id
+    );
+
+    scrollToFormAndFocus(
+        savingsMovementForm,
+        savingsMovementAmount
+    );
+}
+
+
+[
+    savingsMovementGoal,
+    savingsMovementDirection,
+    savingsMovementMethod
+]
+    .filter(Boolean)
+    .forEach(
+        element =>
+            element.addEventListener(
+                "change",
+                function () {
+
+                    refreshSavingsMovementOptions();
+                }
+            )
+    );
+
+
+[
+    savingsMovementAmount,
+    savingsReserveAccount,
+    savingsTransferFrom,
+    savingsTransferTo
+]
+    .filter(Boolean)
+    .forEach(
+        element =>
+            element.addEventListener(
+                "input",
+                updateSavingsMovementPreview
+            )
+    );
+
+
+savingsMovementForm
+    ?.addEventListener(
+        "submit",
+        async function (
+            event
+        ) {
+
+            event.preventDefault();
+
+            if (
+                !currentUser ||
+                savingsMovementForm.dataset.saving ===
+                    "true"
+            ) {
+                return;
+            }
+
+            const goal =
+                getSavingsGoalById(
+                    savingsMovementGoal?.value
+                );
+
+            const direction =
+                savingsMovementDirection?.value;
+
+            const method =
+                savingsMovementMethod?.value;
+
+            const amount =
+                Number(
+                    savingsMovementAmount?.value
+                );
+
+            const movementDate =
+                savingsMovementDate?.value;
+
+            if (!goal) {
+                savingsMovementMessage.textContent =
+                    "Choose a savings goal.";
+                savingsMovementGoal?.focus();
+                return;
+            }
+
+            if (
+                !Number.isFinite(amount) ||
+                amount <= 0
+            ) {
+                savingsMovementMessage.textContent =
+                    "Enter an amount greater than zero.";
+                savingsMovementAmount?.focus();
+                return;
+            }
+
+            if (!movementDate) {
+                savingsMovementMessage.textContent =
+                    "Choose a savings date.";
+                savingsMovementDate?.focus();
+                return;
+            }
+
+            const accountId =
+                method ===
+                    "reserve"
+                    ? savingsReserveAccount?.value ||
+                        null
+                    : null;
+
+            const fromAccountId =
+                method ===
+                    "transfer"
+                    ? savingsTransferFrom?.value ||
+                        null
+                    : null;
+
+            const toAccountId =
+                method ===
+                    "transfer"
+                    ? savingsTransferTo?.value ||
+                        null
+                    : null;
+
+            if (
+                method ===
+                    "reserve" &&
+                !accountId
+            ) {
+                savingsMovementMessage.textContent =
+                    direction ===
+                        "withdraw"
+                        ? "Choose the account whose reserved money you want to release."
+                        : "Choose the account where this money will remain reserved.";
+                savingsReserveAccount?.focus();
+                return;
+            }
+
+            if (
+                method ===
+                    "transfer" &&
+                (
+                    !fromAccountId ||
+                    !toAccountId
+                )
+            ) {
+                savingsMovementMessage.textContent =
+                    "Choose both accounts for the savings transfer.";
+                (
+                    !fromAccountId
+                        ? savingsTransferFrom
+                        : savingsTransferTo
+                )?.focus();
+                return;
+            }
+
+            savingsMovementForm.dataset.saving =
+                "true";
+
+            saveSavingsMovementButton.disabled =
+                true;
+
+            savingsMovementMessage.textContent =
+                direction ===
+                    "withdraw"
+                    ? "Withdrawing savings..."
+                    : "Adding savings...";
+
+            try {
+
+                const {
+                    error
+                } =
+                    await supabase.rpc(
+                        "record_savings_movement",
+                        {
+                            p_goal_id:
+                                goal.id,
+                            p_direction:
+                                direction,
+                            p_method:
+                                method,
+                            p_amount:
+                                amount,
+                            p_account_id:
+                                accountId,
+                            p_from_account_id:
+                                fromAccountId,
+                            p_to_account_id:
+                                toAccountId,
+                            p_movement_date:
+                                movementDate,
+                            p_notes:
+                                savingsMovementNotes
+                                    ?.value
+                                    ?.trim() ||
+                                null
+                        }
+                    );
+
+                if (error) {
+                    throw error;
+                }
+
+                await loadTransfers(
+                    true,
+                    false
+                );
+
+                await loadSavingsGoals(
+                    true
+                );
+
+                await loadSavingsMovements(
+                    true
+                );
+
+                renderAccounts();
+                renderTransactions();
+                renderPlanningTools();
+
+                savingsMovementAmount.value =
+                    "";
+
+                savingsMovementNotes.value =
+                    "";
+
+                savingsMovementDate.value =
+                    getTodayDate();
+
+                savingsMovementMessage.textContent =
+                    "";
+
+                refreshSavingsMovementOptions(
+                    goal.id
+                );
+
+                showTransactionSuccessSnackbar({
+                    title:
+                        direction ===
+                            "withdraw"
+                            ? "Savings withdrawn"
+                            : "Savings added",
+                    message:
+                        method ===
+                            "reserve"
+                            ? "Available Cash was updated without creating an expense."
+                            : "The account transfer and savings progress were updated together."
+                });
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    "Savings movement error:",
+                    error
+                );
+
+                savingsMovementMessage.textContent =
+                    error?.message ||
+                    "Unable to update savings right now.";
+
+            } finally {
+
+                savingsMovementForm.dataset.saving =
+                    "false";
+
+                saveSavingsMovementButton.disabled =
+                    false;
+
+                refreshSavingsMovementOptions();
+            }
+        }
+    );
+
+
 function renderGoalsOverview() {
 
     if (
