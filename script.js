@@ -24551,7 +24551,7 @@ function refreshGoalAccountOptions(
             : goalAccountSelect.value;
 
     goalAccountSelect.innerHTML =
-        '<option value="">No linked account</option>';
+        '<option value="">No preferred Savings account</option>';
 
     accounts
         .filter(
@@ -24561,8 +24561,8 @@ function refreshGoalAccountOptions(
                     account.id === current
                 )
                 &&
-                account.account_type !==
-                    "credit_card"
+                account.account_type ===
+                    "savings"
         )
         .forEach(
             function (account) {
