@@ -2814,6 +2814,15 @@ signOutOtherSessionsButton
         "click",
         async function () {
 
+            const confirmed =
+                window.confirm(
+                    "This will sign out other Kira sessions and may disconnect linked integrations such as ChatGPT. Continue?"
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
             signOutOtherSessionsButton
                 .disabled =
                     true;
@@ -3596,7 +3605,10 @@ async function handleLogout() {
     const {
         error
     } =
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({
+            scope:
+                "local"
+        });
 
     if (error) {
 
