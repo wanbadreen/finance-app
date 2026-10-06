@@ -344,7 +344,7 @@
                         </span>
 
                         <span>
-                            Goals
+                            Savings
                         </span>
 
                     </a>
@@ -574,7 +574,7 @@
                     <section class="balance-card">
 
                         <p>
-                            Available Funds
+                            Available Cash
                         </p>
 
 
@@ -584,7 +584,7 @@
 
 
                         <span>
-                            Cash, bank, e-wallet & savings
+                            Spendable cash after reserved savings
                         </span>
 
                     </section>
@@ -880,46 +880,6 @@
 
                         </div>
 
-
-                    </section>
-
-
-                    <!-- =============================================
-                         DASHBOARD GOALS SUMMARY
-                    ============================================== -->
-
-                    <section class="dashboard-section">
-
-                        <div class="section-heading">
-
-                            <div>
-
-                                <h2>
-                                    Savings Goals
-                                </h2>
-
-                                <p class="section-subtitle">
-                                    Progress toward your active financial goals
-                                </p>
-
-                            </div>
-
-                            <a
-                                href="#goals-page"
-                                class="section-link"
-                                data-page="goals"
-                            >
-                                View Goals
-                            </a>
-
-                        </div>
-
-                        <div
-                            id="dashboard-goals-summary"
-                            class="dashboard-placeholder"
-                        >
-                            Create a savings goal to start tracking progress.
-                        </div>
 
                     </section>
 
@@ -4073,11 +4033,11 @@
                         <div>
 
                             <h2>
-                                Goals & Planning
+                                Savings & Planning
                             </h2>
 
                             <p>
-                                Build savings goals, estimate your emergency fund and plan future cash flow.
+                                Keep saved money separate from spendable cash, track goals and plan ahead.
                             </p>
 
                         </div>
@@ -4096,7 +4056,7 @@
                         <div class="goal-overview-card">
                             <span>Total Saved</span>
                             <strong id="goals-total-saved">RM 0.00</strong>
-                            <p>Amount recorded across active goals.</p>
+                            <p>Saved money tracked across active goals.</p>
                         </div>
 
                         <div class="goal-overview-card">
@@ -4114,6 +4074,207 @@
                     </section>
 
 
+                    <section class="management-section savings-movement-section">
+
+                        <div class="section-heading">
+
+                            <div>
+
+                                <h2>
+                                    Move Money to Savings
+                                </h2>
+
+                                <p class="section-subtitle">
+                                    Reserve money in an existing account or transfer it into a Savings account. Savings do not count as expenses.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="savings-movement-layout">
+
+                            <form
+                                id="savings-movement-form"
+                                class="management-form savings-movement-form"
+                            >
+
+                                <h2>
+                                    Add or Withdraw Savings
+                                </h2>
+
+                                <div class="goal-form-grid">
+
+                                    <div>
+
+                                        <label for="savings-movement-goal">
+                                            Savings Goal
+                                        </label>
+
+                                        <select id="savings-movement-goal" required>
+                                            <option value="">Select goal</option>
+                                        </select>
+
+                                    </div>
+
+                                    <div>
+
+                                        <label for="savings-movement-direction">
+                                            Action
+                                        </label>
+
+                                        <select id="savings-movement-direction" required>
+                                            <option value="add">Add Savings</option>
+                                            <option value="withdraw">Withdraw Savings</option>
+                                        </select>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="goal-form-grid">
+
+                                    <div>
+
+                                        <label for="savings-movement-amount">
+                                            Amount
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            id="savings-movement-amount"
+                                            min="0.01"
+                                            step="0.01"
+                                            placeholder="500"
+                                            required
+                                        >
+
+                                    </div>
+
+                                    <div>
+
+                                        <label for="savings-movement-method">
+                                            Method
+                                        </label>
+
+                                        <select id="savings-movement-method" required>
+                                            <option value="reserve">Reserve in existing account</option>
+                                            <option value="transfer">Transfer to Savings account</option>
+                                        </select>
+
+                                    </div>
+
+                                </div>
+
+                                <div id="savings-reserve-account-group">
+
+                                    <label for="savings-reserve-account">
+                                        Account Holding the Money
+                                    </label>
+
+                                    <select id="savings-reserve-account">
+                                        <option value="">Select account</option>
+                                    </select>
+
+                                </div>
+
+                                <div
+                                    id="savings-transfer-account-group"
+                                    class="savings-transfer-account-group"
+                                    hidden
+                                >
+
+                                    <div>
+
+                                        <label for="savings-transfer-from">
+                                            From
+                                        </label>
+
+                                        <select id="savings-transfer-from">
+                                            <option value="">Select source account</option>
+                                        </select>
+
+                                    </div>
+
+                                    <div>
+
+                                        <label for="savings-transfer-to">
+                                            To
+                                        </label>
+
+                                        <select id="savings-transfer-to">
+                                            <option value="">Select Savings account</option>
+                                        </select>
+
+                                    </div>
+
+                                </div>
+
+                                <label for="savings-movement-date">
+                                    Date
+                                </label>
+
+                                <input
+                                    type="date"
+                                    id="savings-movement-date"
+                                    required
+                                >
+
+                                <label for="savings-movement-notes">
+                                    Notes
+                                </label>
+
+                                <textarea
+                                    id="savings-movement-notes"
+                                    rows="2"
+                                    placeholder="Optional note"
+                                ></textarea>
+
+                                <div
+                                    id="savings-movement-preview"
+                                    class="savings-movement-preview"
+                                >
+                                    Choose a goal and amount to preview the effect on your savings and Available Cash.
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    id="save-savings-movement-button"
+                                    class="primary-button"
+                                >
+                                    Add Savings
+                                </button>
+
+                                <p
+                                    id="savings-movement-message"
+                                    class="form-message"
+                                ></p>
+
+                            </form>
+
+                            <div class="savings-activity-panel">
+
+                                <div class="savings-activity-heading">
+
+                                    <div>
+                                        <h3>Recent Savings Activity</h3>
+                                        <p>Tracked allocations, transfers and withdrawals.</p>
+                                    </div>
+
+                                </div>
+
+                                <div
+                                    id="savings-movement-list"
+                                    class="savings-movement-list"
+                                ></div>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
                     <section class="management-section goals-management-section">
 
                         <div class="section-heading">
@@ -4125,7 +4286,7 @@
                                 </h2>
 
                                 <p class="section-subtitle">
-                                    Track a target amount and your current saved amount.
+                                    Track targets here. Use Add Savings or Withdraw to move money without treating it as spending.
                                 </p>
 
                             </div>
@@ -4181,7 +4342,7 @@
                                 <div>
 
                                     <label for="goal-current-amount">
-                                        Current Saved Amount
+                                        Starting / Manual Saved Amount
                                     </label>
 
                                     <input
@@ -4215,11 +4376,11 @@
                                 <div>
 
                                     <label for="goal-account">
-                                        Linked Account
+                                        Preferred Savings Account
                                     </label>
 
                                     <select id="goal-account">
-                                        <option value="">No linked account</option>
+                                        <option value="">No preferred Savings account</option>
                                     </select>
 
                                 </div>
@@ -5606,13 +5767,13 @@
                                     <div class="more-hub-title-row">
 
                                         <h3>
-                                            Goals & Planning
+                                            Savings & Planning
                                         </h3>
 
                                     </div>
 
                                     <p>
-                                        Track savings goals and use planning calculators.
+                                        Reserve or transfer savings, track goals and use planning calculators.
                                     </p>
 
                                 </div>
