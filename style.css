@@ -315,6 +315,27 @@ a {
     line-height: 1.5;
 }
 
+.auth-legal-links {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+
+    margin-top: 16px;
+
+    font-size: 11px;
+}
+
+.auth-legal-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.auth-legal-links a:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
 
 /* ======================================================
    APP ROOT
@@ -8358,6 +8379,23 @@ body[data-theme="dark"] .recurring-actions .positive-action-button {
 
     font-size: 10px;
     font-weight: 800;
+}
+
+.settings-legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+}
+
+.settings-legal-links a {
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.settings-legal-links a:hover {
+    text-decoration: underline;
 }
 
 .settings-danger-zone {
