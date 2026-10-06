@@ -25931,6 +25931,79 @@ function renderSavingsGoals() {
             }
 
 
+            const savingsActions =
+                document.createElement(
+                    "div"
+                );
+
+            savingsActions.className =
+                "goal-savings-actions";
+
+            if (
+                Number(
+                    goal.current_amount
+                ) <
+                Number(
+                    goal.target_amount
+                )
+            ) {
+
+                const addSavings =
+                    createTextButton(
+                        "Add Savings",
+                        "positive-action-button"
+                    );
+
+                addSavings.addEventListener(
+                    "click",
+                    () =>
+                        openSavingsMovement(
+                            goal,
+                            "add"
+                        )
+                );
+
+                savingsActions.appendChild(
+                    addSavings
+                );
+            }
+
+            if (
+                Number(
+                    goal.current_amount
+                ) > 0
+            ) {
+
+                const withdrawSavings =
+                    createTextButton(
+                        "Withdraw",
+                        "status-button"
+                    );
+
+                withdrawSavings.addEventListener(
+                    "click",
+                    () =>
+                        openSavingsMovement(
+                            goal,
+                            "withdraw"
+                        )
+                );
+
+                savingsActions.appendChild(
+                    withdrawSavings
+                );
+            }
+
+            if (
+                savingsActions.childElementCount >
+                0
+            ) {
+                card.appendChild(
+                    savingsActions
+                );
+            }
+
+
             const actions =
                 document.createElement(
                     "div"
