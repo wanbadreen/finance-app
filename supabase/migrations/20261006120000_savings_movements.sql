@@ -2,7 +2,7 @@
 -- Savings movements are immutable from the client; writes go through record_savings_movement()
 -- so goal progress and account transfers stay consistent.
 
-do $
+do $$
 begin
     if not exists (
         select 1
@@ -15,7 +15,7 @@ begin
             unique (id, user_id);
     end if;
 end;
-$;
+$$;
 
 create table if not exists public.savings_movements (
     id uuid primary key default gen_random_uuid(),
