@@ -4,7 +4,7 @@ import { configuration, authenticator } from './auth.mjs';
 import { schemas, descriptions, reader } from './tools.mjs';
 import { splitDestructiveTools, splitFileParams, splitWriteTools } from './split-mcp.mjs';
 
-const writeTools = new Set(['create_transaction','attach_receipt_to_transaction','edit_transaction','delete_transaction','create_account_transfer','delete_account_transfer','create_budget','pay_recurring_payment',...splitWriteTools]);
+const writeTools = new Set(['create_transaction','attach_receipt_to_transaction','edit_transaction','delete_transaction','create_account_transfer','delete_account_transfer','create_budget','create_recurring_payment','pay_recurring_payment',...splitWriteTools]);
 const fileParams = new Map([
   ['create_transaction',['receipt']],
   ['attach_receipt_to_transaction',['receipt']],
