@@ -247,6 +247,76 @@ test('recurring payment reader returns own enriched rows, statuses and monthly e
   assert.equal(r.active_summary.annual_expense_equivalent,1560);
 });
 
+test('create recurring payment supports finite installment schedules with exact amounts',async()=>{
+  assert.throws(()=>schemas.create_recurring_payment.parse({
+    name:'SPayLater Gadget',kind:'recurring',type:'expense',
+    account_id:accountId,category_id:categoryId,amount:111.66,
+    frequency:'monthly',next_due_date:'2026-10-20'
+  }));
+
+  const db=database({
+    accounts:[
+      {id:accountId,user_id:user,name:'Maybank',account_type:'bank',opening_balance:0,is_active:true}
+    ],
+    categories:[
+      {id:categoryId,user_id:user,name:'Transportation',type:'expense',is_active:true}
+    ],
+    income_sources:[],
+    payment_methods:[
+      {id:methodId,user_id:user,name:'Other',method_type:'other',system_key:'other',is_active:true,sort_order:1}
+    ],
+    transactions:[],
+    recurring_transactions:[],
+    recurring_occurrence_statuses:[]
+  });
+
+  const created=await reader(db,user)('create_recurring_payment',{
+    name:'SPayLater Gadget',
+    kind:'recurring',
+    type:'expense',
+    account_id:accountId,
+    category_id:categoryId,
+    payment_method_id:methodId,
+    amount:111.66,
+    frequency:'monthly',
+    next_due_date:'2026-10-20',
+    schedule:[
+      {due_date:'2026-10-20',amount:111.66,sequence_number:2,sequence_total:3},
+      {due_date:'2026-11-20',amount:111.68,sequence_number:3,sequence_total:3}
+    ],
+    confirmed:true
+  });
+
+  assert.equal(created.created,true);
+  assert.equal(created.recurring_payment.schedule_mode,'finite');
+  assert.equal(created.recurring_payment.scheduled_occurrences.length,2);
+  assert.equal(created.recurring_payment.scheduled_occurrences[0].sequence_number,2);
+  assert.equal(db.tables.recurring_transactions[0].amount,111.66);
+
+  const first=await reader(db,user)('pay_recurring_payment',{
+    recurring_id:created.recurring_payment.id,
+    due_date:'2026-10-20',
+    transaction_date:'2026-10-20',
+    confirmed:true
+  });
+  assert.equal(first.transaction.amount,111.66);
+  assert.equal(first.recurring.next_due_date,'2026-11-20');
+  assert.equal(first.recurring.schedule_completed,false);
+  assert.equal(db.tables.recurring_transactions[0].amount,111.68);
+  assert.equal(db.tables.recurring_transactions[0].is_active,true);
+
+  const final=await reader(db,user)('pay_recurring_payment',{
+    recurring_id:created.recurring_payment.id,
+    due_date:'2026-11-20',
+    transaction_date:'2026-11-20',
+    confirmed:true
+  });
+  assert.equal(final.transaction.amount,111.68);
+  assert.equal(final.recurring.next_due_date,null);
+  assert.equal(final.recurring.schedule_completed,true);
+  assert.equal(db.tables.recurring_transactions[0].is_active,false);
+});
+
 test('pay recurring payment links the exact due occurrence, advances schedule and is retry-safe',async()=>{
   const recurringId='00000000-0000-4000-8000-000000000052';
   const db=database({
@@ -672,8 +742,8 @@ test('HTTP discovery, auth challenges, MCP initialize, tool metadata and dispatc
   );
 
   const list=(await call('tools/list')).result.tools;
-  assert.equal(list.length,26);
-  assert.equal(list.filter(x=>!x.annotations.readOnlyHint).length,15);
+  assert.equal(list.length,27);
+  assert.equal(list.filter(x=>!x.annotations.readOnlyHint).length,16);
   assert.equal(list.find(x=>x.name==='create_transaction').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='edit_transaction').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='create_account_transfer').annotations.destructiveHint,false);
@@ -681,6 +751,8 @@ test('HTTP discovery, auth challenges, MCP initialize, tool metadata and dispatc
   assert.equal(list.find(x=>x.name==='delete_account_transfer').annotations.destructiveHint,true);
   assert.equal(list.find(x=>x.name==='attach_receipt_to_transaction').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='create_budget').annotations.destructiveHint,false);
+  assert.equal(list.find(x=>x.name==='create_recurring_payment').annotations.readOnlyHint,false);
+  assert.equal(list.find(x=>x.name==='create_recurring_payment').annotations.destructiveHint,false);
   assert.equal(list.find(x=>x.name==='get_recurring_payments').annotations.readOnlyHint,true);
   assert.equal(list.find(x=>x.name==='pay_recurring_payment').annotations.readOnlyHint,false);
   assert.equal(list.find(x=>x.name==='pay_recurring_payment').annotations.destructiveHint,false);
