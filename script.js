@@ -2,6 +2,7 @@ import { isNativeApp } from "./native-platform.js";
 import { supabase } from "./supabase.js";
 import { normalizeTransaction } from "./split-core.mjs";
 import { mountSplitUI } from "./split-ui.js";
+import { mountRequestMoneyUI } from "./request-money.js";
 import {
     cleanupDeletedAccountTransfers,
     fetchAccountTransfers,
@@ -1112,6 +1113,11 @@ let transactionTagLinks = [];
 
 let transactions = [];
 const splitUI = mountSplitUI({
+    get: () => ({ accounts, categories, transactions }),
+    navigate: () => navigateToPage("transactions"),
+    refresh: () => loadTransactions(true)
+});
+const requestMoneyUI = mountRequestMoneyUI({
     get: () => ({ accounts, categories, transactions }),
     navigate: () => navigateToPage("transactions"),
     refresh: () => loadTransactions(true)
