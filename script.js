@@ -2,6 +2,7 @@ import { isNativeApp } from "./native-platform.js";
 import { supabase } from "./supabase.js";
 import { normalizeTransaction } from "./split-core.mjs";
 import { mountSplitUI } from "./split-ui.js";
+import { mountRequestMoneyUI } from "./request-money.js";
 import {
     cleanupDeletedAccountTransfers,
     fetchAccountTransfers,
@@ -1112,6 +1113,11 @@ let transactionTagLinks = [];
 
 let transactions = [];
 const splitUI = mountSplitUI({
+    get: () => ({ accounts, categories, transactions }),
+    navigate: () => navigateToPage("transactions"),
+    refresh: () => loadTransactions(true)
+});
+const requestMoneyUI = mountRequestMoneyUI({
     get: () => ({ accounts, categories, transactions }),
     navigate: () => navigateToPage("transactions"),
     refresh: () => loadTransactions(true)
@@ -20198,7 +20204,15 @@ function createTransactionActivityRow(
         }
     );
 
-    if (transaction.split_bill_id) {
+    if (transaction.payment_request_id) {
+        const openRequest = createTextButton("Open Request", "edit-button");
+        openRequest.addEventListener("click", () => requestMoneyUI.openList());
+        buttons.append(openRequest);
+        const requestNote = document.createElement("p");
+        requestNote.className = "transaction-date";
+        requestNote.textContent = "Request Money · Repayment · Excluded from income reporting";
+        left.append(requestNote);
+    } else if (transaction.split_bill_id) {
         const openSplit = createTextButton("Open Split", "edit-button");
         openSplit.addEventListener("click", () => splitUI.open(transaction.split_bill_id));
         buttons.append(openSplit);

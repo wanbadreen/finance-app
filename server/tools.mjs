@@ -171,7 +171,7 @@ export const descriptions = {
 
 const columns = {
   accounts: 'id,name,account_type,opening_balance,is_active',
-  transactions: 'id,account_id,category_id,income_source_id,payment_method_id,type,amount,transaction_date,budget_month_start,description,notes,receipt_path,recurring_id,recurring_due_date,recurring_next_due_date,linked_transfer_id,split_bill_id,report_amount,cash_amount',
+  transactions: 'id,account_id,category_id,income_source_id,payment_method_id,type,amount,transaction_date,budget_month_start,description,notes,receipt_path,recurring_id,recurring_due_date,recurring_next_due_date,linked_transfer_id,split_bill_id,payment_request_id,report_amount,cash_amount',
   account_transfers: 'id,from_account_id,to_account_id,amount,transfer_date,description,notes,fee_percent',
   categories: 'id,name,type,is_active',
   income_sources: 'id,name,is_active',
@@ -950,6 +950,7 @@ export function reader(db, userId) {
     const existing = transactions.find(x => x.id === args.transaction_id);
     if (!existing) throw inputError('Transaction not found for this Kira user.');
     if (existing.split_bill_id) throw inputError('Manage this transaction in Kira Split Bill.');
+    if (existing.payment_request_id) throw inputError('Manage this transaction in Kira Request Money.');
     if (existing.linked_transfer_id) {
       throw inputError('Automatic transfer-fee transactions cannot have receipts attached directly.');
     }
@@ -1002,6 +1003,7 @@ export function reader(db, userId) {
     const existing = transactions.find(x => x.id === args.transaction_id);
     if (!existing) throw inputError('Transaction not found for this Kira user.');
     if (existing.split_bill_id) throw inputError('Manage this transaction in Kira Split Bill.');
+    if (existing.payment_request_id) throw inputError('Manage this transaction in Kira Request Money.');
     if (existing.linked_transfer_id) throw inputError('Automatic transfer-fee transactions cannot be edited directly.');
     if (existing.recurring_id) throw inputError('Recurring-generated transactions cannot be edited through ChatGPT yet.');
 
@@ -1094,6 +1096,7 @@ export function reader(db, userId) {
     const existing = transactions.find(x => x.id === args.transaction_id);
     if (!existing) throw inputError('Transaction not found for this Kira user.');
     if (existing.split_bill_id) throw inputError('Manage this transaction in Kira Split Bill.');
+    if (existing.payment_request_id) throw inputError('Manage this transaction in Kira Request Money.');
     if (existing.linked_transfer_id) throw inputError('Automatic transfer-fee transactions cannot be deleted directly.');
     if (existing.recurring_id) throw inputError('Recurring-generated transactions cannot be deleted through ChatGPT yet.');
 
