@@ -60,6 +60,11 @@ async function qrUrl(db:any,userId:string) {
 }
 function view(row:any,qr:string|null=null) {
   const expired=new Date(row.expires_at).getTime()<Date.now() && !['paid','cancelled'].includes(row.status);
+  const report=row.report ? {
+    payerName:row.report.payer_name || '',
+    reportedAt:row.report.reported_at || null,
+    hasProof:Boolean(row.report.proof_path)
+  } : null;
   return {
     id:row.id,
     requesterName:row.requester_name,
@@ -69,11 +74,21 @@ function view(row:any,qr:string|null=null) {
     status:row.status,
     expired,
     expiresAt:row.expires_at,
-    report:row.report || null,
+    report,
     transactionId:row.transaction_id || null,
     createdAt:row.created_at,
     qrUrl:qr
   };
+}
+async function ownerView(db:any,row:any) {
+  const result:any=view(row);
+  if(row.report?.proof_path) {
+    const {data:signed}=await db.storage.from('receipts').createSignedUrl(row.report.proof_path,300);
+    result.reportProofUrl=signed?.signedUrl || null;
+  } else {
+    result.reportProofUrl=null;
+  }
+  return result;
 }
 
 Deno.serve(async(req:Request)=>{
@@ -163,7 +178,7 @@ Deno.serve(async(req:Request)=>{
     if(input.action==='list') {
       const {data,error}=await db.from('payment_requests').select('*').eq('user_id',userId).order('created_at',{ascending:false}).limit(100);
       if(error) throw error;
-      return reply({requests:(data || []).map((row:any)=>view(row))});
+      return reply({requests:await Promise.all((data || []).map((row:any)=>ownerView(db,row)))});
     }
 
     if(input.action==='rotate-link') {
@@ -195,7 +210,7 @@ Deno.serve(async(req:Request)=>{
       if(error) throw new Error(error.message || 'Unable to confirm payment.');
 
       const {data:updated}=await db.from('payment_requests').select('*').eq('id',input.id).eq('user_id',userId).single();
-      return reply({request:view(updated),transactionId});
+      return reply({request:await ownerView(db,updated),transactionId});
     }
 
     if(input.action==='reject') {
@@ -210,7 +225,7 @@ Deno.serve(async(req:Request)=>{
         .update({status:'pending',report:null,updated_at:new Date().toISOString()})
         .eq('id',row.id).eq('user_id',userId).select('*').single();
       if(updateError) throw new Error('Unable to reject payment report.');
-      return reply({request:view(updated)});
+      return reply({request:await ownerView(db,updated)});
     }
 
     if(input.action==='cancel') {
