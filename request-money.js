@@ -60,20 +60,13 @@ async function busy(container,fn) {
 }
 
 export function mountRequestMoneyUI(context) {
-  const txPage=document.getElementById('transactions-page');
   const dashboard=document.getElementById('dashboard-page');
-  if(!txPage || !dashboard) return { openCreate:()=>{}, openList:()=>{} };
-
-  const header=txPage.querySelector('.content-page-header');
-  const headerActions=document.createElement('div');
-  headerActions.className='request-money-actions';
-  headerActions.innerHTML='<button type="button" class="request-money-button" data-request-list>Money Requests</button><button type="button" class="request-money-button primary" data-request-create>Request Money</button>';
-  header?.append(headerActions);
+  if(!dashboard) return { openCreate:()=>{}, openList:()=>{} };
 
   const summary=dashboard.querySelector('.summary-grid');
   const dash=document.createElement('section');
   dash.className='request-money-dashboard';
-  dash.innerHTML='<div><h3>Request Money</h3><p>Send a simple payment link with your QR and the exact amount.</p></div><div class="request-money-actions"><button type="button" class="request-money-button" data-request-list>View Requests</button><button type="button" class="request-money-button primary" data-request-create>Request Money</button></div>';
+  dash.innerHTML='<div><h3>Request Money</h3><p>Create a payment request link with your QR and the exact amount.</p></div><div class="request-money-actions"><button type="button" class="request-money-button" data-request-list>View Requests</button><button type="button" class="request-money-button primary" data-request-create>Request Money</button></div>';
   summary?.after(dash);
 
   async function showCreated(request,token) {
@@ -102,13 +95,13 @@ export function mountRequestMoneyUI(context) {
     const d=openDialog('Request Money',`
       <form>
         <label>Amount (RM)
-          <input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="20.00" required>
+          <input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" required>
         </label>
-        <label>Person <span class="request-muted">(optional)</span>
-          <input name="recipientName" maxlength="80" placeholder="e.g. Riena">
+        <label>Recipient (optional)
+          <input name="recipientName" maxlength="80" placeholder="Recipient name">
         </label>
-        <label>Note <span class="request-muted">(optional)</span>
-          <textarea name="note" maxlength="160" placeholder="e.g. Cendol semalam"></textarea>
+        <label>Note (optional)
+          <textarea name="note" maxlength="160" placeholder="Payment description"></textarea>
         </label>
         <button class="request-money-button primary" type="submit">Create & Share</button>
       </form>
@@ -168,7 +161,6 @@ export function mountRequestMoneyUI(context) {
   }
 
   async function openList() {
-    context.navigate?.();
     const d=openDialog('Money Requests','<div class="request-list"><p class="request-muted">Loading requests…</p></div>');
     const list=d.querySelector('.request-list');
 
