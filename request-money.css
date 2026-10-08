@@ -129,3 +129,27 @@
   .request-money-actions { width:100%; }
   .request-money-actions .request-money-button { flex:1 1 auto; }
 }
+
+.request-public-page {
+  margin:0;
+  min-height:100vh;
+  background:#f4f6f8;
+  color:#111827;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  .request-public-page {
+    --card-bg:#111827;
+    --surface-subtle:#172033;
+    --surface-muted:#1f2937;
+    --border-color:#334155;
+    --text-muted:#94a3b8;
+    --primary-color:#f8fafc;
+    --input-bg:#0f172a;
+    background:#0b1220;
+    color:#f8fafc;
+  }
+  .request-public-page .request-money-button.primary {
+    color:#0f172a;
+  }
+}
