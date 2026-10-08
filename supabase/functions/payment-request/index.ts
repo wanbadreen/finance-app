@@ -123,7 +123,7 @@ Deno.serve(async(req:Request)=>{
         title:'Payment reported',
         message:`${payerName || 'Someone'} reported ${money(Number(row.amount))}${row.note ? ` for ${clean(row.note,80)}` : ''}. Review it in Request Money.`,
         target_page:'transactions',
-        target_hash:'money-requests',
+        target_hash:'transactions',
         dedupe_key:`request-money:${row.id}:reported`
       },{onConflict:'user_id,dedupe_key',ignoreDuplicates:true});
 
@@ -164,6 +164,20 @@ Deno.serve(async(req:Request)=>{
       const {data,error}=await db.from('payment_requests').select('*').eq('user_id',userId).order('created_at',{ascending:false}).limit(100);
       if(error) throw error;
       return reply({requests:(data || []).map((row:any)=>view(row))});
+    }
+
+    if(input.action==='rotate-link') {
+      if(!uuid(input.id)) throw new Error('Invalid payment request.');
+      const {data:row,error}=await db.from('payment_requests').select('*').eq('id',input.id).eq('user_id',userId).maybeSingle();
+      if(error || !row) throw new Error('Payment request not found.');
+      if(['paid','cancelled'].includes(row.status)) throw new Error('This payment request can no longer be shared.');
+      if(new Date(row.expires_at).getTime()<Date.now()) throw new Error('This payment request has expired.');
+      const token=newToken(),tokenHash=await hashToken(token);
+      const {data:updated,error:updateError}=await db.from('payment_requests')
+        .update({public_token_hash:tokenHash,updated_at:new Date().toISOString()})
+        .eq('id',row.id).eq('user_id',userId).select('*').single();
+      if(updateError) throw new Error('Unable to create a new share link.');
+      return reply({request:view(updated),token});
     }
 
     if(input.action==='confirm') {
