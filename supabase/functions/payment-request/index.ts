@@ -189,7 +189,7 @@ Deno.serve(async(req:Request)=>{
       if(new Date(row.expires_at).getTime()<Date.now()) throw new Error('This payment request has expired.');
       const token=newToken(),tokenHash=await hashToken(token);
       const {data:updated,error:updateError}=await db.from('payment_requests')
-        .update({public_token_hash:tokenHash,updated_at:new Date().toISOString()})
+        .update({public_token_hash:tokenHash,expires_at:new Date(Date.now()+7*24*60*60*1000).toISOString(),updated_at:new Date().toISOString()})
         .eq('id',row.id).eq('user_id',userId).select('*').single();
       if(updateError) throw new Error('Unable to create a new share link.');
       return reply({request:view(updated),token});
@@ -233,7 +233,7 @@ Deno.serve(async(req:Request)=>{
       const {data:row,error}=await db.from('payment_requests').select('*').eq('id',input.id).eq('user_id',userId).maybeSingle();
       if(error || !row) throw new Error('Payment request not found.');
       if(row.status==='paid') throw new Error('A paid request cannot be cancelled.');
-      if(row.status==='cancelled') return reply({request:view(row)});
+      if(row.status==='cancelled') return reply({request:await ownerView(db,row)});
       if(row.report?.proof_path) {
         try { await db.storage.from('receipts').remove([row.report.proof_path]); } catch {}
       }
@@ -241,7 +241,7 @@ Deno.serve(async(req:Request)=>{
         .update({status:'cancelled',report:null,updated_at:new Date().toISOString()})
         .eq('id',row.id).eq('user_id',userId).select('*').single();
       if(updateError) throw new Error('Unable to cancel payment request.');
-      return reply({request:view(updated)});
+      return reply({request:await ownerView(db,updated)});
     }
 
     throw new Error('Unsupported Request Money action.');
