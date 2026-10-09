@@ -20579,7 +20579,7 @@ function createTransactionActivityRow(
     } else if (!transaction.linked_transfer_id && !transaction.recurring_id && transaction.type === "expense") {
         const splitButton = createTextButton("Split", "edit-button");
         splitButton.addEventListener("click", () => splitUI.start(transaction));
-        buttons.append(editButton, deleteButton, splitButton);
+        buttons.append(editButton, splitButton, deleteButton);
     } else if (!transaction.linked_transfer_id) {
 
         buttons.append(
