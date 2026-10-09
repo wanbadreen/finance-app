@@ -31133,8 +31133,170 @@ function renderDashboardBudgetSummary(
 
 
 // ======================================================
+// DASHBOARD MOBILE SECTION TOGGLES
+// ======================================================
+
+const DASHBOARD_SECTION_STATE_KEY =
+    "kira.dashboard.sections.v1";
+
+
+function getDashboardSectionState() {
+
+    try {
+
+        const stored =
+            JSON.parse(
+                localStorage.getItem(
+                    DASHBOARD_SECTION_STATE_KEY
+                )
+                ||
+                "{}"
+            );
+
+        return (
+            stored &&
+            typeof stored ===
+                "object"
+                ? stored
+                : {}
+        );
+
+    } catch {
+
+        return {};
+    }
+}
+
+
+function saveDashboardSectionState(
+    state
+) {
+
+    try {
+
+        localStorage.setItem(
+            DASHBOARD_SECTION_STATE_KEY,
+            JSON.stringify(
+                state
+            )
+        );
+
+    } catch {
+        // Local storage is optional; the UI still works without it.
+    }
+}
+
+
+function setDashboardSectionExpanded(
+    section,
+    expanded
+) {
+
+    if (!section) {
+        return;
+    }
+
+    const button =
+        section.querySelector(
+            "[data-dashboard-toggle]"
+        );
+
+    section.classList.toggle(
+        "is-collapsed",
+        !expanded
+    );
+
+    if (button) {
+
+        button.setAttribute(
+            "aria-expanded",
+            String(
+                expanded
+            )
+        );
+
+        button.textContent =
+            expanded
+                ? "Hide"
+                : "Show";
+    }
+}
+
+
+function initializeDashboardCollapsibleSections() {
+
+    const sections =
+        Array.from(
+            document.querySelectorAll(
+                "#dashboard-page [data-dashboard-section]"
+            )
+        );
+
+    if (!sections.length) {
+        return;
+    }
+
+    const state =
+        getDashboardSectionState();
+
+    sections.forEach(
+        function (
+            section
+        ) {
+
+            const key =
+                section.dataset
+                    .dashboardSection;
+
+            const saved =
+                typeof state[key] ===
+                    "boolean"
+                    ? state[key]
+                    : false;
+
+            setDashboardSectionExpanded(
+                section,
+                saved
+            );
+
+            const button =
+                section.querySelector(
+                    "[data-dashboard-toggle]"
+                );
+
+            button?.addEventListener(
+                "click",
+                function () {
+
+                    const expanded =
+                        section.classList
+                            .contains(
+                                "is-collapsed"
+                            );
+
+                    setDashboardSectionExpanded(
+                        section,
+                        expanded
+                    );
+
+                    state[key] =
+                        expanded;
+
+                    saveDashboardSectionState(
+                        state
+                    );
+                }
+            );
+        }
+    );
+}
+
+
+// ======================================================
 // INITIAL LOAD
 // ======================================================
+
+initializeDashboardCollapsibleSections();
 
 dateInput.value =
     getTodayDate();
