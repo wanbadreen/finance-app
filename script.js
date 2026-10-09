@@ -193,6 +193,12 @@ const balanceElement = document.getElementById("balance");
 const incomeElement = document.getElementById("income");
 const expensesElement = document.getElementById("expenses");
 
+const dashboardAccountBalances =
+    document.getElementById("dashboard-account-balances");
+
+const dashboardAccountList =
+    document.getElementById("dashboard-account-list");
+
 const setupChecklist =
     document.getElementById("setup-checklist");
 
@@ -22702,7 +22708,106 @@ function updateDashboard() {
 
     renderSetupChecklist();
 
+    renderDashboardAccountBalances();
+
     renderCreditCardDashboardSummary();
+}
+
+
+// ======================================================
+// DASHBOARD ACCOUNT BALANCES
+// ======================================================
+
+function renderDashboardAccountBalances() {
+
+    if (
+        !dashboardAccountBalances ||
+        !dashboardAccountList
+    ) {
+        return;
+    }
+
+    const activeAccounts =
+        accounts.filter(
+            account =>
+                account.is_active &&
+                account.account_type !==
+                    "credit_card"
+        );
+
+    dashboardAccountBalances.hidden =
+        activeAccounts.length ===
+        0;
+
+    dashboardAccountList.innerHTML =
+        "";
+
+    activeAccounts.forEach(
+        function (account) {
+
+            const card =
+                document.createElement(
+                    "button"
+                );
+
+            card.type =
+                "button";
+
+            card.className =
+                "dashboard-account-card";
+
+            const name =
+                document.createElement(
+                    "strong"
+                );
+
+            name.textContent =
+                account.name;
+
+            const type =
+                document.createElement(
+                    "span"
+                );
+
+            type.textContent =
+                formatAccountType(
+                    account.account_type
+                );
+
+            const balance =
+                document.createElement(
+                    "b"
+                );
+
+            balance.textContent =
+                formatMoney(
+                    calculateAccountBalance(
+                        account.id
+                    )
+                );
+
+            card.append(
+                name,
+                type,
+                balance
+            );
+
+            card.addEventListener(
+                "click",
+                function () {
+
+                    navigateToPage(
+                        "accounts"
+                    );
+                }
+            );
+
+            dashboardAccountList
+                .appendChild(
+                    card
+                );
+        }
+    );
 }
 
 
