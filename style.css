@@ -6270,6 +6270,67 @@ body[data-theme="dark"] .savings-movement-row {
 }
 
 
+/* Compact transaction-card actions on mobile.
+   Keep the amount at the top-right and move actions into one row
+   below the transaction details instead of stacking them vertically. */
+@media (max-width: 760px) {
+
+    .transaction {
+        padding: 14px 13px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 8px 12px;
+    }
+
+    .transaction-info {
+        grid-column: 1;
+        grid-row: 1;
+        min-width: 0;
+    }
+
+    .transaction-actions {
+        display: contents;
+    }
+
+    .transaction-amount {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: start;
+        justify-self: end;
+        margin-top: 1px;
+    }
+
+    .transaction .action-buttons {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+        margin-top: 2px;
+        padding-top: 9px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 7px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .transaction .action-buttons:empty {
+        display: none;
+    }
+
+    .transaction .action-buttons button {
+        flex: 0 0 auto;
+        min-height: 40px;
+        padding: 0 12px;
+        font-size: 10px;
+    }
+
+    .transaction .delete-permanently-button {
+        flex-basis: auto !important;
+    }
+}
+
+
 /* ======================================================
    RECENT RECURRING ACTIVITY
 ====================================================== */
