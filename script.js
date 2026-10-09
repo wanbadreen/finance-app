@@ -20210,7 +20210,10 @@ function createTransactionActivityRow(
         buttons.append(openRequest);
         const requestNote = document.createElement("p");
         requestNote.className = "transaction-date";
-        requestNote.textContent = "Request Money · Repayment · Excluded from income reporting";
+        const requestIsIncome = Number(transaction.report_amount || 0) > 0;
+        requestNote.textContent = requestIsIncome
+            ? "Request Money · Income · Included in income reporting"
+            : "Request Money · Repayment · Excluded from income reporting";
         left.append(requestNote);
     } else if (transaction.split_bill_id) {
         const openSplit = createTextButton("Open Split", "edit-button");
