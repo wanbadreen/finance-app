@@ -965,6 +965,115 @@ a {
 
 
 /* ======================================================
+   DASHBOARD ACCOUNTS
+====================================================== */
+
+.dashboard-accounts-section {
+    margin-top: 22px;
+}
+
+.dashboard-account-list {
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.dashboard-account-card {
+    min-width: 0;
+    padding: 14px 15px;
+    display: grid;
+    gap: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+}
+
+.dashboard-account-card:hover {
+    border-color: var(--border-strong);
+    background-color: var(--surface-muted);
+}
+
+.dashboard-account-card:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    border-color: var(--accent);
+}
+
+.dashboard-account-card strong {
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-account-card span {
+    color: var(--text-muted);
+    font-size: 9px;
+}
+
+.dashboard-account-card b {
+    margin-top: 6px;
+    overflow: hidden;
+    font-size: 16px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+
+    .dashboard-account-list {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+
+    .dashboard-accounts-section {
+        margin-top: 18px;
+    }
+
+    .dashboard-account-list {
+        display: flex;
+        gap: 9px;
+        overflow-x: auto;
+        padding-bottom: 3px;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .dashboard-account-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    .dashboard-account-card {
+        width: min(44vw, 178px);
+        min-width: min(44vw, 178px);
+        padding: 13px 14px;
+        scroll-snap-align: start;
+    }
+
+    .dashboard-account-card strong {
+        font-size: 11px;
+    }
+
+    .dashboard-account-card span {
+        font-size: 9px;
+    }
+
+    .dashboard-account-card b {
+        font-size: 15px;
+    }
+}
+
+
+/* ======================================================
    SPENDING ANALYTICS
 ====================================================== */
 
