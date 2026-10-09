@@ -908,6 +908,21 @@ const transactionSortSelect =
 const resetTransactionFiltersButton =
     document.getElementById("reset-transaction-filters");
 
+const transactionFilterToggle =
+    document.getElementById("transaction-filter-toggle");
+
+const transactionFilterDialog =
+    document.getElementById("transaction-filter-dialog");
+
+const transactionFilterCount =
+    document.getElementById("transaction-filter-count");
+
+const transactionActiveFilters =
+    document.getElementById("transaction-active-filters");
+
+const applyTransactionFiltersButton =
+    document.getElementById("apply-transaction-filters");
+
 const transactionFilterSummary =
     document.getElementById("transaction-filter-summary");
 
@@ -19328,6 +19343,344 @@ function populateTransactionFilterOptions() {
 }
 
 
+function getSelectedFilterLabel(
+    select
+) {
+
+    if (!select) {
+        return "";
+    }
+
+    return (
+        select.selectedOptions?.[0]?.textContent
+        ||
+        ""
+    ).trim();
+}
+
+
+function formatTransactionFilterMonth(
+    value
+) {
+
+    if (!/^\d{4}-\d{2}$/.test(
+        String(value || "")
+    )) {
+        return String(value || "");
+    }
+
+    const [
+        year,
+        month
+    ] =
+        value.split("-")
+            .map(Number);
+
+    return new Date(
+        year,
+        month - 1,
+        1
+    ).toLocaleDateString(
+        "en-MY",
+        {
+            month:
+                "short",
+            year:
+                "numeric"
+        }
+    );
+}
+
+
+function getTransactionActiveFilterDescriptors() {
+
+    const descriptors =
+        [];
+
+    if (
+        transactionFilterType?.value &&
+        transactionFilterType.value !==
+            "all"
+    ) {
+
+        descriptors.push({
+            key:
+                "type",
+            label:
+                getSelectedFilterLabel(
+                    transactionFilterType
+                )
+        });
+    }
+
+    if (
+        transactionFilterAccount?.value &&
+        transactionFilterAccount.value !==
+            "all"
+    ) {
+
+        descriptors.push({
+            key:
+                "account",
+            label:
+                getSelectedFilterLabel(
+                    transactionFilterAccount
+                )
+        });
+    }
+
+    if (
+        transactionFilterCategory?.value &&
+        transactionFilterCategory.value !==
+            "all"
+    ) {
+
+        descriptors.push({
+            key:
+                "category",
+            label:
+                getSelectedFilterLabel(
+                    transactionFilterCategory
+                )
+        });
+    }
+
+    if (
+        transactionFilterTag?.value &&
+        transactionFilterTag.value !==
+            "all"
+    ) {
+
+        descriptors.push({
+            key:
+                "tag",
+            label:
+                getSelectedFilterLabel(
+                    transactionFilterTag
+                )
+        });
+    }
+
+    if (
+        transactionFilterPaymentMethod?.value &&
+        transactionFilterPaymentMethod.value !==
+            "all"
+    ) {
+
+        descriptors.push({
+            key:
+                "paymentMethod",
+            label:
+                getSelectedFilterLabel(
+                    transactionFilterPaymentMethod
+                )
+        });
+    }
+
+    if (
+        transactionFilterMonth?.value
+    ) {
+
+        descriptors.push({
+            key:
+                "month",
+            label:
+                formatTransactionFilterMonth(
+                    transactionFilterMonth.value
+                )
+        });
+    }
+
+    if (
+        transactionFilterFromDate?.value ||
+        transactionFilterToDate?.value
+    ) {
+
+        const fromLabel =
+            transactionFilterFromDate?.value
+                ? formatDate(
+                    transactionFilterFromDate.value
+                )
+                : "Any date";
+
+        const toLabel =
+            transactionFilterToDate?.value
+                ? formatDate(
+                    transactionFilterToDate.value
+                )
+                : "Any date";
+
+        descriptors.push({
+            key:
+                "dateRange",
+            label:
+                `${fromLabel} – ${toLabel}`
+        });
+    }
+
+    return descriptors;
+}
+
+
+function clearTransactionActiveFilter(
+    key
+) {
+
+    if (
+        key === "type" &&
+        transactionFilterType
+    ) {
+        transactionFilterType.value =
+            "all";
+    }
+
+    if (
+        key === "account" &&
+        transactionFilterAccount
+    ) {
+        transactionFilterAccount.value =
+            "all";
+    }
+
+    if (
+        key === "category" &&
+        transactionFilterCategory
+    ) {
+        transactionFilterCategory.value =
+            "all";
+    }
+
+    if (
+        key === "tag" &&
+        transactionFilterTag
+    ) {
+        transactionFilterTag.value =
+            "all";
+    }
+
+    if (
+        key === "paymentMethod" &&
+        transactionFilterPaymentMethod
+    ) {
+        transactionFilterPaymentMethod.value =
+            "all";
+    }
+
+    if (
+        key === "month" &&
+        transactionFilterMonth
+    ) {
+        transactionFilterMonth.value =
+            "";
+    }
+
+    if (
+        key === "dateRange"
+    ) {
+
+        if (transactionFilterFromDate) {
+            transactionFilterFromDate.value =
+                "";
+        }
+
+        if (transactionFilterToDate) {
+            transactionFilterToDate.value =
+                "";
+        }
+    }
+
+    showAllTransactions =
+        false;
+
+    renderTransactions();
+}
+
+
+function updateTransactionCompactFilterUi() {
+
+    const descriptors =
+        getTransactionActiveFilterDescriptors();
+
+    if (transactionFilterCount) {
+
+        transactionFilterCount.textContent =
+            String(
+                descriptors.length
+            );
+
+        transactionFilterCount.hidden =
+            descriptors.length ===
+                0;
+    }
+
+    if (transactionFilterToggle) {
+
+        transactionFilterToggle.classList.toggle(
+            "active",
+            descriptors.length >
+                0
+        );
+    }
+
+    if (!transactionActiveFilters) {
+        return;
+    }
+
+    transactionActiveFilters.innerHTML =
+        "";
+
+    transactionActiveFilters.hidden =
+        descriptors.length ===
+            0;
+
+    descriptors.forEach(
+        function (
+            descriptor
+        ) {
+
+            const chip =
+                document.createElement(
+                    "button"
+                );
+
+            chip.type =
+                "button";
+
+            chip.className =
+                "transaction-active-filter-chip";
+
+            chip.dataset.filterKey =
+                descriptor.key;
+
+            chip.innerHTML =
+                `<span></span><span aria-hidden="true">×</span>`;
+
+            chip.firstElementChild.textContent =
+                descriptor.label;
+
+            chip.setAttribute(
+                "aria-label",
+                `Remove filter ${descriptor.label}`
+            );
+
+            chip.addEventListener(
+                "click",
+                function () {
+
+                    clearTransactionActiveFilter(
+                        descriptor.key
+                    );
+                }
+            );
+
+            transactionActiveFilters.appendChild(
+                chip
+            );
+        }
+    );
+}
+
+
 function getFilteredTransactions() {
 
     const searchTerm =
@@ -20504,6 +20857,8 @@ function renderTransactions() {
 
     populateTransactionFilterOptions();
 
+    updateTransactionCompactFilterUi();
+
     const totalActivityCount =
         transactions.length +
         transfers.length;
@@ -20822,6 +21177,70 @@ resetTransactionFiltersButton
     ?.addEventListener(
         "click",
         resetTransactionFilters
+    );
+
+
+transactionFilterToggle
+    ?.addEventListener(
+        "click",
+        function () {
+
+            if (
+                transactionFilterDialog &&
+                !transactionFilterDialog.open
+            ) {
+                transactionFilterDialog.showModal();
+            }
+        }
+    );
+
+
+document
+    .querySelectorAll(
+        "[data-transaction-filter-close]"
+    )
+    .forEach(
+        function (
+            button
+        ) {
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    transactionFilterDialog
+                        ?.close();
+                }
+            );
+        }
+    );
+
+
+applyTransactionFiltersButton
+    ?.addEventListener(
+        "click",
+        function () {
+
+            transactionFilterDialog
+                ?.close();
+        }
+    );
+
+
+transactionFilterDialog
+    ?.addEventListener(
+        "click",
+        function (
+            event
+        ) {
+
+            if (
+                event.target ===
+                    transactionFilterDialog
+            ) {
+                transactionFilterDialog.close();
+            }
+        }
     );
 
 

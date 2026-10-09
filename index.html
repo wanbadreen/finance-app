@@ -1102,22 +1102,80 @@
 
                         <div class="transaction-tools">
 
-                            <div class="transaction-search-row">
+                            <input
+                                type="search"
+                                id="transaction-search"
+                                class="transaction-search-input"
+                                placeholder="Search transactions..."
+                                autocomplete="off"
+                            >
 
-                                <input
-                                    type="search"
-                                    id="transaction-search"
-                                    class="transaction-search-input"
-                                    placeholder="Search description, notes, account, category or tag..."
-                                    autocomplete="off"
-                                >
+                            <div class="transaction-compact-controls">
 
                                 <button
                                     type="button"
-                                    id="reset-transaction-filters"
-                                    class="transaction-reset-button"
+                                    id="transaction-filter-toggle"
+                                    class="transaction-filter-toggle"
+                                    aria-haspopup="dialog"
+                                    aria-controls="transaction-filter-dialog"
                                 >
-                                    Reset
+                                    <span>⚙ Filters</span>
+                                    <span
+                                        id="transaction-filter-count"
+                                        class="transaction-filter-count"
+                                        hidden
+                                    >0</span>
+                                </button>
+
+                                <label class="transaction-sort-compact">
+                                    <span class="sr-only">Sort transactions</span>
+                                    <select id="transaction-sort">
+                                        <option value="newest">Newest First</option>
+                                        <option value="oldest">Oldest First</option>
+                                        <option value="highest">Highest Amount</option>
+                                        <option value="lowest">Lowest Amount</option>
+                                    </select>
+                                </label>
+
+                            </div>
+
+                            <div
+                                id="transaction-active-filters"
+                                class="transaction-active-filters"
+                                aria-live="polite"
+                            ></div>
+
+                            <p
+                                id="transaction-filter-summary"
+                                class="transaction-filter-summary"
+                            ></p>
+
+                        </div>
+
+                        <dialog
+                            id="transaction-filter-dialog"
+                            class="transaction-filter-dialog"
+                            aria-labelledby="transaction-filter-dialog-title"
+                        >
+
+                            <div class="transaction-filter-dialog-header">
+
+                                <div>
+                                    <h2 id="transaction-filter-dialog-title">
+                                        Filters
+                                    </h2>
+                                    <p>
+                                        Refine the transactions shown below.
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="transaction-filter-close"
+                                    data-transaction-filter-close
+                                    aria-label="Close filters"
+                                >
+                                    ×
                                 </button>
 
                             </div>
@@ -1187,24 +1245,29 @@
                                     >
                                 </label>
 
-                                <label class="transaction-filter-field">
-                                    <span>Sort</span>
-                                    <select id="transaction-sort">
-                                        <option value="newest">Newest First</option>
-                                        <option value="oldest">Oldest First</option>
-                                        <option value="highest">Highest Amount</option>
-                                        <option value="lowest">Lowest Amount</option>
-                                    </select>
-                                </label>
+                            </div>
+
+                            <div class="transaction-filter-dialog-actions">
+
+                                <button
+                                    type="button"
+                                    id="reset-transaction-filters"
+                                    class="transaction-reset-button"
+                                >
+                                    Reset
+                                </button>
+
+                                <button
+                                    type="button"
+                                    id="apply-transaction-filters"
+                                    class="primary-button"
+                                >
+                                    Apply Filters
+                                </button>
 
                             </div>
 
-                            <p
-                                id="transaction-filter-summary"
-                                class="transaction-filter-summary"
-                            ></p>
-
-                        </div>
+                        </dialog>
 
 
                         <div id="transaction-list"></div>
