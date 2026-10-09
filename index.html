@@ -722,10 +722,64 @@
 
 
                     <!-- =============================================
+                         DASHBOARD RECENT TRANSACTIONS PLACEHOLDER
+                    ============================================== -->
+
+                    <section id="dashboard-recent-section" class="dashboard-section">
+
+
+                        <div class="section-heading">
+
+
+                            <div>
+
+                                <h2>
+                                    Recent Transactions
+                                </h2>
+
+
+                                <p class="section-subtitle">
+                                    Latest financial activity
+                                </p>
+
+                            </div>
+
+
+                            <a
+                                href="#transactions-page"
+                                id="dashboard-view-all-transactions"
+                                class="section-link"
+                                data-page="transactions"
+                            >
+                                View All
+                            </a>
+
+
+                        </div>
+
+
+                        <div
+                            id="dashboard-recent-transactions"
+                            class="dashboard-placeholder"
+                        >
+
+                            Recent transaction preview will be connected in the next navigation step.
+
+                        </div>
+
+
+                    </section>
+
+
+                </section>
+
+
+
+                    <!-- =============================================
                          SPENDING ANALYTICS
                     ============================================== -->
 
-                    <section class="spending-analytics-section">
+                    <section id="dashboard-spending-section" class="spending-analytics-section">
 
 
                         <div class="section-heading">
@@ -837,49 +891,54 @@
 
 
                     <!-- =============================================
-                         DASHBOARD BUDGET SUMMARY PLACEHOLDER
+                         DASHBOARD BUDGET SUMMARY
                     ============================================== -->
 
-                    <section class="dashboard-section">
-
+                    <section
+                        id="dashboard-budget-section"
+                        class="dashboard-section dashboard-collapsible-section is-collapsed"
+                        data-dashboard-section="budget"
+                    >
 
                         <div class="section-heading">
 
-
                             <div>
-
-                                <h2>
-                                    Budget Summary
-                                </h2>
-
-
+                                <h2>Budget Summary</h2>
                                 <p class="section-subtitle">
                                     Monthly spending progress
                                 </p>
-
                             </div>
 
+                            <div class="dashboard-section-actions">
+                                <a
+                                    href="#budgets-page"
+                                    class="section-link"
+                                >
+                                    View Budgets
+                                </a>
 
-                            <a
-                                href="#budgets-page"
-                                class="section-link"
+                                <button
+                                    type="button"
+                                    class="dashboard-collapse-toggle"
+                                    data-dashboard-toggle="budget"
+                                    aria-expanded="false"
+                                >
+                                    Show
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <div class="dashboard-collapsible-body">
+
+                            <div
+                                id="dashboard-budget-summary"
+                                class="dashboard-placeholder"
                             >
-                                View Budgets
-                            </a>
-
-
-                        </div>
-
-
-                        <div
-                            id="dashboard-budget-summary"
-                            class="dashboard-placeholder"
-                        >
-
-                            Your detailed budgets are available in the Budgets page.
+                                Your detailed budgets are available in the Budgets page.
+                            </div>
 
                         </div>
-
 
                     </section>
 
@@ -888,41 +947,55 @@
                          DASHBOARD UPCOMING COMMITMENTS
                     ============================================== -->
 
-                    <section class="dashboard-section">
+                    <section
+                        id="dashboard-upcoming-section"
+                        class="dashboard-section dashboard-collapsible-section is-collapsed"
+                        data-dashboard-section="upcoming"
+                    >
 
                         <div class="section-heading">
 
                             <div>
-
-                                <h2>
-                                    Upcoming Commitments
-                                </h2>
-
+                                <h2>Upcoming Commitments</h2>
                                 <p class="section-subtitle">
                                     Recurring payments and income due soon
                                 </p>
-
-                                <p class="upcoming-status-note">
-                                    Status tracks the commitment only. Use Log Payment to add it to Transactions.
-                                </p>
-
                             </div>
 
-                            <a
-                                href="#recurring-page"
-                                class="section-link"
-                                data-page="recurring"
-                            >
-                                View Schedule
-                            </a>
+                            <div class="dashboard-section-actions">
+                                <a
+                                    href="#recurring-page"
+                                    class="section-link"
+                                    data-page="recurring"
+                                >
+                                    View Schedule
+                                </a>
+
+                                <button
+                                    type="button"
+                                    class="dashboard-collapse-toggle"
+                                    data-dashboard-toggle="upcoming"
+                                    aria-expanded="false"
+                                >
+                                    Show
+                                </button>
+                            </div>
 
                         </div>
 
-                        <div
-                            id="dashboard-upcoming-commitments"
-                            class="dashboard-placeholder"
-                        >
-                            No upcoming recurring items yet.
+                        <div class="dashboard-collapsible-body">
+
+                            <p class="upcoming-status-note">
+                                Status tracks the commitment only. Use Log Payment to add it to Transactions.
+                            </p>
+
+                            <div
+                                id="dashboard-upcoming-commitments"
+                                class="dashboard-placeholder"
+                            >
+                                No upcoming recurring items yet.
+                            </div>
+
                         </div>
 
                     </section>
@@ -932,94 +1005,54 @@
                          DASHBOARD SMART INSIGHTS
                     ============================================== -->
 
-                    <section class="dashboard-section">
+                    <section
+                        id="dashboard-smart-insights-section"
+                        class="dashboard-section dashboard-collapsible-section is-collapsed"
+                        data-dashboard-section="insights"
+                    >
 
                         <div class="section-heading">
 
                             <div>
-
-                                <h2>
-                                    Smart Insights
-                                </h2>
-
+                                <h2>Smart Insights</h2>
                                 <p class="section-subtitle">
                                     Quick observations from your latest finance data
                                 </p>
-
                             </div>
 
-                            <a
-                                href="#insights-page"
-                                class="section-link"
-                                data-page="insights"
-                            >
-                                View Insights
-                            </a>
+                            <div class="dashboard-section-actions">
+                                <a
+                                    href="#insights-page"
+                                    class="section-link"
+                                    data-page="insights"
+                                >
+                                    View Insights
+                                </a>
+
+                                <button
+                                    type="button"
+                                    class="dashboard-collapse-toggle"
+                                    data-dashboard-toggle="insights"
+                                    aria-expanded="false"
+                                >
+                                    Show
+                                </button>
+                            </div>
 
                         </div>
 
-                        <div
-                            id="dashboard-insights-preview"
-                            class="dashboard-insights-preview"
-                        >
-                            Add more transactions to unlock smart insights.
+                        <div class="dashboard-collapsible-body">
+
+                            <div
+                                id="dashboard-insights-preview"
+                                class="dashboard-insights-preview"
+                            >
+                                Add more transactions to unlock smart insights.
+                            </div>
+
                         </div>
 
                     </section>
-
-
-                    <!-- =============================================
-                         DASHBOARD RECENT TRANSACTIONS PLACEHOLDER
-                    ============================================== -->
-
-                    <section class="dashboard-section">
-
-
-                        <div class="section-heading">
-
-
-                            <div>
-
-                                <h2>
-                                    Recent Transactions
-                                </h2>
-
-
-                                <p class="section-subtitle">
-                                    Latest financial activity
-                                </p>
-
-                            </div>
-
-
-                            <a
-                                href="#transactions-page"
-                                id="dashboard-view-all-transactions"
-                                class="section-link"
-                                data-page="transactions"
-                            >
-                                View All
-                            </a>
-
-
-                        </div>
-
-
-                        <div
-                            id="dashboard-recent-transactions"
-                            class="dashboard-placeholder"
-                        >
-
-                            Recent transaction preview will be connected in the next navigation step.
-
-                        </div>
-
-
-                    </section>
-
-
-                </section>
-
 
 
                 <!-- =================================================
