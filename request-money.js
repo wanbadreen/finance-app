@@ -132,25 +132,40 @@ export function mountRequestMoneyUI(context) {
     const accounts=(context.get()?.accounts || []).filter(account=>account.is_active!==false);
     if(!accounts.length) throw new Error('Create an active account first.');
     const d=openDialog(request.status==='reported' ? 'Confirm payment received' : 'Mark request as paid',`
-      <p>You are recording <strong>${money(request.amount)}</strong> as a repayment. It will increase account cash but stay excluded from income reporting.</p>
+      <p>Record where the <strong>${money(request.amount)}</strong> was received and how Kira should treat it.</p>
       <form>
         <label>Received into
           <select name="accountId" required>${accountOptions(accounts[0]?.id)}</select>
         </label>
+        <label>Type
+          <select name="settlementType" required>
+            <option value="repayment">Repayment — exclude from income reporting</option>
+            <option value="income">Income — include in income reporting</option>
+          </select>
+        </label>
+        <p class="request-muted" data-treatment-note>Repayment increases the selected account balance without increasing reported income.</p>
         <label>Date received
           <input name="date" type="date" value="${today()}" required>
         </label>
         <button type="submit" class="request-money-button primary">Confirm & Record</button>
       </form>
     `);
-    d.querySelector('form').onsubmit=event=>{
+    const form=d.querySelector('form');
+    const treatment=form.elements.settlementType;
+    const treatmentNote=d.querySelector('[data-treatment-note]');
+    treatment.onchange=()=>{
+      treatmentNote.textContent=treatment.value==='income'
+        ? 'Income increases the selected account balance and is included in income reporting.'
+        : 'Repayment increases the selected account balance without increasing reported income.';
+    };
+    form.onsubmit=event=>{
       event.preventDefault();
       busy(d,async()=>{
-        const form=event.currentTarget;
         await paymentRequest({
           action:'confirm',
           id:request.id,
           accountId:form.elements.accountId.value,
+          settlementType:form.elements.settlementType.value,
           date:form.elements.date.value
         });
         d.close();
@@ -187,6 +202,7 @@ export function mountRequestMoneyUI(context) {
           </div>
           ${request.note ? `<p>${esc(request.note)}</p>` : ''}
           ${report}${proof}
+          ${request.status==='paid' && request.settlementType ? `<p class="request-muted">Recorded as ${request.settlementType==='income'?'Income':'Repayment'}.</p>` : ''}
           <p class="request-muted">Created ${new Date(request.createdAt).toLocaleString()} · Expires ${new Date(request.expiresAt).toLocaleDateString()}</p>
           <div class="request-money-actions">
             ${canShare ? '<button type="button" class="request-money-button" data-action="share">New Share Link</button>' : ''}

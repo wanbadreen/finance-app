@@ -76,6 +76,7 @@ function view(row:any,qr:string|null=null) {
     expiresAt:row.expires_at,
     report,
     transactionId:row.transaction_id || null,
+    settlementType:row.settlement_type || null,
     createdAt:row.created_at,
     qrUrl:qr
   };
@@ -198,6 +199,8 @@ Deno.serve(async(req:Request)=>{
     if(input.action==='confirm') {
       if(!uuid(input.id) || !uuid(input.accountId)) throw new Error('Choose a valid account.');
       const date=/^\d{4}-\d{2}-\d{2}$/.test(input.date || '') ? input.date : new Date().toISOString().slice(0,10);
+      const settlementType=['income','repayment'].includes(input.settlementType) ? input.settlementType : null;
+      if(!settlementType) throw new Error('Choose Income or Repayment.');
       const {data:row}=await db.from('payment_requests').select('*').eq('id',input.id).eq('user_id',userId).maybeSingle();
       if(!row) throw new Error('Payment request not found.');
 
@@ -205,7 +208,8 @@ Deno.serve(async(req:Request)=>{
         p_id:input.id,
         p_owner:userId,
         p_account:input.accountId,
-        p_date:date
+        p_date:date,
+        p_settlement_type:settlementType
       });
       if(error) throw new Error(error.message || 'Unable to confirm payment.');
 
