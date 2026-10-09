@@ -10987,3 +10987,453 @@ body[data-theme="dark"] .setup-checklist-progress-label {
         grid-template-columns: 1fr 1fr;
     }
 }
+
+
+/* ======================================================
+   DASHBOARD UI CONSOLIDATION
+====================================================== */
+
+#dashboard-page {
+    max-width: 980px;
+}
+
+.dashboard-quick-actions-section {
+    margin-top: 20px;
+}
+
+.dashboard-inline-link-button {
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #2563eb;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dashboard-inline-link-button:hover {
+    background: transparent;
+    text-decoration: underline;
+}
+
+.dashboard-quick-actions {
+    display: grid;
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.dashboard-quick-action {
+    min-width: 0;
+    min-height: 64px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.dashboard-quick-action:hover {
+    border-color: var(--border-strong);
+    background-color: var(--surface-muted);
+}
+
+.dashboard-quick-action:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    border-color: var(--accent);
+}
+
+.dashboard-quick-action-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background-color: var(--surface-muted);
+    color: var(--text-primary);
+    font-size: 16px;
+    line-height: 1;
+}
+
+.dashboard-recent-section,
+.dashboard-spending-section,
+.dashboard-overview-section {
+    margin-top: 24px;
+}
+
+.dashboard-spending-card {
+    padding: 18px;
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 18px;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    background-color: var(--card-bg);
+}
+
+.dashboard-spending-main {
+    min-width: 0;
+}
+
+.dashboard-spending-main > span {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.dashboard-spending-main > strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: 27px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+}
+
+.dashboard-spending-change {
+    min-width: 190px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background-color: var(--surface-muted);
+    text-align: right;
+}
+
+.dashboard-spending-change p {
+    margin: 0 0 3px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.dashboard-spending-change span {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.dashboard-spending-change.positive {
+    background-color: var(--success-surface);
+}
+
+.dashboard-spending-change.positive p {
+    color: var(--success-text);
+}
+
+.dashboard-spending-change.negative {
+    background-color: var(--danger-surface);
+}
+
+.dashboard-spending-change.negative p {
+    color: var(--danger-text);
+}
+
+.dashboard-spending-change.neutral {
+    background-color: var(--surface-muted);
+}
+
+.dashboard-credit-card-section {
+    margin-top: 24px;
+}
+
+.dashboard-credit-card-section .credit-card-dashboard-totals {
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.dashboard-card-metric {
+    min-width: 0;
+    padding: 14px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background-color: var(--card-bg);
+}
+
+.dashboard-card-metric span {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.dashboard-card-metric strong {
+    display: block;
+    overflow: hidden;
+    color: var(--text-primary);
+    font-size: 18px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-credit-card-section .credit-card-dashboard-list {
+    gap: 8px;
+}
+
+.dashboard-credit-card-section .credit-card-dashboard-row {
+    padding: 12px 14px;
+    border-radius: 12px;
+}
+
+.dashboard-credit-card-section .credit-card-dashboard-row strong {
+    font-size: 12px;
+}
+
+.dashboard-credit-card-section .credit-card-dashboard-row span {
+    font-size: 10px;
+}
+
+.dashboard-overview-list {
+    display: grid;
+    gap: 9px;
+}
+
+.dashboard-overview-card {
+    min-width: 0;
+    padding: 14px 15px;
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.dashboard-overview-card:hover {
+    border-color: var(--border-strong);
+    background-color: var(--surface-muted);
+}
+
+.dashboard-overview-card:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    border-color: var(--accent);
+}
+
+.dashboard-overview-copy {
+    min-width: 0;
+}
+
+.dashboard-overview-copy > strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.dashboard-overview-summary {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 10px;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.dashboard-overview-summary > strong {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--text-secondary);
+    font-size: 10px;
+}
+
+.dashboard-overview-summary > span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 9px;
+}
+
+.dashboard-overview-arrow {
+    color: var(--text-muted);
+    font-size: 24px;
+    line-height: 1;
+}
+
+#dashboard-recent-transactions {
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+#dashboard-recent-transactions .empty-state {
+    border-radius: 14px;
+}
+
+@media (max-width: 760px) {
+
+    #dashboard-page {
+        max-width: none;
+    }
+
+    #dashboard-page .balance-card {
+        padding: 21px;
+    }
+
+    #dashboard-page .balance-card h2 {
+        font-size: 31px;
+    }
+
+    #dashboard-page .summary-grid {
+        margin-top: 10px;
+        gap: 9px;
+    }
+
+    #dashboard-page .summary-card {
+        padding: 14px;
+    }
+
+    #dashboard-page .summary-card p {
+        margin-bottom: 5px;
+        font-size: 10px;
+    }
+
+    #dashboard-page .summary-card h3 {
+        font-size: 17px;
+    }
+
+    .dashboard-quick-actions-section {
+        margin-top: 18px;
+    }
+
+    .dashboard-quick-actions {
+        gap: 8px;
+    }
+
+    .dashboard-quick-action {
+        min-height: 58px;
+        padding: 9px 7px;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 9px;
+        line-height: 1.15;
+        text-align: center;
+    }
+
+    .dashboard-quick-action-icon {
+        width: 26px;
+        height: 26px;
+        font-size: 14px;
+    }
+
+    #dashboard-page .section-heading {
+        margin-bottom: 10px;
+        align-items: center;
+    }
+
+    #dashboard-page .section-heading h2 {
+        font-size: 15px;
+    }
+
+    #dashboard-page .section-subtitle {
+        margin-top: 2px;
+        font-size: 10px;
+    }
+
+    #dashboard-page .section-link,
+    #dashboard-page .dashboard-inline-link-button {
+        font-size: 10px;
+    }
+
+    .dashboard-accounts-section,
+    .dashboard-recent-section,
+    .dashboard-spending-section,
+    .dashboard-credit-card-section,
+    .dashboard-overview-section {
+        margin-top: 20px;
+    }
+
+    .dashboard-spending-card {
+        padding: 15px;
+        grid-template-columns: 1fr;
+        gap: 11px;
+    }
+
+    .dashboard-spending-main > strong {
+        font-size: 24px;
+    }
+
+    .dashboard-spending-change {
+        min-width: 0;
+        padding: 10px 11px;
+        text-align: left;
+    }
+
+    .dashboard-credit-card-section .credit-card-dashboard-totals {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .dashboard-card-metric {
+        padding: 12px;
+    }
+
+    .dashboard-card-metric span {
+        font-size: 9px;
+    }
+
+    .dashboard-card-metric strong {
+        font-size: 15px;
+    }
+
+    .dashboard-credit-card-section .credit-card-dashboard-row {
+        padding: 11px 12px;
+    }
+
+    .dashboard-overview-card {
+        padding: 13px;
+    }
+
+    .dashboard-overview-copy > strong {
+        font-size: 11px;
+    }
+
+    .dashboard-overview-summary {
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 430px) {
+
+    .dashboard-quick-action {
+        min-height: 56px;
+        font-size: 8.5px;
+    }
+
+    .dashboard-account-card {
+        width: min(46vw, 170px);
+        min-width: min(46vw, 170px);
+    }
+
+    .dashboard-credit-card-section .credit-card-dashboard-row {
+        grid-template-columns:
+            minmax(0, 1fr) auto;
+        gap: 10px;
+    }
+
+    .dashboard-credit-card-section .credit-card-dashboard-row .amount {
+        max-width: 120px;
+    }
+}

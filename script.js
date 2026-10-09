@@ -199,6 +199,9 @@ const dashboardAccountBalances =
 const dashboardAccountList =
     document.getElementById("dashboard-account-list");
 
+const dashboardTransferAction =
+    document.getElementById("dashboard-transfer-action");
+
 const setupChecklist =
     document.getElementById("setup-checklist");
 
@@ -4573,6 +4576,7 @@ function renderCreditCardDashboardSummary() {
         0;
 
     if (!activeCards.length) {
+
         dashboardCreditCardTotals.innerHTML =
             "";
 
@@ -4615,51 +4619,17 @@ function renderCreditCardDashboardSummary() {
             totalOutstanding
         );
 
-    const utilisation =
-        totalLimit >
-        0
-            ? (
-                totalOutstanding /
-                totalLimit
-            ) *
-                100
-            : 0;
-
     dashboardCreditCardTotals.innerHTML =
-        [
-            [
-                "Total Card Debt",
-                formatMoney(
-                    totalOutstanding
-                ),
-                "Across active cards"
-            ],
-            [
-                "Available Credit",
-                formatMoney(
-                    totalAvailable
-                ),
-                `of ${formatMoney(totalLimit)} total limit`
-            ],
-            [
-                "Overall Utilisation",
-                `${utilisation.toFixed(1)}%`,
-                "Outstanding ÷ credit limits"
-            ]
-        ]
-            .map(
-                item =>
-                    `
-                        <article class="credit-card-dashboard-total">
-                            <span>${item[0]}</span>
-                            <strong>${item[1]}</strong>
-                            <p>${item[2]}</p>
-                        </article>
-                    `
-            )
-            .join(
-                ""
-            );
+        `
+            <article class="dashboard-card-metric">
+                <span>Outstanding</span>
+                <strong>${formatMoney(totalOutstanding)}</strong>
+            </article>
+            <article class="dashboard-card-metric">
+                <span>Available Credit</span>
+                <strong>${formatMoney(totalAvailable)}</strong>
+            </article>
+        `;
 
     dashboardCreditCardList.innerHTML =
         "";
@@ -4694,7 +4664,7 @@ function renderCreditCardDashboardSummary() {
         )
         .slice(
             0,
-            4
+            2
         )
         .forEach(
             function (card) {
@@ -12845,14 +12815,9 @@ function renderFinancialCalendar() {
 
 function renderDashboardUpcomingCommitments() {
 
-    if (
-        !dashboardUpcomingCommitments
-    ) {
+    if (!dashboardUpcomingCommitments) {
         return;
     }
-
-    dashboardUpcomingCommitments.innerHTML =
-        "";
 
     const today =
         parseRecurringLocalDate(
@@ -12887,8 +12852,11 @@ function renderDashboardUpcomingCommitments() {
             )
             .filter(
                 item =>
+                    item.due >=
+                        today
+                    &&
                     item.due <=
-                    horizon
+                        horizon
             )
             .sort(
                 (
@@ -12897,267 +12865,74 @@ function renderDashboardUpcomingCommitments() {
                 ) =>
                     first.due -
                     second.due
-            )
-            .slice(
-                0,
-                5
             );
 
     if (!items.length) {
 
-        const empty =
-            document.createElement(
-                "p"
-            );
-
-        empty.className =
-            "dashboard-upcoming-empty";
-
-        empty.textContent =
+        dashboardUpcomingCommitments.textContent =
             "Nothing is due in the next 30 days.";
-
-        dashboardUpcomingCommitments
-            .appendChild(
-                empty
-            );
 
         return;
     }
 
-    items.forEach(
-        function (item) {
-
-            const row =
-                document.createElement(
-                    "div"
-                );
-
-            row.className =
-                "dashboard-upcoming-item";
-
-            const date =
-                document.createElement(
-                    "div"
-                );
-
-            date.className =
-                "dashboard-upcoming-date";
-
-            const day =
-                document.createElement(
-                    "strong"
-                );
-
-            day.textContent =
-                String(
-                    item.due.getDate()
-                );
-
-            const month =
-                document.createElement(
-                    "span"
-                );
-
-            month.textContent =
-                item.due.toLocaleDateString(
-                    "en-MY",
-                    {
-                        month:
-                            "short"
-                    }
-                );
-
-            date.append(
-                day,
-                month
-            );
-
-            const copy =
-                document.createElement(
-                    "div"
-                );
-
-            copy.className =
-                "dashboard-upcoming-copy";
-
-            const name =
-                document.createElement(
-                    "strong"
-                );
-
-            name.textContent =
-                item.name;
-
-            const due =
-                recurringDueLabel(
-                    item.next_due_date
-                );
-
-            const meta =
-                document.createElement(
-                    "span"
-                );
-
-            const reminderText =
-                isRecurringReminderDue(
+    const outgoing =
+        items
+            .filter(
+                item =>
+                    item.type ===
+                    "expense"
+            )
+            .reduce(
+                (
+                    total,
                     item
-                )
-                    ? " • Reminder"
-                    : "";
-
-            meta.textContent =
-                `${
-                    item.kind ===
-                    "subscription"
-                        ? "Subscription"
-                        : formatRecurringFrequency(
-                            item.frequency
-                        )
-                } • ${due.text}${reminderText}`;
-
-            copy.append(
-                name,
-                meta
+                ) =>
+                    total +
+                    Number(
+                        item.amount ||
+                        0
+                    ),
+                0
             );
 
-            const amount =
-                document.createElement(
-                    "strong"
-                );
-
-            amount.className =
-                `dashboard-upcoming-amount ${item.type}`;
-
-            amount.textContent =
-                `${
+    const incoming =
+        items
+            .filter(
+                item =>
                     item.type ===
                     "income"
-                        ? "+"
-                        : "-"
-                }${formatMoney(
-                    item.amount
-                )}`;
-
-            row.append(
-                date,
-                copy,
-                amount
+            )
+            .reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    Number(
+                        item.amount ||
+                        0
+                    ),
+                0
             );
 
-            const currentStatus =
-                getRecurringOccurrenceStatus(
-                    item.id,
-                    item.next_due_date
-                );
+    const parts = [
+        `${items.length} ${items.length === 1 ? "commitment" : "commitments"} due`
+    ];
 
-            const statusRow =
-                document.createElement(
-                    "div"
-                );
+    if (outgoing > 0) {
+        parts.push(
+            `${formatMoney(outgoing)} outgoing`
+        );
+    }
 
-            statusRow.className =
-                "dashboard-upcoming-status-row";
+    if (incoming > 0) {
+        parts.push(
+            `${formatMoney(incoming)} incoming`
+        );
+    }
 
-            const statusLabel =
-                document.createElement(
-                    "div"
-                );
-
-            statusLabel.className =
-                `dashboard-upcoming-current-status ${currentStatus}`;
-
-            statusLabel.textContent =
-                `Status: ${getRecurringStatusLabel(
-                    currentStatus
-                )}`;
-
-            const controls =
-                document.createElement(
-                    "div"
-                );
-
-            controls.className =
-                "dashboard-upcoming-status-controls";
-
-            [
-                ["pending", "Pending"],
-                ["paid", "Paid"],
-                ["skipped", "Skipped"]
-            ].forEach(
-                function (
-                    [
-                        status,
-                        label
-                    ]
-                ) {
-
-                    const button =
-                        document.createElement(
-                            "button"
-                        );
-
-                    button.type =
-                        "button";
-
-                    button.className =
-                        "dashboard-upcoming-status-button";
-
-                    if (
-                        currentStatus ===
-                        status
-                    ) {
-
-                        button.classList.add(
-                            "active",
-                            status
-                        );
-                    }
-
-                    button.textContent =
-                        label;
-
-                    button.addEventListener(
-                        "click",
-                        async function () {
-
-                            if (
-                                currentStatus ===
-                                status
-                            ) {
-                                return;
-                            }
-
-                            button.disabled =
-                                true;
-
-                            await setRecurringOccurrenceStatus(
-                                item,
-                                status
-                            );
-                        }
-                    );
-
-                    controls.appendChild(
-                        button
-                    );
-                }
-            );
-
-            statusRow.append(
-                statusLabel,
-                controls
-            );
-
-            row.appendChild(
-                statusRow
-            );
-
-            dashboardUpcomingCommitments
-                .appendChild(
-                    row
-                );
-        }
-    );
+    dashboardUpcomingCommitments.textContent =
+        parts.join(" · ");
 }
 
 
@@ -22907,39 +22682,44 @@ function renderSpendingDashboard() {
             previousMonth
         );
 
+    if (spendingPeriodLabel) {
 
-    spendingPeriodLabel.textContent =
-        `${currentMonthName} vs ${previousMonthName}`;
+        spendingPeriodLabel.textContent =
+            currentMonthName;
+    }
 
-    currentSpendingLabel.textContent =
-        currentMonthName;
+    if (currentSpendingLabel) {
 
-    previousSpendingLabel.textContent =
-        previousMonthName;
+        currentSpendingLabel.textContent =
+            "Spending";
+    }
 
-    currentMonthSpendingElement.textContent =
-        formatMoney(
-            currentSpending
-        );
+    if (previousSpendingLabel) {
 
-    previousMonthSpendingElement.textContent =
-        formatMoney(
-            previousSpending
-        );
+        previousSpendingLabel.textContent =
+            previousMonthName;
+    }
 
+    if (currentMonthSpendingElement) {
+
+        currentMonthSpendingElement.textContent =
+            formatMoney(
+                currentSpending
+            );
+    }
+
+    if (previousMonthSpendingElement) {
+
+        previousMonthSpendingElement.textContent =
+            formatMoney(
+                previousSpending
+            );
+    }
 
     renderSpendingChange(
         currentSpending,
         previousSpending,
         previousMonthName
-    );
-
-
-    renderAutomaticInsights(
-        currentMonth,
-        previousMonth,
-        currentSpending,
-        previousSpending
     );
 }
 
@@ -25007,32 +24787,47 @@ function renderInsightMonthlySummary(data) {
 
 
 function renderDashboardInsights(data) {
+
     if (!dashboardInsightsPreview) {
         return;
     }
 
-    dashboardInsightsPreview.innerHTML = "";
+    dashboardInsightsPreview.innerHTML =
+        "";
 
-    buildPriorityInsights(data)
-        .slice(0, 3)
-        .forEach(insight => {
-            const row = document.createElement("div");
-            row.className = `dashboard-insight-row ${insight.severity}`;
+    const insight =
+        buildPriorityInsights(
+            data
+        )[0];
 
-            const dot = document.createElement("span");
-            dot.className = "dashboard-insight-dot";
+    if (!insight) {
 
-            const copy = document.createElement("div");
-            const title = document.createElement("strong");
-            const message = document.createElement("span");
+        dashboardInsightsPreview.textContent =
+            "Add more transactions to unlock smart insights.";
 
-            title.textContent = insight.title;
-            message.textContent = insight.message;
+        return;
+    }
 
-            copy.append(title, message);
-            row.append(dot, copy);
-            dashboardInsightsPreview.appendChild(row);
-        });
+    const title =
+        document.createElement(
+            "strong"
+        );
+
+    const message =
+        document.createElement(
+            "span"
+        );
+
+    title.textContent =
+        insight.title;
+
+    message.textContent =
+        insight.message;
+
+    dashboardInsightsPreview.append(
+        title,
+        message
+    );
 }
 
 
@@ -30314,6 +30109,71 @@ quickAddTransactionLinks.forEach(
 );
 
 
+dashboardTransferAction
+    ?.addEventListener(
+        "click",
+        function () {
+
+            pendingRecurringId =
+                null;
+
+            if (
+                cancelEditButton &&
+                !cancelEditButton.classList.contains(
+                    "hidden-button"
+                )
+            ) {
+                cancelEditButton.click();
+            }
+
+            navigateToPage(
+                "transactions",
+                {
+                    scrollToTop:
+                        false
+                }
+            );
+
+            requestAnimationFrame(
+                function () {
+
+                    transactionTypeSelect.disabled =
+                        false;
+
+                    transactionTypeSelect.value =
+                        "transfer";
+
+                    transactionTypeSelect.dispatchEvent(
+                        new Event(
+                            "change",
+                            {
+                                bubbles:
+                                    true
+                            }
+                        )
+                    );
+
+                    transactionForm.scrollIntoView({
+                        behavior:
+                            "smooth",
+                        block:
+                            "start"
+                    });
+
+                    setTimeout(
+                        function () {
+
+                            transferFromAccountSelect
+                                ?.focus();
+                        },
+                        350
+                    );
+                }
+            );
+        }
+    );
+
+
 
 // ======================================================
 // PWA / INSTALL APP
@@ -30698,7 +30558,7 @@ function renderDashboardRecentTransactions() {
         transactions
             .slice(
                 0,
-                5
+                3
             );
 
 
@@ -30980,260 +30840,63 @@ function renderDashboardBudgetSummary(
     month
 ) {
 
-    if (
-        !dashboardBudgetSummary
-    ) {
-
+    if (!dashboardBudgetSummary) {
         return;
     }
 
+    if (!dashboardBudgets.length) {
 
-    dashboardBudgetSummary.innerHTML =
-        "";
-
-
-    if (
-        dashboardBudgets.length ===
-        0
-    ) {
-
-        const empty =
-            document.createElement(
-                "div"
-            );
-
-
-        empty.className =
-            "empty-state";
-
-
-        empty.textContent =
+        dashboardBudgetSummary.textContent =
             "No budgets set for this month yet.";
 
-
-        dashboardBudgetSummary.appendChild(
-            empty
-        );
-
-
         return;
     }
 
-
-    dashboardBudgets.forEach(
-        function (budget) {
-
-            const limit =
+    const totalBudget =
+        dashboardBudgets.reduce(
+            (
+                total,
+                budget
+            ) =>
+                total +
                 Number(
-                    budget.amount
-                );
+                    budget.amount ||
+                    0
+                ),
+            0
+        );
 
-
-            const spent =
+    const totalSpent =
+        dashboardBudgets.reduce(
+            (
+                total,
+                budget
+            ) =>
+                total +
                 calculateCategorySpending(
                     budget.category_id,
                     month
-                );
+                ),
+            0
+        );
 
-
-            const percentage =
-                limit > 0
-                    ?
-                    (
-                        spent /
-                        limit
-                    )
-                    *
-                    100
-                    :
-                    0;
-
-
-            const visualPercentage =
-                Math.min(
-                    percentage,
-                    100
-                );
-
-
-            const card =
-                document.createElement(
-                    "div"
-                );
-
-
-            card.className =
-                "dashboard-budget-item";
-
-
-            // ------------------------------------------
-            // HEADER
-            // ------------------------------------------
-
-            const header =
-                document.createElement(
-                    "div"
-                );
-
-
-            header.className =
-                "dashboard-budget-header";
-
-
-            const categoryName =
-                document.createElement(
-                    "span"
-                );
-
-
-            categoryName.className =
-                "dashboard-budget-name";
-
-
-            categoryName.textContent =
-                getCategoryName(
-                    budget.category_id
-                )
-                ||
-                "Unknown Category";
-
-
-            const amountText =
-                document.createElement(
-                    "span"
-                );
-
-
-            amountText.className =
-                "dashboard-budget-amount";
-
-
-            amountText.textContent =
-                `${formatMoney(
-                    spent
-                )} / ${formatMoney(
-                    limit
-                )}`;
-
-
-            header.appendChild(
-                categoryName
-            );
-
-            header.appendChild(
-                amountText
-            );
-
-
-            // ------------------------------------------
-            // PROGRESS
-            // ------------------------------------------
-
-            const progress =
-                document.createElement(
-                    "div"
-                );
-
-
-            progress.className =
-                "budget-progress";
-
-
-            const progressFill =
-                document.createElement(
-                    "div"
-                );
-
-
-            progressFill.className =
-                "budget-progress-fill";
-
-
-            if (
-                percentage >=
+    const percentage =
+        totalBudget > 0
+            ? (
+                totalSpent /
+                totalBudget
+            ) *
                 100
-            ) {
+            : 0;
 
-                progressFill.classList.add(
-                    "budget-over"
-                );
+    const difference =
+        totalBudget -
+        totalSpent;
 
-            } else if (
-                percentage >=
-                80
-            ) {
-
-                progressFill.classList.add(
-                    "budget-warning"
-                );
-            }
-
-
-            progressFill.style.width =
-                `${visualPercentage}%`;
-
-
-            progress.appendChild(
-                progressFill
-            );
-
-
-            // ------------------------------------------
-            // FOOTER
-            // ------------------------------------------
-
-            const footer =
-                document.createElement(
-                    "div"
-                );
-
-
-            footer.className =
-                "dashboard-budget-footer";
-
-
-            if (
-                spent >
-                limit
-            ) {
-
-                footer.classList.add(
-                    "budget-over-text"
-                );
-
-
-                footer.textContent =
-                    `${formatMoney(
-                        spent - limit
-                    )} over budget`;
-
-            } else {
-
-                footer.textContent =
-                    `${formatMoney(
-                        limit - spent
-                    )} remaining`;
-            }
-
-
-            card.appendChild(
-                header
-            );
-
-            card.appendChild(
-                progress
-            );
-
-            card.appendChild(
-                footer
-            );
-
-
-            dashboardBudgetSummary.appendChild(
-                card
-            );
-        }
-    );
+    dashboardBudgetSummary.textContent =
+        difference >= 0
+            ? `${Math.round(percentage)}% used · ${formatMoney(difference)} remaining`
+            : `${Math.round(percentage)}% used · ${formatMoney(Math.abs(difference))} over budget`;
 }
 
 

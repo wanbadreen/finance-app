@@ -63,12 +63,6 @@ export function mountRequestMoneyUI(context) {
   const dashboard=document.getElementById('dashboard-page');
   if(!dashboard) return { openCreate:()=>{}, openList:()=>{} };
 
-  const summary=dashboard.querySelector('.summary-grid');
-  const dash=document.createElement('section');
-  dash.className='request-money-dashboard';
-  dash.innerHTML='<div><h3>Request Money</h3><p>Create a payment request link with your QR and the exact amount.</p></div><div class="request-money-actions"><button type="button" class="request-money-button" data-request-list>View Requests</button><button type="button" class="request-money-button primary" data-request-create>Request Money</button></div>';
-  summary?.after(dash);
-
   async function showCreated(request,token) {
     const link=publicLink(request.id,token);
     const d=openDialog('Request ready',`
