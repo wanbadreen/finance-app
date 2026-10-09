@@ -1894,6 +1894,199 @@ a {
     font-weight: 600;
 }
 
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.transaction-compact-controls {
+    margin-top: 10px;
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.transaction-filter-toggle,
+.transaction-sort-compact select {
+    min-height: 42px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.transaction-filter-toggle {
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.transaction-filter-toggle:hover,
+.transaction-filter-toggle.active {
+    background-color: var(--hover-bg);
+    border-color: var(--accent);
+}
+
+.transaction-filter-count {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background-color: var(--primary-action-bg);
+    color: var(--primary-action-text);
+    font-size: 10px;
+    line-height: 1;
+}
+
+.transaction-sort-compact {
+    min-width: 0;
+    margin-left: auto;
+}
+
+.transaction-sort-compact select {
+    width: 100%;
+    min-width: 150px;
+    padding: 0 34px 0 12px;
+    cursor: pointer;
+}
+
+.transaction-filter-toggle:focus-visible,
+.transaction-sort-compact select:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    border-color: var(--accent);
+}
+
+.transaction-active-filters {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.transaction-active-filters[hidden] {
+    display: none;
+}
+
+.transaction-active-filter-chip {
+    min-height: 30px;
+    padding: 5px 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--info-border);
+    border-radius: 999px;
+    background-color: var(--info-surface);
+    color: var(--text-primary);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.transaction-active-filter-chip:hover {
+    border-color: var(--accent);
+}
+
+.transaction-filter-dialog {
+    width: min(680px, calc(100vw - 32px));
+    max-width: 680px;
+    max-height: min(80vh, 720px);
+    padding: 0;
+    overflow: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.transaction-filter-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.transaction-filter-dialog-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 18px 18px 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.transaction-filter-dialog-header h2 {
+    margin: 0;
+    font-size: 19px;
+}
+
+.transaction-filter-dialog-header p {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.transaction-filter-close {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.transaction-filter-dialog .transaction-filter-grid {
+    margin: 0;
+    padding: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.transaction-filter-dialog-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    padding: 14px 18px 18px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+    gap: 10px;
+    background-color: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+}
+
+.transaction-filter-dialog-actions .primary-button,
+.transaction-filter-dialog-actions .transaction-reset-button {
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+}
+
 /* ======================================================
    RECENTLY DELETED
 ====================================================== */
@@ -2481,6 +2674,59 @@ a {
    VERY SMALL MOBILE
 ====================================================== */
 
+
+@media (max-width: 760px) {
+
+    .transaction-tools {
+        padding: 12px;
+    }
+
+    .transaction-compact-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 8px;
+    }
+
+    .transaction-filter-toggle {
+        width: 100%;
+        padding: 0 10px;
+    }
+
+    .transaction-sort-compact {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .transaction-sort-compact select {
+        min-width: 0;
+        font-size: 11px;
+    }
+
+    .transaction-filter-summary {
+        margin-top: 9px;
+    }
+
+    .transaction-filter-dialog {
+        width: 100%;
+        max-width: none;
+        max-height: 84dvh;
+        margin: auto 0 0;
+        border-width: 1px 0 0;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .transaction-filter-dialog .transaction-filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 16px;
+        gap: 10px;
+    }
+
+    .transaction-filter-dialog-actions {
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+}
+
+
 @media (max-width: 430px) {
 
     .app-content {
@@ -2545,6 +2791,14 @@ a {
 
     .transaction-filter-field:last-child {
         grid-column: auto;
+    }
+
+    .transaction-filter-dialog .transaction-filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .transaction-filter-dialog-actions {
+        grid-template-columns: 1fr 1.2fr;
     }
 
 }
