@@ -1,5 +1,7 @@
 import { isNativeApp } from "./native-platform.js";
 import { supabase } from "./supabase.js";
+import { createDataSync } from "./data-sync.mjs";
+import "./data-sync.css";
 import { normalizeTransaction } from "./split-core.mjs";
 import { mountSplitUI } from "./split-ui.js";
 import { mountRequestMoneyUI } from "./request-money.js";
@@ -3319,6 +3321,7 @@ deleteAccountButton
 
 function showLoggedOutState() {
 
+    dataSync.stop();
     currentUser = null;
 
     accounts = [];
@@ -3443,6 +3446,9 @@ async function showLoggedInState(user) {
 
     await initializeFirstTimeOnboarding();
 
+    // Activate live subscriptions only once initial data has loaded.
+    if (currentUser?.id === user.id) dataSync.start(user.id);
+
     if (isNativeApp) {
         window.dispatchEvent(
             new CustomEvent("kira:app-ready")
@@ -3450,6 +3456,68 @@ async function showLoggedInState(user) {
     }
 }
 
+
+// ======================================================
+// EXTERNAL DATA SYNC (MCP writes, other tabs/devices and return visits)
+// ======================================================
+
+async function refreshExternalKiraData({ reason, tables = [] }) {
+    if (!currentUser) return;
+    const fullRefresh = reason !== "realtime";
+    const changed = new Set(tables);
+    const needs = (...names) => fullRefresh || names.some(name => changed.has(name));
+
+    if (needs("accounts")) await loadAccounts(true);
+    if (needs("account_transfers")) await loadTransfers(true, false);
+
+    if (fullRefresh) {
+        await loadCategories(true);
+        await loadIncomeSources(true);
+        await loadPaymentMethods(true);
+        await loadTags();
+    } else if (needs("transaction_tags")) {
+        await loadTags();
+    }
+
+    if (needs("credit_cards", "credit_card_statements", "credit_card_reconciliations")) {
+        await loadCreditCardData(true);
+    }
+
+    // This loader re-renders transactions, balances, dashboard, reports and
+    // credit card summaries from fresh Supabase rows, not cached app state.
+    if (needs(
+        "transactions", "transaction_tags", "accounts", "account_transfers",
+        "credit_cards", "credit_card_statements", "credit_card_reconciliations"
+    )) {
+        await loadTransactions(true);
+    }
+
+    if (needs("recurring_transactions")) await loadRecurringTransactions(true);
+    if (needs("savings_goals")) await loadSavingsGoals(true);
+    if (needs("savings_movements")) await loadSavingsMovements(true);
+    if (needs("split_bills")) await splitUI.refreshIfVisible();
+
+    if (fullRefresh) {
+        await loadBudgets(true);
+        refreshTransactionDropdowns();
+        refreshRecurringFormOptions();
+        refreshGoalAccountOptions();
+        refreshSavingsMovementOptions();
+        renderCreditCardsPage();
+        renderCreditCardDashboardSummary();
+        updateDashboard();
+        renderPlanningTools();
+        renderReports();
+        renderSmartInsights();
+    }
+}
+
+const dataSync = createDataSync({
+    supabase,
+    appRoot: financeApp,
+    getUserId: () => currentUser?.id,
+    refreshData: refreshExternalKiraData
+});
 
 // ======================================================
 // REGISTER
