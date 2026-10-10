@@ -202,7 +202,13 @@ export function mountSplitUI(context) {
   // Existing Add links keep their transaction destination; the mobile plus offers both actions.
   document.querySelector('.mobile-add-action')?.addEventListener('click',e=>{e.preventDefault();const d=openDialog('Add to Kira',`${button('Add transaction','ordinary')}${button('Split Bill','split',true)}`);d.querySelector('[data-split-action=ordinary]').onclick=()=>{show(false);d.close();form.scrollIntoView({behavior:'smooth'});};d.querySelector('[data-split-action=split]').onclick=()=>{d.close();start();};});
   document.querySelectorAll('a[href="#transaction-form"]:not(.mobile-add-action)').forEach(a=>a.addEventListener('click',()=>show(false)));
-  return {start,open,reset(){bills=[];selected=null;draft=null;root.innerHTML='';show(false,false);}};
+  async function refreshIfVisible() {
+    // Never replace a partially filled Split Bill form during background sync.
+    if (root.classList.contains('split-hidden') || root.querySelector('#split-form')) return;
+    if (selected?.id) await open(selected.id);
+    else await load();
+  }
+  return {start,open,refreshIfVisible,reset(){bills=[];selected=null;draft=null;root.innerHTML='';show(false,false);}};
 }
 
 function history(payments,name,owner) {

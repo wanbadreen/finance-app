@@ -1,0 +1,49 @@
+.kira-sync-indicator {
+  position: fixed;
+  z-index: 2200;
+  top: calc(env(safe-area-inset-top, 0px) + 68px);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 15px;
+  border: 1px solid var(--border-color, #dce2e8);
+  border-radius: 999px;
+  background: var(--card-bg, #fff);
+  color: var(--text-primary, #142239);
+  box-shadow: 0 8px 26px rgb(0 0 0 / 14%);
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-16px + var(--kira-pull, 0px)));
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.kira-sync-indicator.kira-sync-visible {
+  opacity: 1;
+  transform: translate(-50%, var(--kira-pull, 0px));
+}
+.kira-sync-spinner {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: kira-sync-spin 650ms linear infinite;
+}
+.kira-sync-indicator[data-state="success"] .kira-sync-spinner {
+  border: none;
+  animation: none;
+}
+.kira-sync-indicator[data-state="success"] .kira-sync-spinner::before { content: "✓"; color: #128452; }
+.kira-sync-indicator[data-state="error"] .kira-sync-spinner { border: none; animation: none; }
+.kira-sync-indicator[data-state="error"] .kira-sync-spinner::before { content: "!"; color: #d95050; }
+@keyframes kira-sync-spin { to { transform: rotate(360deg); } }
+@media (min-width: 768px) {
+  .kira-sync-indicator { top: 80px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kira-sync-indicator, .kira-sync-spinner { transition: none; animation: none; }
+}
